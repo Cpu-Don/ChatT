@@ -3,62 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sincro MD - Chat Seguro</title>
+    <title>Sincro MD - Chat VIP</title>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         :root { --p: #075e54; --s: #25d366; --bg: #e5ddd5; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; display: flex; justify-content: center; height: 100vh; }
         #app { width: 100%; max-width: 450px; background: white; position: relative; display: flex; flex-direction: column; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
-        .screen { display: none; padding: 30px; flex-direction: column; justify-content: center; height: 100%; text-align: center; box-sizing: border-box; }
+        .screen { display: none; padding: 20px; flex-direction: column; height: 100%; box-sizing: border-box; }
         .active { display: flex !important; }
-        input { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: var(--p); color: white; transition: 0.3s; }
-        .header { background: var(--p); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: var(--p); color: white; }
+        .header { background: var(--p); color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
         #chat-box { flex: 1; padding: 15px; overflow-y: auto; background: var(--bg); display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px; border-radius: 10px; max-width: 80%; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .msg { padding: 10px; border-radius: 10px; max-width: 80%; font-size: 14px; position: relative; }
         .me { background: #dcf8c6; align-self: flex-end; }
         .them { background: white; align-self: flex-start; }
-        #admin-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; padding: 20px; box-sizing: border-box; }
+        .locked-media { background: #bbb; height: 150px; display: flex; align-items: center; justify-content: center; border-radius: 8px; filter: blur(4px); margin-top: 5px; }
+        .lock-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; z-index: 2; color: #444; font-weight: bold; }
+        #admin-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; padding: 20px; box-sizing: border-box; overflow-y: auto; }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <div id="scr-reg" class="screen active">
+    <div id="scr-reg" class="screen active" style="text-align:center; justify-content:center;">
         <h2 style="color:var(--p)">Sincro MD</h2>
-        <p style="color:#666;">Registra tu Gmail para recibir tu código</p>
         <input type="text" id="reg-user" placeholder="Nombre de Usuario">
         <input type="email" id="reg-mail" placeholder="tu-correo@gmail.com">
-        <input type="password" id="reg-pass" placeholder="Crea una Contraseña">
-        <button class="btn" onclick="enviarOTP()">ENVIAR CÓDIGO A GMAIL</button>
-        <p onclick="loginAdmin()" style="font-size:11px; color:#aaa; margin-top:20px; cursor:pointer;">Panel de Control (Admin)</p>
+        <input type="password" id="reg-pass" placeholder="Contraseña">
+        <button class="btn" onclick="enviarOTP()">RECIBIR CÓDIGO GMAIL</button>
+        <p onclick="loginAdmin()" style="font-size:11px; color:#aaa; cursor:pointer; margin-top:15px;">Acceso Administrador</p>
     </div>
 
-    <div id="scr-verify" class="screen">
-        <h2>Revisa tu Gmail</h2>
-        <p>Introduce el código de 6 dígitos:</p>
-        <input type="number" id="otp-input" placeholder="000000" style="text-align:center; font-size:28px; letter-spacing:8px;">
-        <button class="btn" onclick="confirmarOTP()">VERIFICAR Y ENTRAR</button>
+    <div id="scr-verify" class="screen" style="text-align:center; justify-content:center;">
+        <h2>Verifica tu cuenta</h2>
+        <input type="number" id="otp-input" placeholder="Código de 6 dígitos" style="text-align:center; font-size:24px;">
+        <button class="btn" onclick="confirmarOTP()">ENTRAR AL CHAT</button>
     </div>
 
     <div id="scr-chat" class="screen" style="padding:0;">
         <div class="header">
-            <b>Sincro MD - Grupo</b>
-            <button id="btn-adm" onclick="abrirAdmin()" style="display:none; background:orange; border:none; color:white; padding:5px 10px; border-radius:5px; font-size:10px; cursor:pointer;">USUARIOS</button>
+            <b>Sincro MD</b>
+            <button id="btn-adm" onclick="abrirAdmin()" style="display:none; background:orange; border:none; padding:5px; border-radius:5px; color:white; cursor:pointer;">ADMIN</button>
         </div>
         <div id="chat-box"></div>
-        <div style="padding:10px; background:#f0f0f0; display:flex; gap:8px;">
-            <input id="msg-in" placeholder="Escribe un mensaje..." style="margin:0; border-radius:20px;">
-            <button onclick="enviarMensaje()" class="btn" style="width:50px; border-radius:50%; margin:0;">></button>
+        <div style="padding:10px; background:#eee; display:flex; gap:5px;">
+            <input id="msg-in" placeholder="Escribe aquí..." style="margin:0;">
+            <button onclick="enviarMsg('texto')" class="btn" style="width:50px;">></button>
+            <button onclick="enviarMsg('foto')" class="btn" style="width:50px; background:#444;">📷</button>
         </div>
     </div>
 
     <div id="admin-panel">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:10px;">
-            <h3>Usuarios Registrados</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>Gestión de Usuarios</h3>
             <button onclick="cerrarAdmin()">Cerrar X</button>
         </div>
-        <div id="lista-pedidos" style="margin-top:20px;"></div>
+        <div id="lista-users"></div>
     </div>
 </div>
 
@@ -67,122 +68,95 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-    // --- CONFIGURACIÓN ---
+    // CONFIGURACIÓN (REEMPLAZA CON TUS DATOS SI ES NECESARIO)
     const firebaseConfig = { databaseURL: "https://micanalmaestro-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const auth = firebase.auth();
+    emailjs.init("BrWqcYWEajAbCMVYM"); 
 
-    emailjs.init("BrWqcYWEajAbCMVYM"); // Tu Public Key
-
-    let datosTemp = {};
-    let codigoReal = "";
-    let miUser = "";
-    let esAdmin = false;
+    let datosTemp = {}, codigoReal = "", miUser = "", esAdmin = false, miPerfil = {};
 
     function view(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    // --- ENVIAR CÓDIGO ---
     function enviarOTP() {
         const u = document.getElementById('reg-user').value.trim();
         const m = document.getElementById('reg-mail').value.trim();
-        const p = document.getElementById('reg-pass').value.trim();
-
-        if(!u || !m || !p) return alert("Llena todos los campos");
-
+        if(!u || !m) return alert("Completa los datos");
         codigoReal = Math.floor(100000 + Math.random() * 900000).toString();
-        datosTemp = { user: u, mail: m, pass: p };
-
-        emailjs.send("service_ahvtgiw", "template_jsynwd9", {
-            to_name: u,
-            to_email: m,
-            code: codigoReal
-        }).then(() => {
-            alert("Código enviado a: " + m);
-            view('scr-verify');
-        }).catch(err => alert("Error: Revisa los permisos de EmailJS"));
+        datosTemp = { user: u, mail: m, pass: document.getElementById('reg-pass').value };
+        
+        emailjs.send("service_ahvtgiw", "template_jsynwd9", { to_name: u, to_email: m, code: codigoReal })
+            .then(() => { alert("Código enviado!"); view('scr-verify'); })
+            .catch(() => alert("Error al enviar código. Revisa EmailJS."));
     }
 
-    // --- VERIFICAR Y APROBAR AUTOMÁTICAMENTE ---
     function confirmarOTP() {
-        const input = document.getElementById('otp-input').value;
-        if(input === codigoReal) {
-            miUser = datosTemp.user.toLowerCase().replace(/\s/g, ''); // Sin espacios
-            
-            // Se guarda como APROBADO TRUE de una vez
-            db.ref('sincro_users/' + miUser).set({
-                nombre: datosTemp.user,
-                correo: datosTemp.mail,
-                clave: datosTemp.pass,
-                aprobado: true 
-            }).then(() => {
-                alert("¡Verificado con éxito!");
-                entrarAlChat();
-            });
-        } else {
-            alert("Código incorrecto");
-        }
+        if(document.getElementById('otp-input').value === codigoReal) {
+            miUser = datosTemp.user.toLowerCase().replace(/\s/g, '');
+            miPerfil = { nombre: datosTemp.user, vip: false }; // VIP falso por defecto
+            db.ref('sincro_users/' + miUser).set(miPerfil).then(() => entrarAlChat());
+        } else { alert("Código incorrecto"); }
     }
 
-    // --- ENTRAR AL CHAT ---
     function entrarAlChat() {
         view('scr-chat');
         if(esAdmin) document.getElementById('btn-adm').style.display = "block";
         
-        db.ref('sincro_mensajes').limitToLast(50).on('value', s => {
+        // Escuchar cambios en mi propio perfil (por si el admin me hace VIP)
+        db.ref('sincro_users/' + miUser).on('value', s => { miPerfil = s.val() || miPerfil; });
+
+        db.ref('sincro_mensajes').limitToLast(30).on('value', s => {
             const box = document.getElementById('chat-box');
             box.innerHTML = "";
             s.forEach(child => {
                 const m = child.val();
                 const d = document.createElement('div');
                 d.className = "msg " + (m.u === miUser ? "me" : "them");
-                d.innerHTML = `<b>${m.u}</b><br>${m.t}`;
+                
+                if(m.type === "foto" && !miPerfil.vip && m.u !== miUser) {
+                    d.innerHTML = `<b>${m.u}</b><br><div class="locked-media"></div><span class="lock-icon">🔒</span><small>Contenido VIP</small>`;
+                } else {
+                    d.innerHTML = `<b>${m.u}</b><br>${m.t}`;
+                }
                 box.appendChild(d);
             });
             box.scrollTop = box.scrollHeight;
         });
     }
 
-    function enviarMensaje() {
-        const inp = document.getElementById('msg-in');
-        if(!inp.value.trim()) return;
-        db.ref('sincro_mensajes').push({ u: miUser, t: inp.value });
-        inp.value = "";
+    function enviarMsg(tipo) {
+        const txt = document.getElementById('msg-in').value;
+        if(tipo === "texto" && !txt) return;
+        db.ref('sincro_mensajes').push({ u: miUser, t: tipo === "foto" ? "📷 Foto enviada" : txt, type: tipo });
+        document.getElementById('msg-in').value = "";
     }
 
-    // --- LOGIN ADMIN (FIREBASE AUTH) ---
     function loginAdmin() {
-        const email = prompt("Correo de Admin:");
-        const pass = prompt("Contraseña:");
-        if (email && pass) {
-            auth.signInWithEmailAndPassword(email, pass)
-                .then(() => {
-                    esAdmin = true;
-                    miUser = "Admin";
-                    entrarAlChat();
-                    cargarUsuarios();
-                })
-                .catch(err => alert("Acceso Denegado: " + err.message));
-        }
+        const e = prompt("Email Admin:"), p = prompt("Clave Admin:");
+        if(e && p) auth.signInWithEmailAndPassword(e, p).then(() => { esAdmin = true; miUser = "Admin"; entrarAlChat(); cargarAdmin(); }).catch(err => alert(err.message));
     }
 
     function abrirAdmin() { document.getElementById('admin-panel').style.display = "block"; }
     function cerrarAdmin() { document.getElementById('admin-panel').style.display = "none"; }
 
-    function cargarUsuarios() {
+    function cargarAdmin() {
         db.ref('sincro_users').on('value', s => {
-            const list = document.getElementById('lista-pedidos');
+            const list = document.getElementById('lista-users');
             list.innerHTML = "";
             s.forEach(child => {
                 const u = child.val();
-                list.innerHTML += `
-                    <div style="text-align:left; background:#f9f9f9; padding:10px; margin-bottom:5px; border-radius:8px;">
-                        <b>${u.nombre}</b> (${u.correo})<br>
-                        <small>Estado: ${u.aprobado ? '✅ Activo' : '❌ Pendiente'}</small>
-                    </div>`;
+                const div = document.createElement('div');
+                div.style = "padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;";
+                div.innerHTML = `<span>${u.nombre} ${u.vip ? '⭐' : ''}</span>`;
+                const btn = document.createElement('button');
+                btn.innerText = u.vip ? "Quitar VIP" : "Hacer VIP";
+                btn.onclick = () => db.ref('sincro_users/' + child.key + '/vip').set(!u.vip);
+                div.appendChild(btn);
+                list.appendChild(div);
             });
         });
     }
