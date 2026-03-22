@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sincro MD - Registro Seguro</title>
+    <title>Sincro MD - Chat Seguro</title>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         :root { --p: #075e54; --s: #25d366; --bg: #e5ddd5; }
@@ -15,7 +15,7 @@
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: var(--p); color: white; transition: 0.3s; }
         .header { background: var(--p); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         #chat-box { flex: 1; padding: 15px; overflow-y: auto; background: var(--bg); display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px; border-radius: 10px; max-width: 80%; font-size: 14px; }
+        .msg { padding: 10px; border-radius: 10px; max-width: 80%; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .me { background: #dcf8c6; align-self: flex-end; }
         .them { background: white; align-self: flex-start; }
         #admin-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: none; padding: 20px; box-sizing: border-box; }
@@ -26,57 +26,54 @@
 <div id="app">
     <div id="scr-reg" class="screen active">
         <h2 style="color:var(--p)">Sincro MD</h2>
-        <p style="color:#666;">Registra tu Gmail para recibir el código</p>
+        <p style="color:#666;">Registra tu Gmail para recibir tu código</p>
         <input type="text" id="reg-user" placeholder="Nombre de Usuario">
         <input type="email" id="reg-mail" placeholder="tu-correo@gmail.com">
-        <input type="password" id="reg-pass" placeholder="Contraseña">
-        <button class="btn" onclick="enviarOTP()">ENVIAR CÓDIGO</button>
-        <p onclick="loginAdmin()" style="font-size:11px; color:#aaa; margin-top:20px; cursor:pointer;">Acceso Administrador</p>
+        <input type="password" id="reg-pass" placeholder="Crea una Contraseña">
+        <button class="btn" onclick="enviarOTP()">ENVIAR CÓDIGO A GMAIL</button>
+        <p onclick="loginAdmin()" style="font-size:11px; color:#aaa; margin-top:20px; cursor:pointer;">Panel de Control (Admin)</p>
     </div>
 
     <div id="scr-verify" class="screen">
-        <h2>Verifica tu Gmail</h2>
-        <input type="number" id="otp-input" placeholder="000000" style="text-align:center; font-size:28px;">
-        <button class="btn" onclick="confirmarOTP()">VERIFICAR</button>
-    </div>
-
-    <div id="scr-wait" class="screen">
-        <h3>📧 Verificado</h3>
-        <p>Espera a que el Administrador apruebe tu entrada.</p>
+        <h2>Revisa tu Gmail</h2>
+        <p>Introduce el código de 6 dígitos:</p>
+        <input type="number" id="otp-input" placeholder="000000" style="text-align:center; font-size:28px; letter-spacing:8px;">
+        <button class="btn" onclick="confirmarOTP()">VERIFICAR Y ENTRAR</button>
     </div>
 
     <div id="scr-chat" class="screen" style="padding:0;">
         <div class="header">
-            <b>Sincro Chat</b>
-            <button id="btn-adm" onclick="abrirAdmin()" style="display:none; background:orange; border:none; color:white; padding:5px; border-radius:5px;">ADMIN</button>
+            <b>Sincro MD - Grupo</b>
+            <button id="btn-adm" onclick="abrirAdmin()" style="display:none; background:orange; border:none; color:white; padding:5px 10px; border-radius:5px; font-size:10px; cursor:pointer;">USUARIOS</button>
         </div>
         <div id="chat-box"></div>
         <div style="padding:10px; background:#f0f0f0; display:flex; gap:8px;">
-            <input id="msg-in" placeholder="Escribe..." style="margin:0;">
-            <button onclick="enviarMensaje()" class="btn" style="width:50px; margin:0;">></button>
+            <input id="msg-in" placeholder="Escribe un mensaje..." style="margin:0; border-radius:20px;">
+            <button onclick="enviarMensaje()" class="btn" style="width:50px; border-radius:50%; margin:0;">></button>
         </div>
     </div>
 
     <div id="admin-panel">
-        <div style="display:flex; justify-content:space-between;">
-            <h3>Solicitudes</h3>
-            <button onclick="cerrarAdmin()">X</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:10px;">
+            <h3>Usuarios Registrados</h3>
+            <button onclick="cerrarAdmin()">Cerrar X</button>
         </div>
-        <div id="lista-pedidos"></div>
+        <div id="lista-pedidos" style="margin-top:20px;"></div>
     </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-    // CONFIGURACIÓN INYECTADA
+    // --- CONFIGURACIÓN ---
     const firebaseConfig = { databaseURL: "https://micanalmaestro-default-rtdb.firebaseio.com/" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const auth = firebase.auth();
 
-    // TU LLAVE PÚBLICA INTEGRADA
-    emailjs.init("BrWqcYWEajAbCMVYM"); 
+    emailjs.init("BrWqcYWEajAbCMVYM"); // Tu Public Key
 
     let datosTemp = {};
     let codigoReal = "";
@@ -88,11 +85,13 @@
         document.getElementById(id).classList.add('active');
     }
 
+    // --- ENVIAR CÓDIGO ---
     function enviarOTP() {
         const u = document.getElementById('reg-user').value.trim();
         const m = document.getElementById('reg-mail').value.trim();
         const p = document.getElementById('reg-pass').value.trim();
-        if(!u || !m || !p) return alert("Llena los campos");
+
+        if(!u || !m || !p) return alert("Llena todos los campos");
 
         codigoReal = Math.floor(100000 + Math.random() * 900000).toString();
         datosTemp = { user: u, mail: m, pass: p };
@@ -102,36 +101,46 @@
             to_email: m,
             code: codigoReal
         }).then(() => {
-            alert("Código enviado!");
+            alert("Código enviado a: " + m);
             view('scr-verify');
-        }).catch(err => alert("Error: " + JSON.stringify(err)));
+        }).catch(err => alert("Error: Revisa los permisos de EmailJS"));
     }
 
+    // --- VERIFICAR Y APROBAR AUTOMÁTICAMENTE ---
     function confirmarOTP() {
-        if(document.getElementById('otp-input').value === codigoReal) {
-            miUser = datosTemp.user.toLowerCase();
+        const input = document.getElementById('otp-input').value;
+        if(input === codigoReal) {
+            miUser = datosTemp.user.toLowerCase().replace(/\s/g, ''); // Sin espacios
+            
+            // Se guarda como APROBADO TRUE de una vez
             db.ref('sincro_users/' + miUser).set({
                 nombre: datosTemp.user,
                 correo: datosTemp.mail,
                 clave: datosTemp.pass,
-                aprobado: false
+                aprobado: true 
+            }).then(() => {
+                alert("¡Verificado con éxito!");
+                entrarAlChat();
             });
-            view('scr-wait');
-            db.ref('sincro_users/' + miUser + '/aprobado').on('value', s => {
-                if(s.val() === true) entrarAlChat();
-            });
-        } else { alert("Código incorrecto"); }
+        } else {
+            alert("Código incorrecto");
+        }
     }
 
+    // --- ENTRAR AL CHAT ---
     function entrarAlChat() {
         view('scr-chat');
         if(esAdmin) document.getElementById('btn-adm').style.display = "block";
-        db.ref('sincro_mensajes').on('value', s => {
+        
+        db.ref('sincro_mensajes').limitToLast(50).on('value', s => {
             const box = document.getElementById('chat-box');
             box.innerHTML = "";
             s.forEach(child => {
                 const m = child.val();
-                box.innerHTML += `<div class="msg ${m.u === miUser ? 'me' : 'them'}"><b>${m.u}</b><br>${m.t}</div>`;
+                const d = document.createElement('div');
+                d.className = "msg " + (m.u === miUser ? "me" : "them");
+                d.innerHTML = `<b>${m.u}</b><br>${m.t}`;
+                box.appendChild(d);
             });
             box.scrollTop = box.scrollHeight;
         });
@@ -139,31 +148,41 @@
 
     function enviarMensaje() {
         const inp = document.getElementById('msg-in');
-        if(!inp.value) return;
+        if(!inp.value.trim()) return;
         db.ref('sincro_mensajes').push({ u: miUser, t: inp.value });
         inp.value = "";
     }
 
+    // --- LOGIN ADMIN (FIREBASE AUTH) ---
     function loginAdmin() {
-        if(prompt("Clave:") === "1234") {
-            miUser = "Admin"; esAdmin = true; entrarAlChat(); cargarSolicitudes();
+        const email = prompt("Correo de Admin:");
+        const pass = prompt("Contraseña:");
+        if (email && pass) {
+            auth.signInWithEmailAndPassword(email, pass)
+                .then(() => {
+                    esAdmin = true;
+                    miUser = "Admin";
+                    entrarAlChat();
+                    cargarUsuarios();
+                })
+                .catch(err => alert("Acceso Denegado: " + err.message));
         }
     }
 
     function abrirAdmin() { document.getElementById('admin-panel').style.display = "block"; }
     function cerrarAdmin() { document.getElementById('admin-panel').style.display = "none"; }
 
-    function cargarSolicitudes() {
+    function cargarUsuarios() {
         db.ref('sincro_users').on('value', s => {
             const list = document.getElementById('lista-pedidos');
             list.innerHTML = "";
             s.forEach(child => {
                 const u = child.val();
-                if(!u.aprobado) {
-                    list.innerHTML += `<div style="padding:10px; border-bottom:1px solid #eee;">
-                        ${u.nombre} <button onclick="db.ref('sincro_users/${child.key}/aprobado').set(true)">Aprobar</button>
+                list.innerHTML += `
+                    <div style="text-align:left; background:#f9f9f9; padding:10px; margin-bottom:5px; border-radius:8px;">
+                        <b>${u.nombre}</b> (${u.correo})<br>
+                        <small>Estado: ${u.aprobado ? '✅ Activo' : '❌ Pendiente'}</small>
                     </div>`;
-                }
             });
         });
     }
