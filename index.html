@@ -3,167 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sincro MD - Sistema Operativo</title>
+    <title>Sincro MD - Prueba de Conexión</title>
     
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        :root { --p: #075e54; --s: #25d366; --bg: #e5ddd5; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f0f2f5; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
-        #app { width: 100%; max-width: 450px; background: white; position: relative; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
-        .screen { display: none; padding: 25px; flex-direction: column; height: 100%; box-sizing: border-box; }
+        :root { --p: #075e54; --bg: #e5ddd5; }
+        body { font-family: sans-serif; margin: 0; background: #f0f2f5; display: flex; justify-content: center; height: 100vh; }
+        #app { width: 100%; max-width: 450px; background: white; display: flex; flex-direction: column; position: relative; }
+        .screen { display: none; padding: 25px; flex-direction: column; height: 100%; box-sizing: border-box; text-align: center; }
         .active { display: flex !important; }
-        input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; outline: none; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: var(--p); color: white; font-size: 16px; }
-        .header { background: var(--p); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-        #chat-box { flex: 1; padding: 15px; overflow-y: auto; background: var(--bg); display: flex; flex-direction: column; gap: 12px; }
-        .msg { padding: 10px 14px; border-radius: 12px; max-width: 85%; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); line-height: 1.4; }
-        .me { background: #dcf8c6; align-self: flex-end; border-top-right-radius: 2px; }
-        .them { background: white; align-self: flex-start; border-top-left-radius: 2px; }
-        .locked { background: #888; height: 110px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 24px; margin: 5px 0; }
-        #admin-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 999; display: none; padding: 20px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: var(--p); color: white; }
+        .header { background: var(--p); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        #chat-box { flex: 1; padding: 15px; overflow-y: auto; background: var(--bg); display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px; border-radius: 10px; max-width: 80%; font-size: 14px; text-align: left; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .me { background: #dcf8c6; align-self: flex-end; }
+        .them { background: white; align-self: flex-start; }
+        .locked { background: #999; height: 80px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        #admin-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; display: none; padding: 20px; box-sizing: border-box; overflow-y: auto; }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <div id="scr-reg" class="screen active" style="justify-content:center; text-align:center;">
-        <h1 style="color:var(--p); margin:0;">Sincro MD</h1>
-        <p style="color:#666;">Ingresa tus datos para continuar</p>
-        <input type="text" id="reg-user" placeholder="Nombre de Usuario">
-        <input type="email" id="reg-mail" placeholder="ejemplo@gmail.com">
-        <input type="password" id="reg-pass" placeholder="Contraseña">
-        <button class="btn" id="btn-enviar" onclick="enviarOTP()">ENVIAR CÓDIGO</button>
-        <p onclick="loginAdmin()" style="font-size:12px; color:#aaa; margin-top:25px; cursor:pointer;">Acceso Administrador</p>
-    </div>
-
-    <div id="scr-verify" class="screen" style="justify-content:center; text-align:center;">
-        <h2>Verifica tu Gmail</h2>
-        <p>Escribe el código de 6 dígitos que recibiste:</p>
-        <input type="number" id="otp-input" placeholder="000000" style="text-align:center; font-size:28px; letter-spacing:8px;">
-        <button class="btn" onclick="confirmarOTP()">ENTRAR AL CHAT</button>
+    <div id="scr-reg" class="screen active" style="justify-content:center;">
+        <h2 style="color:var(--p)">Sincro MD (PRUEBA)</h2>
+        <p>Escribe un nombre para entrar al chat rápido:</p>
+        <input type="text" id="reg-user" placeholder="Tu Nombre">
+        <button class="btn" onclick="entrarDirecto()">ENTRAR AHORA</button>
+        <p onclick="loginAdmin()" style="font-size:12px; color:#aaa; margin-top:20px; cursor:pointer;">Acceso Admin</p>
     </div>
 
     <div id="scr-chat" class="screen" style="padding:0;">
         <div class="header">
-            <span>Sincro MD</span>
-            <button id="btn-adm-nav" onclick="abrirAdmin()" style="display:none; background:orange; border:none; padding:5px 10px; color:white; border-radius:5px; cursor:pointer;">ADMIN</button>
+            <b>Chat de Prueba</b>
+            <button id="btn-adm-nav" onclick="abrirAdmin()" style="display:none; background:orange; border:none; color:white; padding:5px; border-radius:5px;">ADMIN</button>
         </div>
         <div id="chat-box"></div>
-        <div style="padding:10px; background:#f0f0f0; display:flex; gap:8px;">
-            <input id="msg-in" placeholder="Escribe un mensaje..." style="margin:0; flex:1;">
+        <div style="padding:10px; background:#eee; display:flex; gap:5px;">
+            <input id="msg-in" placeholder="Escribe un mensaje..." style="margin:0;">
             <button onclick="enviarMsg('texto')" class="btn" style="width:50px; margin:0;">></button>
             <button onclick="enviarMsg('foto')" class="btn" style="width:50px; margin:0; background:#444;">📷</button>
         </div>
     </div>
 
     <div id="admin-panel">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; margin-bottom:15px;">
-            <h3>Usuarios y VIP</h3>
-            <button onclick="cerrarAdmin()">Cerrar X</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd;">
+            <h3>Gestión VIP</h3>
+            <button onclick="cerrarAdmin()">X</button>
         </div>
         <div id="lista-users"></div>
     </div>
 </div>
 
 <script>
-    // 1. CONFIGURACIÓN E INICIALIZACIÓN
+    // --- INICIALIZACIÓN ---
     const firebaseConfig = { databaseURL: "https://micanalmaestro-default-rtdb.firebaseio.com/" };
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.database();
     const auth = firebase.auth();
 
-    // Inicializar EmailJS con tu Public Key
-    (function(){
-        emailjs.init("BrWqcYWEajAbCMVYM");
-    })();
+    let miUser = "", esAdmin = false, miPerfil = { vip: false };
 
-    let datosTemp = {}, codigoReal = "", miUser = "", esAdmin = false, miPerfil = { vip: false };
-
-    // Navegación entre pantallas
     function view(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    // 2. LÓGICA DE REGISTRO
-    function enviarOTP() {
+    // --- ENTRAR SIN CORREO (SOLO PRUEBA) ---
+    function entrarDirecto() {
         const u = document.getElementById('reg-user').value.trim();
-        const m = document.getElementById('reg-mail').value.trim();
-        const p = document.getElementById('reg-pass').value.trim();
-
-        if (!u || !m || !p) {
-            alert("Por favor, completa todos los campos.");
-            return;
-        }
-
-        codigoReal = Math.floor(100000 + Math.random() * 900000).toString();
-        datosTemp = { user: u, mail: m, pass: p };
-
-        const btn = document.getElementById('btn-enviar');
-        btn.disabled = true;
-        btn.innerText = "Enviando...";
-
-        emailjs.send("service_ahvtgiw", "template_jsynwd9", {
-            to_name: u,
-            to_email: m,
-            code: codigoReal
-        }).then(function() {
-            alert("Código enviado a " + m);
-            view('scr-verify');
-        }).catch(function(err) {
-            alert("Error al enviar el correo. Revisa EmailJS.");
-            btn.disabled = false;
-            btn.innerText = "ENVIAR CÓDIGO";
-        });
+        if(!u) return alert("Escribe un nombre");
+        
+        miUser = u.toLowerCase().replace(/\s/g, '');
+        
+        // Guardar en base de datos
+        db.ref('sincro_users/' + miUser).set({
+            nombre: u,
+            vip: false
+        }).then(() => {
+            entrarAlChat();
+        }).catch(err => alert("Error Firebase: " + err.message));
     }
 
-    function confirmarOTP() {
-        const input = document.getElementById('otp-input').value;
-        if (input === codigoReal) {
-            miUser = datosTemp.user.toLowerCase().replace(/\s/g, '');
-            // Guardar usuario inicial
-            db.ref('sincro_users/' + miUser).set({
-                nombre: datosTemp.user,
-                correo: datosTemp.mail,
-                vip: false
-            }).then(() => {
-                entrarAlChat();
-            });
-        } else {
-            alert("Código incorrecto.");
-        }
-    }
-
-    // 3. LÓGICA DEL CHAT
     function entrarAlChat() {
         view('scr-chat');
         if (esAdmin) document.getElementById('btn-adm-nav').style.display = "block";
 
-        // Escuchar cambios VIP en mi perfil
-        db.ref('sincro_users/' + miUser).on('value', snap => {
-            if (snap.exists()) miPerfil = snap.val();
+        // Escuchar mi perfil
+        db.ref('sincro_users/' + miUser).on('value', s => {
+            if (s.exists()) miPerfil = s.val();
         });
 
-        // Cargar mensajes en tiempo real
-        db.ref('sincro_mensajes').limitToLast(50).on('value', snap => {
+        // Escuchar mensajes
+        db.ref('sincro_mensajes').limitToLast(20).on('value', s => {
             const box = document.getElementById('chat-box');
             box.innerHTML = "";
-            snap.forEach(child => {
+            s.forEach(child => {
                 const m = child.val();
-                const div = document.createElement('div');
-                div.className = "msg " + (m.u === miUser ? "me" : "them");
-
-                // Filtro VIP para fotos
+                const d = document.createElement('div');
+                d.className = "msg " + (m.u === miUser ? "me" : "them");
+                
                 if (m.type === "foto" && !miPerfil.vip && m.u !== miUser) {
-                    div.innerHTML = `<b>${m.u}</b><br><div class="locked">🔒</div><small style="color:red">Contenido Bloqueado (VIP)</small>`;
+                    d.innerHTML = `<b>${m.u}</b><br><div class="locked">🔒 VIP</div>`;
                 } else {
-                    div.innerHTML = `<b>${m.u}</b><br>${m.t}`;
+                    d.innerHTML = `<b>${m.u}</b><br>${m.t}`;
                 }
-                box.appendChild(div);
+                box.appendChild(d);
             });
             box.scrollTop = box.scrollHeight;
         });
@@ -171,52 +120,42 @@
 
     function enviarMsg(tipo) {
         const inp = document.getElementById('msg-in');
-        const texto = inp.value.trim();
-        if (tipo === "texto" && !texto) return;
-
+        if (tipo === "texto" && !inp.value.trim()) return;
         db.ref('sincro_mensajes').push({
             u: miUser,
-            t: tipo === "foto" ? "📷 Foto/Video compartido" : texto,
-            type: tipo,
-            timestamp: Date.now()
+            t: tipo === "foto" ? "📷 Imagen VIP" : inp.value,
+            type: tipo
         });
         inp.value = "";
     }
 
-    // 4. LÓGICA ADMIN (CON FIREBASE AUTH)
+    // --- ADMIN ---
     function loginAdmin() {
-        const e = prompt("Email de Admin:");
-        const p = prompt("Clave de Admin:");
+        const e = prompt("Email Admin:"), p = prompt("Clave Admin:");
         if (e && p) {
             auth.signInWithEmailAndPassword(e, p).then(() => {
-                esAdmin = true;
-                miUser = "Admin";
-                entrarAlChat();
-                cargarListaAdmin();
-            }).catch(err => alert("Error: Acceso Denegado"));
+                esAdmin = true; miUser = "Admin"; entrarAlChat(); cargarAdmin();
+            }).catch(err => alert("Error: " + err.message));
         }
     }
 
     function abrirAdmin() { document.getElementById('admin-panel').style.display = "block"; }
     function cerrarAdmin() { document.getElementById('admin-panel').style.display = "none"; }
 
-    function cargarListaAdmin() {
-        db.ref('sincro_users').on('value', snap => {
-            const container = document.getElementById('lista-users');
-            container.innerHTML = "";
-            snap.forEach(child => {
+    function cargarAdmin() {
+        db.ref('sincro_users').on('value', s => {
+            const list = document.getElementById('lista-users');
+            list.innerHTML = "";
+            s.forEach(child => {
                 const u = child.val();
-                const d = document.createElement('div');
-                d.style = "padding:12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;";
-                d.innerHTML = `<div><b>${u.nombre}</b><br><small>${u.vip ? '⭐ VIP' : 'Básico'}</small></div>`;
-                
+                const div = document.createElement('div');
+                div.style = "padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;";
+                div.innerHTML = `<span>${u.nombre} ${u.vip ? '⭐' : ''}</span>`;
                 const b = document.createElement('button');
-                b.innerText = u.vip ? "Quitar VIP" : "Dar VIP";
-                b.style = "padding:5px 10px; cursor:pointer; background:#eee; border:1px solid #ccc; border-radius:5px;";
+                b.innerText = u.vip ? "Quitar VIP" : "Hacer VIP";
                 b.onclick = () => db.ref('sincro_users/' + child.key + '/vip').set(!u.vip);
-                
-                d.appendChild(b);
-                container.appendChild(d);
+                div.appendChild(b);
+                list.appendChild(div);
             });
         });
     }
