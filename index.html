@@ -3,34 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sincro MD - Login</title>
+    <title>Sincro MD - Panel Pro</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        :root { --tg-blue: #0088cc; --tg-bg: #54759e; --msg-out: #efffde; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; height: 100vh; display: flex; justify-content: center; }
-        #app { width: 100%; max-width: 1000px; height: 95vh; margin: auto; background: white; display: flex; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative; }
+        :root { --tg-blue: #0088cc; --tg-bg: #54759e; --msg-out: #efffde; --side-bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #222; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        
+        #app { width: 98%; max-width: 1300px; height: 95vh; background: white; display: flex; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); position: relative; }
 
         /* --- PANTALLAS --- */
         .screen { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; padding: 40px; text-align: center; box-sizing: border-box; }
         .active { display: flex; }
-        
-        .bg-blue { background: linear-gradient(135deg, var(--tg-blue), #004466); color: white; }
-        .in-style { width: 100%; max-width: 300px; padding: 15px; margin: 8px; border-radius: 10px; border: 1px solid #ddd; outline: none; font-size: 16px; }
+        .bg-blue { background: linear-gradient(135deg, var(--tg-blue), #00334d); color: white; }
+        .in-style { width: 100%; max-width: 300px; padding: 15px; margin: 8px; border-radius: 10px; border: 1px solid #ddd; outline: none; }
         .btn-style { width: 100%; max-width: 300px; padding: 15px; border-radius: 10px; border: none; background: white; color: var(--tg-blue); font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* --- LAYOUT CHAT --- */
+        /* --- LAYOUT 3 COLUMNAS --- */
         #main-chat { display: flex; width: 100%; height: 100%; }
-        #sidebar { width: 30%; background: #f8f9fa; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
-        #chat-section { width: 70%; display: flex; flex-direction: column; background: var(--tg-bg); }
-        #chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .msg { padding: 8px 12px; border-radius: 15px; max-width: 75%; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background: white; }
+        #sidebar-left { width: 260px; background: var(--side-bg); border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+        #chat-section { flex: 1; display: flex; flex-direction: column; background: var(--tg-bg); position: relative; }
+        #sidebar-right { width: 300px; background: var(--side-bg); border-left: 1px solid #ddd; display: flex; flex-direction: column; }
+
+        /* --- MENSAJES --- */
+        #chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg { padding: 12px; border-radius: 12px; max-width: 75%; font-size: 14px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .msg b { display: block; color: var(--tg-blue); margin-bottom: 5px; font-size: 11px; }
         .me { background: var(--msg-out); align-self: flex-end; }
-        .footer { padding: 15px; background: white; display: flex; gap: 10px; }
-        #msg-in { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
+        
+        /* --- MULTIMEDIA BLUR (TU PETICIÓN) --- */
+        .media-box { width: 100%; border-radius: 8px; margin-top: 5px; position: relative; overflow: hidden; }
+        .blur { filter: blur(15px); pointer-events: none; }
+        .lock-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.4); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; z-index: 5; }
+
+        /* --- PANEL DE CONTROL ADMIN --- */
+        .admin-badge { background: #ff4757; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+        .vip-toggle { background: #2ecc71; border: none; color: white; padding: 4px 8px; border-radius: 5px; cursor: pointer; font-size: 11px; }
+        .vip-toggle.off { background: #95a5a6; }
+
+        .footer { padding: 15px; background: white; display: flex; gap: 10px; border-top: 1px solid #ddd; }
+        #msg-in { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #eee; background: #f9f9f9; outline: none; }
     </style>
 </head>
 <body>
@@ -38,48 +53,60 @@
 <div id="app">
     <div id="scr-login" class="screen bg-blue active">
         <h1>Sincro MD</h1>
-        <p>Inicia sesión para continuar</p>
-        <input type="text" id="log-user" class="in-style" placeholder="Nombre de usuario">
-        <input type="password" id="log-pass" class="in-style" placeholder="Tu Contraseña">
+        <input type="text" id="log-user" class="in-style" placeholder="Usuario">
+        <input type="password" id="log-pass" class="in-style" placeholder="Contraseña">
         <button class="btn-style" onclick="login()">ENTRAR</button>
-        <p onclick="view('scr-reg')" style="cursor:pointer; font-size:14px; text-decoration:underline;">¿No tienes cuenta? Regístrate</p>
+        <p onclick="view('scr-reg')" style="cursor:pointer; font-size:12px;">Crear cuenta nueva</p>
     </div>
 
     <div id="scr-reg" class="screen bg-blue">
-        <h1>Crear Cuenta</h1>
+        <h1>Registro</h1>
         <input type="text" id="reg-user" class="in-style" placeholder="Nombre de usuario">
-        <input type="email" id="reg-mail" class="in-style" placeholder="tu-correo@gmail.com">
-        <input type="password" id="reg-pass" class="in-style" placeholder="Crea una clave">
-        <button class="btn-style" onclick="enviarOTP()">RECIBIR CÓDIGO</button>
-        <p onclick="view('scr-login')" style="cursor:pointer; font-size:14px;">Ya tengo cuenta</p>
+        <input type="email" id="reg-mail" class="in-style" placeholder="Correo electrónico">
+        <input type="password" id="reg-pass" class="in-style" placeholder="Contraseña">
+        <button class="btn-style" onclick="enviarOTP()">ENVIAR CÓDIGO</button>
+        <p onclick="view('scr-login')" style="cursor:pointer; font-size:12px;">Volver</p>
     </div>
 
     <div id="scr-verify" class="screen">
-        <h2>Verifica tu correo</h2>
-        <input type="number" id="otp-input" class="in-style" style="background:#eee; text-align:center; font-size:25px;">
+        <h2>Ingresa el código</h2>
+        <input type="number" id="otp-input" class="in-style" style="font-size:30px; text-align:center;">
         <button class="btn-style" style="background:var(--tg-blue); color:white;" onclick="confirmarOTP()">VERIFICAR</button>
     </div>
 
     <div id="scr-chat" class="screen" style="padding:0;">
         <div id="main-chat">
-            <div id="sidebar">
-                <div style="padding:15px; background:#eee; font-weight:bold; border-bottom:1px solid #ddd;">Galería VIP</div>
-                <div id="media-list" style="padding:10px; display:grid; grid-template-columns:1fr 1fr; gap:5px;"></div>
+            <div id="sidebar-left">
+                <div style="padding:20px; font-weight:bold; border-bottom:1px solid #ddd;">CHATS</div>
+                <div style="padding:15px; background:#e1e9f2; border-left:4px solid var(--tg-blue);">Chat General 🚀</div>
             </div>
+
             <div id="chat-section">
-                <div style="background:var(--tg-blue); color:white; padding:15px; font-weight:bold;">Chat Público</div>
+                <div style="background:white; padding:15px; border-bottom:1px solid #ddd; font-weight:bold;">Sincro MD - Público</div>
                 <div id="chat-box"></div>
                 <div class="footer">
-                    <button onclick="enviarMsg('foto')" style="background:none; border:none; font-size:24px;">📷</button>
-                    <input id="msg-in" placeholder="Escribe..." onkeypress="if(event.key === 'Enter') enviarMsg('texto')">
-                    <button onclick="enviarMsg('texto')" style="background:var(--tg-blue); border:none; color:white; width:40px; height:40px; border-radius:50%;">➤</button>
+                    <button onclick="enviarMsg('foto')" style="border:none; background:none; font-size:22px; cursor:pointer;">🖼️</button>
+                    <button onclick="enviarMsg('video')" style="border:none; background:none; font-size:22px; cursor:pointer;">📹</button>
+                    <input id="msg-in" placeholder="Mensaje..." onkeypress="if(event.key === 'Enter') enviarMsg('texto')">
+                    <button onclick="enviarMsg('texto')" style="background:var(--tg-blue); color:white; border:none; width:40px; height:40px; border-radius:50%; cursor:pointer;">➤</button>
                 </div>
+            </div>
+
+            <div id="sidebar-right">
+                <div style="padding:15px; background:#eee; font-weight:bold;">MULTIMEDIA</div>
+                <div id="media-list" style="padding:10px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; height:120px; overflow-y:auto; border-bottom:1px solid #ddd;"></div>
+                
+                <div style="padding:15px; background:#eee; font-weight:bold;">MIEMBROS <span id="admin-notif" style="display:none; color:red; font-size:10px;">(MODO ADMIN)</span></div>
+                <div id="member-list" style="flex:1; overflow-y:auto;"></div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // CONFIGURACIÓN (Cambia el nombre de tu admin aquí)
+    const ADMIN_USER = "admin"; 
+
     const firebaseConfig = { databaseURL: "https://micanalmaestro-default-rtdb.firebaseio.com/" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -92,13 +119,11 @@
         document.getElementById(id).classList.add('active');
     }
 
-    // --- LÓGICA DE REGISTRO ---
     function enviarOTP() {
         const u = document.getElementById('reg-user').value.trim();
         const m = document.getElementById('reg-mail').value.trim();
         const p = document.getElementById('reg-pass').value.trim();
-        if(!u || !m || !p) return alert("Llena todos los campos");
-
+        if(!u || !m || !p) return alert("Completa los datos");
         codeReal = Math.floor(100000 + Math.random() * 900000).toString();
         dTemp = { user: u, mail: m, pass: p };
         emailjs.send("service_ahvtgiw", "template_jsynwd9", { to_name: u, to_email: m, code: codeReal })
@@ -108,47 +133,100 @@
     function confirmarOTP() {
         if(document.getElementById('otp-input').value === codeReal) {
             mUser = dTemp.user.toLowerCase().replace(/\s/g, '');
-            // Se guarda la clave para futuros inicios de sesión
-            db.ref('usuarios/' + mUser).set({ nombre: dTemp.user, clave: dTemp.pass, vip: false })
+            db.ref('usuarios/' + mUser).set({ nombre: dTemp.user, clave: dTemp.pass, vip: false, mail: dTemp.mail })
             .then(() => entrar());
-        } else { alert("Código incorrecto"); }
+        } else { alert("Código error"); }
     }
 
-    // --- LÓGICA DE LOGIN ---
     function login() {
         const u = document.getElementById('log-user').value.trim().toLowerCase().replace(/\s/g, '');
         const p = document.getElementById('log-pass').value.trim();
-        
         db.ref('usuarios/' + u).once('value', s => {
-            if(s.exists() && s.val().clave === p) {
-                mUser = u;
-                entrar();
-            } else {
-                alert("Usuario o clave incorrectos");
-            }
+            if(s.exists() && s.val().clave === p) { mUser = u; entrar(); }
+            else { alert("Error"); }
         });
+    }
+
+    // --- LÓGICA DE ADMIN: DAR O QUITAR PERMISOS ---
+    function toggleVIP(targetUser, currentStatus) {
+        if(mUser !== ADMIN_USER) return;
+        db.ref('usuarios/' + targetUser).update({ vip: !currentStatus });
     }
 
     function entrar() {
         view('scr-chat');
+        if(mUser === ADMIN_USER) document.getElementById('admin-notif').style.display = "inline";
+
+        // Escuchar mis propios datos
         db.ref('usuarios/' + mUser).on('value', s => { if(s.exists()) mPerf = s.val(); });
+
+        // Escuchar lista de miembros y permisos
+        db.ref('usuarios').on('value', s => {
+            const list = document.getElementById('member-list'); list.innerHTML = "";
+            s.forEach(u => {
+                const user = u.key;
+                const data = u.val();
+                const isAdmin = user === ADMIN_USER;
+                const isVIP = data.vip;
+
+                list.innerHTML += `
+                    <div style="display:flex; align-items:center; padding:10px; border-bottom:1px solid #eee; gap:10px;">
+                        <div style="width:30px; height:30px; background:#ccc; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px;">${data.nombre[0]}</div>
+                        <div style="flex:1;">
+                            <span style="font-size:13px; font-weight:bold;">${data.nombre}</span> ${isAdmin ? '<span class="admin-badge">ADMIN</span>' : ''}
+                            <br><small style="color:${isVIP ? 'green' : 'red'}; font-size:10px;">${isVIP ? 'Acceso Total' : 'Sin Acceso Multimedia'}</small>
+                        </div>
+                        ${mUser === ADMIN_USER && !isAdmin ? `<button class="vip-toggle ${isVIP ? '' : 'off'}" onclick="toggleVIP('${user}', ${isVIP})">${isVIP ? 'Quitar Acceso' : 'Dar Acceso'}</button>` : ''}
+                    </div>
+                `;
+            });
+        });
+
+        // Escuchar Mensajes
         db.ref('Chat Público').on('value', s => {
             const b = document.getElementById('chat-box'); b.innerHTML = "";
+            const grid = document.getElementById('media-list'); grid.innerHTML = "";
+
             s.forEach(c => {
                 const data = c.val();
+                const isMine = data.u === mUser;
+                const isMultimedia = data.type !== "texto";
                 const d = document.createElement('div');
-                d.className = "msg " + (data.u === mUser ? "me" : "them");
-                d.innerHTML = `<b>${data.u}</b>${data.t}`;
+                d.className = "msg " + (isMine ? "me" : "them");
+
+                let content = data.t;
+
+                if(isMultimedia) {
+                    // BLOQUEO SI: No eres VIP Y el mensaje no es tuyo Y no eres el Admin
+                    const locked = !mPerf.vip && !isMine && mUser !== ADMIN_USER;
+                    
+                    if(data.type === "foto") {
+                        content = `<div class="media-box">
+                            ${locked ? '<div class="lock-overlay">🔒 CONTENIDO PRIVADO</div>' : ''}
+                            <img src="https://via.placeholder.com/250x150/000/fff?text=FOTO+SINCRO" class="${locked ? 'blur' : ''}" style="width:100%;">
+                        </div>`;
+                    } else {
+                        content = `<div class="media-box">
+                            ${locked ? '<div class="lock-overlay">🔒 VIDEO PRIVADO</div>' : ''}
+                            <div class="${locked ? 'blur' : ''}" style="background:#000; color:white; height:100px; display:flex; align-items:center; justify-content:center;">▶ VIDEO</div>
+                        </div>`;
+                    }
+                    grid.innerHTML += `<div style="background:#eee; height:50px; border-radius:4px;"></div>`;
+                }
+
+                d.innerHTML = `<b>${data.u}</b> ${content}`;
                 b.appendChild(d);
             });
             b.scrollTop = b.scrollHeight;
         });
     }
 
-    function enviarMsg(t) {
+    function enviarMsg(type) {
         const i = document.getElementById('msg-in');
-        if(t === "texto" && !i.value.trim()) return;
-        db.ref('Chat Público').push({ u: mUser, t: t === "foto" ? "📷 Foto" : i.value, type: t });
+        let text = i.value;
+        if(type !== "texto") text = (type === "foto" ? "📷 Foto Enviada" : "🎥 Video Enviado");
+        if(type === "texto" && !text.trim()) return;
+        db.ref('Chat Público').push({ u: mUser, t: text, type: type });
         i.value = "";
     }
 </script>
