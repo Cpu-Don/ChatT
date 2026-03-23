@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sincro MD - Pro</title>
+    <title>Sincro MD - Oficial</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -12,92 +12,102 @@
 
     <style>
         :root { --tg-blue: #0088cc; --tg-bg: #54759e; --msg-out: #efffde; --side-bg: #ffffff; }
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #0e1621; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        * { box-sizing: border-box; transition: all 0.3s ease; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #0e1621; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
         
         #app { width: 100%; height: 100%; background: white; display: flex; overflow: hidden; position: relative; }
-        @media (min-width: 1024px) { #app { width: 98%; height: 95vh; border-radius: 12px; } }
+        @media (min-width: 1024px) { #app { width: 98%; height: 95vh; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); } }
 
+        /* --- NOTIFICACIONES BONITAS --- */
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; pointer-events: none; }
+        .toast { background: rgba(0, 0, 0, 0.85); color: white; padding: 12px 25px; border-radius: 50px; font-size: 14px; margin-bottom: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); opacity: 0; transform: translateY(-20px); animation: slideIn 0.4s forwards; display: flex; align-items: center; gap: 10px; }
+        @keyframes slideIn { to { opacity: 1; transform: translateY(0); } }
+
+        /* Estructura */
         #main-layout { display: flex; width: 100%; height: 100%; }
-        #sidebar-left { width: 280px; background: var(--side-bg); border-right: 1px solid #dfe5ec; display: flex; flex-direction: column; transition: 0.3s; }
+        #sidebar-left { width: 300px; background: var(--side-bg); border-right: 1px solid #dfe5ec; display: flex; flex-direction: column; }
         #chat-section { flex: 1; display: flex; flex-direction: column; background: var(--tg-bg); position: relative; }
-        #sidebar-right { width: 320px; background: var(--side-bg); border-left: 1px solid #dfe5ec; display: flex; flex-direction: column; transition: 0.3s; }
+        #sidebar-right { width: 320px; background: var(--side-bg); border-left: 1px solid #dfe5ec; display: flex; flex-direction: column; }
 
         @media (max-width: 1023px) {
-            #sidebar-left { position: absolute; left: 0; z-index: 100; transform: translateX(-100%); height: 100%; }
-            #sidebar-right { position: absolute; right: 0; z-index: 100; transform: translateX(100%); height: 100%; }
+            #sidebar-left { position: absolute; left: 0; z-index: 100; transform: translateX(-100%); height: 100%; width: 85%; }
+            #sidebar-right { position: absolute; right: 0; z-index: 100; transform: translateX(100%); height: 100%; width: 85%; }
             .show-left { transform: translateX(0) !important; }
             .show-right { transform: translateX(0) !important; }
         }
 
+        /* Mensajes y Multimedia */
         .header { padding: 15px; background: white; font-weight: bold; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         #chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        
-        .msg { padding: 10px 15px; border-radius: 15px; max-width: 85%; background: white; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .msg { padding: 10px 15px; border-radius: 18px; max-width: 85%; background: white; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-wrap: break-word; }
         .me { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 2px; }
         .msg b { display: block; color: var(--tg-blue); font-size: 11px; margin-bottom: 3px; }
-        
-        .media-container { margin-top: 5px; border-radius: 10px; overflow: hidden; position: relative; background: #000; min-height: 150px; }
-        .blur { filter: blur(40px); pointer-events: none; }
-        .lock { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); color:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; z-index: 10; }
 
-        .media-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 10px; overflow-y: auto; max-height: 220px; }
-        .thumb { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; cursor: pointer; }
-        .member-card { display: flex; align-items: center; padding: 10px; gap: 10px; cursor: pointer; border-radius: 8px; }
-        
+        .media-container { margin-top: 5px; border-radius: 12px; overflow: hidden; position: relative; background: #000; min-height: 150px; }
+        .blur { filter: blur(45px); pointer-events: none; }
+        .lock { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); color:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; z-index: 5; }
+
+        /* Login Animado */
         .screen { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
         .active { display: flex; }
         .bg-blue { background: linear-gradient(135deg, #0088cc, #004466); color: white; }
+        .in-style { padding:14px; width:300px; margin-top:12px; border-radius:10px; border:none; outline:none; font-size: 16px; }
+        .btn-main { padding:14px; width:300px; margin-top:25px; border-radius:10px; border:none; background: white; color:#0088cc; font-weight:bold; cursor:pointer; font-size: 16px; }
+        .btn-main:hover { transform: scale(1.02); background: #f0f0f0; }
     </style>
 </head>
 <body>
 
+<div id="toast-container"></div>
+
 <div id="app">
     <div id="scr-login" class="screen bg-blue active">
-        <h1>Sincro MD</h1>
-        <input type="text" id="log-user" placeholder="Usuario" style="padding:12px; width:280px; border-radius:8px; border:none;">
-        <input type="password" id="log-pass" placeholder="Clave" style="padding:12px; width:280px; margin-top:10px; border-radius:8px; border:none;">
-        <button onclick="login()" style="padding:12px; width:280px; margin-top:15px; border-radius:8px; border:none; color:#0088cc; font-weight:bold; cursor:pointer;">ENTRAR</button>
-        <p onclick="view('scr-reg')" style="cursor:pointer; font-size:12px; margin-top:15px;">Registrarse</p>
+        <h1 style="font-size: 40px; margin-bottom: 10px;">Sincro MD</h1>
+        <p style="opacity: 0.8; margin-bottom: 20px;">Tu conexión segura</p>
+        <input type="text" id="log-user" class="in-style" placeholder="Usuario">
+        <input type="password" id="log-pass" class="in-style" placeholder="Contraseña">
+        <button onclick="login()" class="btn-main">ENTRAR</button>
+        <p onclick="view('scr-reg')" style="cursor:pointer; font-size:14px; margin-top:20px; text-decoration: underline;">¿No tienes cuenta? Crea una aquí</p>
     </div>
 
     <div id="scr-reg" class="screen bg-blue">
-        <h1>Crear Cuenta</h1>
-        <input type="text" id="reg-user" placeholder="Usuario" style="padding:12px; width:280px;">
-        <input type="email" id="reg-mail" placeholder="Correo" style="padding:12px; width:280px; margin-top:10px;">
-        <input type="password" id="reg-pass" placeholder="Clave" style="padding:12px; width:280px; margin-top:10px;">
-        <button onclick="enviarOTP()" style="padding:12px; width:280px; margin-top:15px;">ENVIAR CÓDIGO</button>
+        <h1>Nueva Cuenta</h1>
+        <input type="text" id="reg-user" class="in-style" placeholder="Elige un Usuario">
+        <input type="email" id="reg-mail" class="in-style" placeholder="Correo Electrónico">
+        <input type="password" id="reg-pass" class="in-style" placeholder="Crea tu Clave">
+        <button onclick="enviarOTP()" class="btn-main">REGISTRARME</button>
+        <p onclick="view('scr-login')" style="cursor:pointer; font-size:14px; margin-top:20px;">Volver al Inicio</p>
     </div>
 
     <div id="scr-chat" class="screen" style="padding:0;">
         <div id="main-layout">
             <aside id="sidebar-left">
-                <div class="header">SINCRO <button onclick="toggleMenu('left')" style="border:none; background:none;">✖</button></div>
-                <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; border-left:5px solid #0088cc; cursor:pointer;">Chat Público 🚀</div>
-                <div style="padding:15px; font-size:12px; color:#999; font-weight:bold;">CHATS PRIVADOS</div>
+                <div class="header" style="background: #f8f9fa;">SINCRO <button onclick="toggleMenu('left')" style="border:none; background:none; cursor:pointer; font-size:18px;">✕</button></div>
+                <div onclick="verChatPublico()" style="padding:18px; background:#e1e9f2; border-left:5px solid #0088cc; cursor:pointer; font-weight:bold;">Chat Público 🚀</div>
+                <div style="padding:15px; font-size:12px; color:#adb5bd; font-weight:bold; letter-spacing: 1px;">CHATS PRIVADOS</div>
                 <div id="private-list" style="overflow-y:auto; flex:1;"></div>
             </aside>
 
             <main id="chat-section">
                 <div class="header">
-                    <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:20px;">☰</button>
-                    <span id="chat-title">Chat Público</span>
-                    <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:20px;">👤</button>
+                    <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;">☰</button>
+                    <span id="chat-title" style="color: #333;">Cargando...</span>
+                    <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;">👤</button>
                 </div>
                 <div id="chat-box"></div>
-                <div class="footer" style="padding:10px; background:white; display:flex; gap:10px;">
-                    <button onclick="abrirCloudinary('foto')" style="border:none; background:none; font-size:24px; cursor:pointer;">🖼️</button>
-                    <button onclick="abrirCloudinary('video')" style="border:none; background:none; font-size:24px; cursor:pointer;">📹</button>
-                    <input id="msg-in" placeholder="Escribe un mensaje..." style="flex:1; padding:10px; border-radius:20px; border:1px solid #eee;" onkeypress="if(event.key === 'Enter') enviarMsg()">
-                    <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:40px; height:40px; border-radius:50%;">➤</button>
+                <div class="footer" style="padding:12px; background:white; display:flex; gap:12px; border-top:1px solid #eee; align-items: center;">
+                    <button onclick="abrirCloudinary('foto')" style="border:none; background:none; font-size:28px; cursor:pointer;">🖼️</button>
+                    <button onclick="abrirCloudinary('video')" style="border:none; background:none; font-size:28px; cursor:pointer;">📹</button>
+                    <input id="msg-in" placeholder="Escribe algo..." style="flex:1; padding:14px; border-radius:30px; border:1px solid #eee; background:#f1f3f5; outline:none;" onkeypress="if(event.key === 'Enter') enviarMsg()">
+                    <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:48px; height:48px; border-radius:50%; cursor:pointer; font-size: 20px;">➤</button>
                 </div>
             </main>
 
             <aside id="sidebar-right">
-                <div class="header">INFO <button onclick="toggleMenu('right')" style="border:none; background:none;">✖</button></div>
-                <div style="padding:10px; font-size:12px; font-weight:bold; color:#666;">GALERÍA</div>
-                <div id="gallery" class="media-grid"></div>
-                <div style="padding:10px; font-size:12px; font-weight:bold; color:#666; border-top:1px solid #eee;">MIEMBROS</div>
+                <div class="header" style="background: #f8f9fa;">INFO <button onclick="toggleMenu('right')" style="border:none; background:none; cursor:pointer; font-size:18px;">✕</button></div>
+                <div style="padding:12px; font-size:13px; font-weight:bold; color:#666;">GALERÍA GRUPAL</div>
+                <div id="gallery" class="media-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 10px;"></div>
+                <div style="padding:12px; font-size:13px; font-weight:bold; color:#666; border-top:1px solid #eee;">MIEMBROS</div>
                 <div id="member-list" style="flex:1; overflow-y:auto;"></div>
             </aside>
         </div>
@@ -105,15 +115,28 @@
 </div>
 
 <script>
+    // --- INTEGRACIÓN DE TUS DATOS ---
     const firebaseConfig = { databaseURL: "https://micanalmaestro-default-rtdb.firebaseio.com/" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    
-    // CONFIGURACIÓN CLOUDINARY
-    const CLOUD_NAME = "tu_cloud_name"; 
-    const UPLOAD_PRESET = "tu_preset";
+
+    const CLOUD_NAME = "dhtyepcjg"; 
+    const UPLOAD_PRESET = "Historial";
 
     let mUser = "", mPerf = { vip: false }, chatActual = "Chat Público", listener = null;
+
+    // --- FUNCIÓN DE ALERTA BONITA ---
+    function notify(text) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `🔔 ${text}`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    }
 
     function view(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -125,12 +148,32 @@
         if(side === 'right') document.getElementById('sidebar-right').classList.toggle('show-right');
     }
 
+    function enviarOTP() {
+        const u = document.getElementById('reg-user').value.trim().toLowerCase();
+        const p = document.getElementById('reg-pass').value;
+        const e = document.getElementById('reg-mail').value;
+        if(!u || !p) return notify("¡Hey! Faltan datos.");
+
+        db.ref('usuarios/' + u).set({
+            nombre: u, clave: p, correo: e,
+            vip: (u === 'chat') // Admin automático
+        }).then(() => {
+            notify("¡Cuenta creada con éxito! Bienvendio.");
+            view('scr-login');
+        });
+    }
+
     function login() {
         const u = document.getElementById('log-user').value.trim().toLowerCase();
         const p = document.getElementById('log-pass').value;
         db.ref('usuarios/' + u).once('value', s => {
-            if(s.exists() && s.val().clave === p) { mUser = u; entrar(); }
-            else alert("Error en acceso");
+            if(s.exists() && s.val().clave === p) {
+                mUser = u;
+                notify("¡Hola de nuevo!");
+                entrar();
+            } else {
+                notify("Usuario o clave incorrecta. ❌");
+            }
         });
     }
 
@@ -138,19 +181,17 @@
         view('scr-chat');
         db.ref('usuarios/' + mUser).on('value', s => { if(s.exists()) mPerf = s.val(); });
         
-        // Cargar Miembros
         db.ref('usuarios').on('value', snap => {
             const list = document.getElementById('member-list'); list.innerHTML = "";
             snap.forEach(child => {
                 if(child.key === mUser) return;
-                list.innerHTML += `<div class="member-card" onclick="iniciarPrivado('${child.key}')">
-                    <div style="width:35px; height:35px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">${child.val().nombre[0]}</div>
-                    <div><b>${child.val().nombre}</b></div>
+                list.innerHTML += `<div class="member-card" onclick="iniciarPrivado('${child.key}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; border-radius:10px; margin:5px;">
+                    <div style="width:38px; height:38px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:12px; font-size:14px;">${child.val().nombre[0].toUpperCase()}</div>
+                    <b style="font-size:14px; color:#444;">${child.val().nombre}</b>
                 </div>`;
             });
         });
-
-        escucharChat();
+        verChatPublico();
     }
 
     function escucharChat() {
@@ -162,18 +203,15 @@
             snap.forEach(child => {
                 const data = child.val();
                 const isMine = data.u === mUser;
-                const isAdmin = mUser === 'chat'; // Tu usuario admin
-                
+                const isAdmin = mUser === 'chat';
                 const d = document.createElement('div');
                 d.className = "msg " + (isMine ? "me" : "them");
                 
                 let html = `<b>${data.u}</b>`;
                 if(data.type === 'foto' || data.type === 'video') {
-                    // Lógica de Permiso: Solo Admin, el Dueño o VIP ven claro
                     const locked = !mPerf.vip && !isMine && !isAdmin;
-                    
                     if(data.type === 'foto') {
-                        gal.innerHTML += `<img src="${data.url}" class="thumb" onclick="window.open('${data.url}')">`;
+                        gal.innerHTML += `<img src="${data.url}" class="thumb" onclick="window.open('${data.url}')" style="width:100%; border-radius:8px; cursor:pointer;">`;
                         html += `<div class="media-container">${locked?'<div class="lock">🔒 VIP</div>':''}<img src="${data.url}" class="${locked?'blur':''}" style="width:100%"></div>`;
                     } else {
                         html += `<div class="media-container">${locked?'<div class="lock">🔒 VIP</div>':''}<video src="${data.url}" controls class="${locked?'blur':''}" style="width:100%"></video></div>`;
@@ -188,6 +226,18 @@
         });
     }
 
+    function abrirCloudinary(tipo) {
+        notify("Abriendo galería... 📁");
+        cloudinary.openUploadWidget({ 
+            cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET, sources: ['local', 'camera']
+        }, (error, result) => {
+            if (!error && result && result.event === "success") {
+                db.ref(chatActual).push({ u: mUser, url: result.info.secure_url, type: tipo });
+                notify("¡Archivo enviado! ✅");
+            }
+        });
+    }
+
     function enviarMsg() {
         const i = document.getElementById('msg-in');
         if(!i.value.trim()) return;
@@ -195,37 +245,20 @@
         i.value = "";
     }
 
-    // --- ARREGLO DE CLOUDINARY ---
-    function abrirCloudinary(tipo) {
-        cloudinary.openUploadWidget({ 
-            cloudName: CLOUD_NAME, 
-            uploadPreset: UPLOAD_PRESET, 
-            sources: ['local', 'camera'],
-            clientAllowedFormats: tipo === 'foto' ? ['jpg','png','jpeg'] : ['mp4','mov','webm']
-        }, (error, result) => {
-            if (!error && result && result.event === "success") {
-                // AQUÍ ESTABA EL ERROR: Ahora se envía inmediatamente al chat al terminar la subida
-                db.ref(chatActual).push({ 
-                    u: mUser, 
-                    url: result.info.secure_url, 
-                    type: tipo,
-                    time: Date.now() 
-                });
-            }
-        });
-    }
-
     function iniciarPrivado(otro) {
         const id = "Privados/" + [mUser, otro].sort().join("_");
         chatActual = id;
         document.getElementById('chat-title').innerText = "Chat con " + otro;
+        notify("Entrando a chat privado 🔒");
         escucharChat();
+        if(window.innerWidth < 1024) toggleMenu('right');
     }
 
     function verChatPublico() {
         chatActual = "Chat Público";
         document.getElementById('chat-title').innerText = "Chat Público";
         escucharChat();
+        if(window.innerWidth < 1024) toggleMenu('left');
     }
 </script>
 </body>
