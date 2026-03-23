@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sincro MD - Pro Ultimate</title>
+    <title>Sincro MD - Pro</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -11,52 +11,50 @@
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
 
     <style>
-        :root { --tg-blue: #0088cc; --tg-bg: #54759e; --msg-out: #efffde; --side-bg: #f4f7f9; --online: #2ecc71; --offline: #bdc3c7; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #121212; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        :root { --tg-blue: #0088cc; --tg-bg: #54759e; --msg-out: #efffde; --side-bg: #ffffff; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #0e1621; height: 100vh; display: flex; justify-content: center; align-items: center; }
         
         #app { width: 100%; height: 100%; background: white; display: flex; overflow: hidden; position: relative; }
-        @media (min-width: 900px) { #app { width: 95%; height: 92vh; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.6); } }
+        @media (min-width: 1024px) { #app { width: 98%; height: 95vh; border-radius: 12px; } }
 
-        /* PANTALLAS */
-        .screen { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; padding: 25px; box-sizing: border-box; text-align: center; }
-        .active { display: flex; }
-        .bg-blue { background: linear-gradient(145deg, var(--tg-blue), #003a5c); color: white; }
-        .in-style { width: 100%; max-width: 320px; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1px solid #ddd; outline: none; font-size: 16px; }
-        .btn-style { width: 100%; max-width: 320px; padding: 15px; border-radius: 12px; border: none; background: white; color: var(--tg-blue); font-weight: bold; cursor: pointer; transition: 0.3s; }
-
-        /* LAYOUT 3 COLUMNAS */
-        #main-chat { display: flex; width: 100%; height: 100%; }
-        #sidebar-left { width: 260px; background: var(--side-bg); border-right: 1px solid #eee; display: none; flex-direction: column; }
+        /* --- INTERFAZ 3 COLUMNAS --- */
+        #main-layout { display: flex; width: 100%; height: 100%; }
+        #sidebar-left { width: 280px; background: var(--side-bg); border-right: 1px solid #dfe5ec; display: flex; flex-direction: column; transition: 0.3s; }
         #chat-section { flex: 1; display: flex; flex-direction: column; background: var(--tg-bg); position: relative; }
-        #sidebar-right { width: 280px; background: var(--side-bg); border-left: 1px solid #eee; display: none; flex-direction: column; }
+        #sidebar-right { width: 320px; background: var(--side-bg); border-left: 1px solid #dfe5ec; display: flex; flex-direction: column; transition: 0.3s; }
 
-        @media (min-width: 1000px) { #sidebar-left, #sidebar-right { display: flex; } }
+        /* Responsivo Móvil */
+        @media (max-width: 1023px) {
+            #sidebar-left { position: absolute; left: 0; z-index: 100; transform: translateX(-100%); height: 100%; }
+            #sidebar-right { position: absolute; right: 0; z-index: 100; transform: translateX(100%); height: 100%; }
+            .show-left { transform: translateX(0) !important; }
+            .show-right { transform: translateX(0) !important; }
+        }
 
-        /* MENSAJES */
-        #chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .msg { padding: 12px; border-radius: 15px; max-width: 80%; background: white; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; }
-        .msg b { display: block; color: var(--tg-blue); font-size: 11px; margin-bottom: 4px; }
+        /* --- COMPONENTES --- */
+        .header { padding: 15px; background: white; font-weight: bold; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        #chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        
+        /* Mensajes y VIP Blur */
+        .msg { padding: 10px 15px; border-radius: 15px; max-width: 85%; background: white; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .me { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 2px; }
-        .them { align-self: flex-start; border-bottom-left-radius: 2px; }
+        .msg b { display: block; color: var(--tg-blue); font-size: 11px; margin-bottom: 3px; }
+        .media-container { margin-top: 5px; border-radius: 10px; overflow: hidden; position: relative; background: #000; }
+        .blur { filter: blur(35px); pointer-events: none; }
+        .lock { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); color:white; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; }
 
-        /* MULTIMEDIA BLUR (VIP) */
-        .media-box { margin-top: 6px; border-radius: 10px; overflow: hidden; position: relative; background: #000; min-height: 100px; }
-        .blur-media { filter: blur(30px); pointer-events: none; }
-        .lock-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 2; font-size: 12px; }
-        .media-img, .media-vid { width: 100%; display: block; max-height: 350px; object-fit: contain; }
+        /* Galería y Miembros */
+        .media-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 10px; overflow-y: auto; max-height: 220px; }
+        .thumb { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 4px; cursor: pointer; }
+        .member-card { display: flex; align-items: center; padding: 10px; gap: 10px; cursor: pointer; border-radius: 8px; transition: 0.2s; }
+        .member-card:hover { background: #f0f4f8; }
+        .status { width: 10px; height: 10px; border-radius: 50%; border: 2px solid white; position: absolute; bottom: 0; right: 0; }
 
-        /* FOOTER */
-        .footer { padding: 12px; background: white; display: flex; gap: 10px; align-items: center; border-top: 1px solid #eee; }
-        #msg-in { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #eee; background: #f8f9fa; outline: none; }
-        .icon-btn { border: none; background: none; font-size: 24px; cursor: pointer; transition: 0.2s; }
-
-        /* MIEMBROS Y PRESENCIA */
-        .member-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #f0f0f0; gap: 12px; }
-        .avatar-wrap { position: relative; }
-        .member-avatar { width: 38px; height: 38px; background: var(--tg-blue); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .status-dot { width: 12px; height: 12px; border-radius: 50%; position: absolute; bottom: 0; right: 0; border: 2px solid white; }
-        .online-dot { background: var(--online); }
-        .offline-dot { background: var(--offline); }
+        /* Acceso */
+        .screen { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        .active { display: flex; }
+        .bg-blue { background: linear-gradient(135deg, #0088cc, #004466); color: white; }
     </style>
 </head>
 <body>
@@ -64,181 +62,193 @@
 <div id="app">
     <div id="scr-login" class="screen bg-blue active">
         <h1>Sincro MD</h1>
-        <input type="text" id="log-user" class="in-style" placeholder="Usuario">
-        <input type="password" id="log-pass" class="in-style" placeholder="Contraseña">
-        <button class="btn-style" onclick="login()">ENTRAR</button>
-        <p onclick="view('scr-reg')" style="cursor:pointer; font-size:14px;">Crear cuenta</p>
+        <input type="text" id="log-user" placeholder="Usuario" style="padding:12px; width:280px; margin:5px; border-radius:8px; border:none;">
+        <input type="password" id="log-pass" placeholder="Clave" style="padding:12px; width:280px; margin:5px; border-radius:8px; border:none;">
+        <button onclick="login()" style="padding:12px; width:280px; margin-top:10px; border-radius:8px; border:none; color:#0088cc; font-weight:bold; cursor:pointer;">ENTRAR</button>
+        <p onclick="view('scr-reg')" style="cursor:pointer; font-size:12px; margin-top:15px;">Crear cuenta nueva</p>
     </div>
 
     <div id="scr-reg" class="screen bg-blue">
         <h1>Registro</h1>
-        <input type="text" id="reg-user" class="in-style" placeholder="Nombre de usuario">
-        <input type="email" id="reg-mail" class="in-style" placeholder="Correo">
-        <input type="password" id="reg-pass" class="in-style" placeholder="Clave">
-        <button class="btn-style" onclick="enviarOTP()">CÓDIGO</button>
-        <p onclick="view('scr-login')" style="cursor:pointer; font-size:14px;">Volver</p>
+        <input type="text" id="reg-user" placeholder="Usuario" style="padding:12px; width:280px; margin:5px;">
+        <input type="email" id="reg-mail" placeholder="Correo" style="padding:12px; width:280px; margin:5px;">
+        <input type="password" id="reg-pass" placeholder="Contraseña" style="padding:12px; width:280px; margin:5px;">
+        <button onclick="enviarOTP()" style="padding:12px; width:280px;">ENVIAR CÓDIGO</button>
     </div>
 
     <div id="scr-verify" class="screen">
-        <h2>Verifica</h2>
-        <input type="number" id="otp-input" class="in-style" style="text-align:center;">
-        <button class="btn-style" onclick="confirmarOTP()">VERIFICAR</button>
+        <h2>Ingresa el Código</h2>
+        <input type="number" id="otp-input" style="padding:15px; font-size:24px; text-align:center; width:200px;">
+        <button onclick="confirmarOTP()" style="padding:12px; margin-top:10px; background:#0088cc; color:white; border:none; border-radius:8px;">VERIFICAR</button>
     </div>
 
     <div id="scr-chat" class="screen" style="padding:0;">
-        <div id="main-chat">
-            <div id="sidebar-left">
-                <div style="padding:20px; font-weight:bold; color:var(--tg-blue);">Sincro App</div>
-                <div style="padding:15px; background:#e1e9f2; border-left:5px solid var(--tg-blue);">Chat General 🚀</div>
-            </div>
+        <div id="main-layout">
+            <aside id="sidebar-left">
+                <div class="header">SINCRO <button onclick="toggleMenu('left')" style="border:none; background:none;">✖</button></div>
+                <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; border-left:5px solid #0088cc; cursor:pointer;">Chat Público 🚀</div>
+                <div style="padding:15px; font-size:12px; color:#999; font-weight:bold;">CHATS PRIVADOS</div>
+                <div id="private-list" style="overflow-y:auto; flex:1;"></div>
+            </aside>
 
-            <div id="chat-section">
-                <div style="padding:15px; background:white; font-weight:bold; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
-                    <span>Sincro Chat</span>
-                    <button onclick="location.reload()" style="border:none; background:none; cursor:pointer;">🚪</button>
+            <main id="chat-section">
+                <div class="header">
+                    <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:20px;">☰</button>
+                    <span id="chat-title">Chat Público</span>
+                    <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:20px;">👤</button>
                 </div>
                 <div id="chat-box"></div>
-                <div class="footer">
-                    <button onclick="abrirCloudinary('foto')" class="icon-btn">🖼️</button>
-                    <button onclick="abrirCloudinary('video')" class="icon-btn">📹</button>
-                    <input id="msg-in" placeholder="Escribe..." onkeypress="if(event.key === 'Enter') enviarTexto()">
-                    <button onclick="enviarTexto()" style="background:var(--tg-blue); border:none; width:42px; height:42px; border-radius:50%; color:white; cursor:pointer;">➤</button>
+                <div id="p-status" style="display:none; padding:5px; text-align:center; background:#fff; font-size:10px; color:#0088cc;">Subiendo a Cloudinary...</div>
+                <div class="footer" style="padding:10px; background:white; display:flex; gap:10px;">
+                    <button onclick="abrirCloudinary('foto')" style="border:none; background:none; font-size:24px; cursor:pointer;">🖼️</button>
+                    <button onclick="abrirCloudinary('video')" style="border:none; background:none; font-size:24px; cursor:pointer;">📹</button>
+                    <input id="msg-in" placeholder="Escribe..." style="flex:1; padding:10px; border-radius:20px; border:1px solid #eee;" onkeypress="if(event.key === 'Enter') enviarMsg()">
+                    <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:40px; height:40px; border-radius:50%;">➤</button>
                 </div>
-            </div>
+            </main>
 
-            <div id="sidebar-right">
-                <div style="padding:15px; font-weight:bold; background:#f8f9fa;">MIEMBROS</div>
-                <div id="member-list" style="flex:1; overflow-y:auto;"></div>
-            </div>
+            <aside id="sidebar-right">
+                <div class="header">INFO <button onclick="toggleMenu('right')" style="border:none; background:none;">✖</button></div>
+                <div style="padding:10px; font-size:12px; font-weight:bold; color:#666;">GALERÍA MULTIMEDIA</div>
+                <div id="gallery" class="media-grid"></div>
+                <div style="padding:10px; font-size:12px; font-weight:bold; color:#666; border-top:1px solid #eee;">MIEMBROS</div>
+                <div id="member-list" class="member-list" style="flex:1; overflow-y:auto;"></div>
+                <button onclick="borrarChatActual()" style="padding:10px; background:#ffeded; color:#d63031; border:none; width:100%; cursor:pointer; font-weight:bold;">BORRAR CHAT ACTUAL</button>
+            </aside>
         </div>
     </div>
 </div>
 
 <script>
-    // --- CONFIGURACIÓN ---
     const firebaseConfig = { databaseURL: "https://micanalmaestro-default-rtdb.firebaseio.com/" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     emailjs.init("BrWqcYWEajAbCMVYM");
 
-    // CLOUDINARY (Pon tus datos reales aquí)
     const CLOUD_NAME = "tu_cloud_name"; 
-    const UPLOAD_PRESET = "tu_preset_unsigned"; 
+    const UPLOAD_PRESET = "tu_preset";
 
-    let dTemp = {}, codeReal = "", mUser = "", mPerf = { vip: false };
+    let mUser = "", mPerf = { vip: false }, chatActual = "Chat Público", listener = null;
 
     function view(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    // REGISTRO / LOGIN
-    function enviarOTP() {
-        const u = document.getElementById('reg-user').value.trim();
-        const m = document.getElementById('reg-mail').value.trim();
-        const p = document.getElementById('reg-pass').value.trim();
-        if(!u || !m || !p) return alert("Llena todo");
-        codeReal = Math.floor(100000 + Math.random() * 900000).toString();
-        dTemp = { user: u, mail: m, pass: p };
-        emailjs.send("service_ahvtgiw", "template_jsynwd9", { to_name: u, to_email: m, code: codeReal })
-        .then(() => view('scr-verify'));
+    function toggleMenu(side) {
+        if(side === 'left') document.getElementById('sidebar-left').classList.toggle('show-left');
+        if(side === 'right') document.getElementById('sidebar-right').classList.toggle('show-right');
     }
 
-    function confirmarOTP() {
-        if(document.getElementById('otp-input').value === codeReal) {
-            mUser = dTemp.user.toLowerCase().replace(/\s/g, '');
-            db.ref('usuarios/' + mUser).set({ nombre: dTemp.user, clave: dTemp.pass, vip: false, online: true })
-            .then(() => entrar());
-        } else { alert("Error"); }
-    }
-
+    // --- ACCESO ---
     function login() {
-        const u = document.getElementById('log-user').value.trim().toLowerCase().replace(/\s/g, '');
-        const p = document.getElementById('log-pass').value.trim();
+        const u = document.getElementById('log-user').value.trim().toLowerCase();
+        const p = document.getElementById('log-pass').value;
         db.ref('usuarios/' + u).once('value', s => {
             if(s.exists() && s.val().clave === p) { mUser = u; entrar(); }
-            else { alert("Incorrecto"); }
+            else alert("Clave incorrecta");
         });
     }
-
-    // --- LÓGICA DE PRESENCIA Y FUNCIONAMIENTO ---
 
     function entrar() {
         view('scr-chat');
-
-        // Sistema de "En Línea" (Detecta cuando el usuario cierra la pestaña)
         const userRef = db.ref('usuarios/' + mUser);
         userRef.update({ online: true });
         userRef.onDisconnect().update({ online: false });
-
-        // Mis datos
         userRef.on('value', s => { if(s.exists()) mPerf = s.val(); });
 
-        // Miembros en Tiempo Real con punto de estado
-        db.ref('usuarios').on('value', snapshot => {
+        // Miembros
+        db.ref('usuarios').on('value', snap => {
             const list = document.getElementById('member-list'); list.innerHTML = "";
-            snapshot.forEach(child => {
+            snap.forEach(child => {
                 const u = child.val();
+                if(child.key === mUser) return;
                 list.innerHTML += `
-                <div class="member-item">
-                    <div class="avatar-wrap">
-                        <div class="member-avatar">${u.nombre[0].toUpperCase()}</div>
-                        <div class="status-dot ${u.online ? 'online-dot' : 'offline-dot'}"></div>
-                    </div>
-                    <span><b>${u.nombre}</b> ${u.vip ? '⭐' : ''}</span>
-                </div>`;
+                    <div class="member-card" onclick="iniciarPrivado('${child.key}')">
+                        <div style="position:relative">
+                            <div style="width:40px; height:40px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">${u.nombre[0]}</div>
+                            <div class="status" style="background:${u.online?'#2ecc71':'#bdc3c7'}"></div>
+                        </div>
+                        <div><b>${u.nombre}</b><br><small>${u.vip?'VIP ⭐':'Miembro'}</small></div>
+                    </div>`;
             });
         });
 
-        // Chat con sistema Blur VIP
-        db.ref('Chat Público').on('value', snapshot => {
+        escucharChat();
+    }
+
+    // --- CHAT LÓGICA ---
+    function escucharChat() {
+        if(listener) db.ref(chatActual).off('value', listener);
+        listener = db.ref(chatActual).on('value', snap => {
             const box = document.getElementById('chat-box'); box.innerHTML = "";
-            snapshot.forEach(child => {
+            const gal = document.getElementById('gallery'); gal.innerHTML = "";
+            snap.forEach(child => {
                 const data = child.val();
                 const isMine = data.u === mUser;
-                const div = document.createElement('div');
-                div.className = "msg " + (isMine ? "me" : "them");
+                const d = document.createElement('div');
+                d.className = "msg " + (isMine ? "me" : "them");
                 
                 let html = `<b>${data.u}</b>`;
                 if(data.type === 'foto' || data.type === 'video') {
                     const locked = !mPerf.vip && !isMine;
-                    html += `<div class="media-box">
-                        ${locked ? '<div class="lock-text">🔒 CONTENIDO VIP</div>' : ''}
-                        ${data.type === 'foto' ? 
-                            `<img src="${data.url}" class="media-img ${locked ? 'blur-media' : ''}">` : 
-                            `<video src="${data.url}" controls class="media-vid ${locked ? 'blur-media' : ''}"></video>`
-                        }
+                    if(data.type === 'foto') gal.innerHTML += `<img src="${data.url}" class="thumb" onclick="window.open('${data.url}')">`;
+                    html += `<div class="media-container">
+                        ${locked?'<div class="lock">🔒 SOLO VIP</div>':''}
+                        ${data.type==='foto' ? `<img src="${data.url}" class="${locked?'blur':''}" style="width:100%">` : `<video src="${data.url}" controls class="${locked?'blur':''}" style="width:100%"></video>`}
                     </div>`;
-                } else {
-                    html += `<span>${data.t}</span>`;
-                }
-                div.innerHTML = html;
-                box.appendChild(div);
+                } else { html += `<span>${data.t}</span>`; }
+                d.innerHTML = html;
+                box.appendChild(d);
             });
             box.scrollTop = box.scrollHeight;
         });
     }
 
-    // Subida a Cloudinary
+    function enviarMsg() {
+        const i = document.getElementById('msg-in');
+        if(!i.value.trim()) return;
+        db.ref(chatActual).push({ u: mUser, t: i.value, type: 'texto', time: Date.now() });
+        i.value = "";
+    }
+
     function abrirCloudinary(tipo) {
-        cloudinary.openUploadWidget({
-            cloudName: CLOUD_NAME,
-            uploadPreset: UPLOAD_PRESET,
-            sources: ['local', 'camera'],
-            clientAllowedFormats: tipo === 'foto' ? ['png', 'jpg', 'jpeg'] : ['mp4', 'mov', 'webm'],
-            multiple: false
-        }, (error, result) => {
-            if (!error && result && result.event === "success") {
-                db.ref('Chat Público').push({ u: mUser, url: result.info.secure_url, type: tipo });
+        document.getElementById('p-status').style.display = "block";
+        cloudinary.openUploadWidget({ cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET, sources: ['local', 'camera'] }, (err, res) => {
+            document.getElementById('p-status').style.display = "none";
+            if (!err && res.event === "success") {
+                db.ref(chatActual).push({ u: mUser, url: res.info.secure_url, type: tipo, time: Date.now() });
             }
         });
     }
 
-    function enviarTexto() {
-        const i = document.getElementById('msg-in');
-        if(!i.value.trim()) return;
-        db.ref('Chat Público').push({ u: mUser, t: i.value, type: 'texto' });
-        i.value = "";
+    // --- CHATS PRIVADOS ---
+    function iniciarPrivado(otroUser) {
+        const id = "Privados/" + [mUser, otroUser].sort().join("_");
+        chatActual = id;
+        document.getElementById('chat-title').innerText = "Chat con " + otroUser + " 🔒";
+        
+        // Agregar a la lista de la izquierda si no está
+        const pList = document.getElementById('private-list');
+        if(!document.getElementById('p-'+otroUser)) {
+            pList.innerHTML += `<div id="p-${otroUser}" onclick="iniciarPrivado('${otroUser}')" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer;">👤 ${otroUser}</div>`;
+        }
+        
+        escucharChat();
+        if(window.innerWidth < 1024) toggleMenu('right');
+    }
+
+    function verChatPublico() {
+        chatActual = "Chat Público";
+        document.getElementById('chat-title').innerText = "Chat Público";
+        escucharChat();
+        if(window.innerWidth < 1024) toggleMenu('left');
+    }
+
+    function borrarChatActual() {
+        if(confirm("¿Borrar todos los mensajes de este chat?")) {
+            db.ref(chatActual).remove();
+        }
     }
 </script>
 </body>
