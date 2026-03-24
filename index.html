@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sincro MD - Oficial</title>
+    <title>Sincro MD - Verificado</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -18,12 +18,12 @@
         #app { width: 100%; height: 100%; background: white; display: flex; overflow: hidden; position: relative; }
         @media (min-width: 1024px) { #app { width: 98%; height: 95vh; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); } }
 
-        /* Notificaciones Flotantes */
+        /* Notificaciones */
         #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; pointer-events: none; }
-        .toast { background: rgba(0, 0, 0, 0.9); color: white; padding: 12px 25px; border-radius: 50px; font-size: 14px; margin-bottom: 10px; animation: slideIn 0.3s forwards; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .toast { background: rgba(0, 0, 0, 0.9); color: white; padding: 12px 25px; border-radius: 50px; font-size: 14px; margin-bottom: 10px; animation: slideIn 0.3s forwards; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Estructura del Layout */
+        /* Estructura */
         #main-layout { display: flex; width: 100%; height: 100%; }
         #sidebar-left, #sidebar-right { width: 300px; background: var(--side-bg); border: 1px solid #dfe5ec; display: flex; flex-direction: column; z-index: 10; transition: transform 0.3s ease; }
         #chat-section { flex: 1; display: flex; flex-direction: column; background: var(--tg-bg); position: relative; }
@@ -35,29 +35,29 @@
             .show-right { transform: translateX(0) !important; }
         }
 
-        /* Estilos de Mensajes */
+        /* Mensajes */
         .header { padding: 15px; background: white; font-weight: bold; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         #chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .msg { padding: 10px 15px; border-radius: 15px; max-width: 80%; background: white; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); position: relative; word-wrap: break-word; }
+        .msg { padding: 10px 15px; border-radius: 15px; max-width: 80%; background: white; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor: pointer; position: relative; }
         .me { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 2px; }
         .them { align-self: flex-start; background: #ffffff; border-bottom-left-radius: 2px; }
         .msg b { display: block; color: var(--tg-blue); font-size: 11px; margin-bottom: 3px; }
 
-        /* Multimedia y Efecto VIP */
-        .media-container { margin-top: 5px; border-radius: 10px; overflow: hidden; position: relative; background: #000; min-height: 120px; }
-        .blur { filter: blur(40px); pointer-events: none; opacity: 0.6; }
+        /* Media */
+        .media-container { margin-top: 5px; border-radius: 10px; overflow: hidden; position: relative; background: #000; min-height: 100px; }
+        .blur { filter: blur(35px); pointer-events: none; opacity: 0.6; }
         .lock-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; z-index: 5; }
 
         .status-dot { width: 10px; height: 10px; background: #4caf50; border-radius: 50%; border: 2px solid white; position: absolute; bottom: 2px; right: 2px; }
 
-        /* Pantallas de Acceso */
+        /* UI de Acceso */
         .screen { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; }
         .active { display: flex; }
         .bg-blue { background: linear-gradient(135deg, #0088cc, #004466); color: white; }
-        .in-style { padding:14px; width:300px; margin-top:10px; border-radius:10px; border:none; outline:none; font-size: 16px; }
-        .btn-main { padding:14px; width:300px; margin-top:20px; border-radius:10px; border:none; background: white; color:#0088cc; font-weight:bold; cursor:pointer; font-size: 16px; }
+        .in-style { padding:14px; width:300px; margin-top:10px; border-radius:10px; border:none; outline:none; }
+        .btn-main { padding:14px; width:300px; margin-top:20px; border-radius:10px; border:none; background: white; color:#0088cc; font-weight:bold; cursor:pointer; }
         
-        #btn-admin-clear { display: none; background: #ff4d4d; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+        #btn-admin-del { display: none; background: #ff4d4d; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -66,58 +66,58 @@
 
 <div id="app">
     <div id="scr-login" class="screen bg-blue active">
-        <h1 style="font-size: 45px; margin-bottom: 5px;">Sincro MD</h1>
-        <p style="opacity: 0.8; margin-bottom: 25px;">Conexión Segura v2.0</p>
+        <h1 style="font-size: 40px; margin-bottom: 0;">Sincro MD</h1>
+        <p style="opacity: 0.7; margin-bottom: 30px;">Inicia sesión para chatear</p>
         <input type="email" id="log-mail" class="in-style" placeholder="Correo Electrónico">
         <input type="password" id="log-pass" class="in-style" placeholder="Contraseña">
         <button onclick="login()" class="btn-main">ENTRAR</button>
-        <p onclick="view('scr-reg')" style="cursor:pointer; margin-top:20px; text-decoration: underline;">¿Eres nuevo? Crea una cuenta aquí</p>
+        <p onclick="view('scr-reg')" style="cursor:pointer; margin-top:20px; text-decoration: underline;">Crear una cuenta nueva</p>
     </div>
 
     <div id="scr-reg" class="screen bg-blue">
-        <h1>Nueva Cuenta</h1>
+        <h1>Registro Seguro</h1>
         <input type="text" id="reg-user" class="in-style" placeholder="Nombre de Usuario">
-        <input type="email" id="reg-mail" class="in-style" placeholder="Correo Electrónico">
+        <input type="email" id="reg-mail" class="in-style" placeholder="Tu Correo Real">
         <input type="password" id="reg-pass" class="in-style" placeholder="Clave (6+ caracteres)">
-        <button onclick="registro()" class="btn-main">CREAR MI CUENTA</button>
-        <p onclick="view('scr-login')" style="cursor:pointer; margin-top:20px;">Ya tengo cuenta, volver</p>
+        <button onclick="registro()" class="btn-main">REGISTRARME</button>
+        <p onclick="view('scr-login')" style="cursor:pointer; margin-top:20px;">Volver al inicio</p>
     </div>
 
     <div id="scr-chat" class="screen" style="padding:0;">
         <div id="main-layout">
             <aside id="sidebar-left">
-                <div class="header" style="background: #f8f9fa;">SINCRO <button onclick="toggleMenu('left')" style="border:none; background:none;">✕</button></div>
-                <div onclick="verChatPublico()" style="padding:18px; background:#e1e9f2; border-left:5px solid #0088cc; cursor:pointer; font-weight:bold;">🌐 Chat Público</div>
-                <div style="padding:12px; font-size:11px; color:#adb5bd; font-weight:bold; letter-spacing: 1px;">CHATS PRIVADOS</div>
+                <div class="header">SINCRO <button onclick="toggleMenu('left')" style="border:none; background:none;">✕</button></div>
+                <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; cursor:pointer; font-weight:bold;">🌐 Chat Público</div>
+                <div style="padding:10px; font-size:11px; color:#999;">MIEMBROS</div>
                 <div id="member-list" style="overflow-y:auto; flex:1;"></div>
-                <button onclick="logout()" style="padding:15px; background:#fff1f0; border:none; color:#cf2a27; cursor:pointer; font-weight:bold;">Cerrar Sesión</button>
+                <button onclick="logout()" style="padding:15px; background:#fff0f0; border:none; color:#d9534f; cursor:pointer;">Cerrar Sesión</button>
             </aside>
 
             <main id="chat-section">
                 <div class="header">
-                    <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:22px;">☰</button>
-                    <span id="chat-title" style="color:#333;">Cargando...</span>
-                    <button id="btn-admin-clear" onclick="vaciarChat()">🗑️ Limpiar</button>
-                    <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:22px;">ℹ️</button>
+                    <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:20px;">☰</button>
+                    <span id="chat-title">Cargando...</span>
+                    <button id="btn-admin-del" onclick="vaciarChat()">🗑️ Limpiar</button>
+                    <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:20px;">ℹ️</button>
                 </div>
                 <div id="chat-box"></div>
                 <div class="footer" style="padding:12px; background:white; display:flex; gap:10px; border-top:1px solid #eee;">
-                    <button onclick="abrirCloudinary('foto')" style="border:none; background:none; font-size:26px;">📷</button>
-                    <input id="msg-in" placeholder="Escribe un mensaje..." style="flex:1; padding:12px; border-radius:25px; border:1px solid #eee; background:#f1f3f5; outline:none;" onkeypress="if(event.key === 'Enter') enviarMsg()">
-                    <button onclick="enviarMsg()" style="background:#0088cc; color:white; border-radius:50%; width:48px; height:48px; border:none; cursor:pointer; font-size:18px;">➤</button>
+                    <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:24px;">📷</button>
+                    <input id="msg-in" placeholder="Escribe..." style="flex:1; padding:12px; border-radius:20px; border:1px solid #eee; outline:none;" onkeypress="if(event.key === 'Enter') enviarMsg()">
+                    <button onclick="enviarMsg()" style="background:#0088cc; color:white; border-radius:50%; width:45px; height:45px; border:none;">➤</button>
                 </div>
             </main>
 
             <aside id="sidebar-right">
                 <div class="header">GALERÍA <button onclick="toggleMenu('right')" style="border:none; background:none;">✕</button></div>
-                <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px; padding:8px;"></div>
+                <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px; padding:10px;"></div>
             </aside>
         </div>
     </div>
 </div>
 
 <script>
-    // --- CONFIGURACIÓN DE FIREBASE ---
+    // --- CONFIGURACIÓN ---
     const firebaseConfig = { 
         databaseURL: "https://micanalmaestro-default-rtdb.firebaseio.com/",
         apiKey: "AIzaSyB2GH_bFRmRwhqtaBb3ll_9eNEMXj7RuMo" 
@@ -135,7 +135,7 @@
     function notify(t) {
         const c = document.getElementById('toast-container');
         const e = document.createElement('div'); e.className = 'toast'; e.innerText = t;
-        c.appendChild(e); setTimeout(() => e.remove(), 3500);
+        c.appendChild(e); setTimeout(() => e.remove(), 4000);
     }
 
     function view(id) {
@@ -145,32 +145,46 @@
 
     function toggleMenu(s) { document.getElementById('sidebar-' + s).classList.toggle('show-' + s); }
 
-    // --- LÓGICA DE REGISTRO REAL ---
+    // --- ACCESO CON VERIFICACIÓN ---
     function registro() {
         const u = document.getElementById('reg-user').value.trim();
         const e = document.getElementById('reg-mail').value.trim();
         const p = document.getElementById('reg-pass').value;
 
-        if(!u || !e || p.length < 6) return notify("⚠️ Datos inválidos (Clave mín 6 caracteres)");
-
-        notify("Creando cuenta...");
+        if(!u || !e || p.length < 6) return notify("⚠️ Datos incompletos (mín. 6 caracteres)");
 
         auth.createUserWithEmailAndPassword(e, p).then(res => {
+            // Enviar correo de verificación
+            res.user.sendEmailVerification().then(() => {
+                notify("📧 ¡Correo enviado! Verifica tu bandeja (o spam) antes de entrar.");
+            });
+
+            // Guardar perfil
             db.ref('usuarios/' + res.user.uid).set({ 
                 nombre: u, 
-                vip: (u.toLowerCase() === 'chat'), // El usuario "chat" es admin
-                online: true 
+                vip: (u.toLowerCase() === 'chat'), // Admin si se llama "chat"
+                online: false 
             });
-            notify("✅ ¡Cuenta creada! Ya puedes iniciar sesión.");
-            view('scr-login');
-        }).catch(err => notify("❌ Error: " + err.message));
+
+            // Forzar salida para que verifique
+            setTimeout(() => { auth.signOut(); view('scr-login'); }, 3000);
+        }).catch(err => notify("❌ " + err.message));
     }
 
     function login() {
         const e = document.getElementById('log-mail').value.trim();
         const p = document.getElementById('log-pass').value;
-        if(!e || !p) return notify("⚠️ Ingresa tus credenciales");
-        auth.signInWithEmailAndPassword(e, p).catch(err => notify("❌ Acceso denegado"));
+        if(!e || !p) return notify("⚠️ Ingresa tus datos");
+
+        auth.signInWithEmailAndPassword(e, p).then(res => {
+            if (res.user.emailVerified) {
+                notify("✅ Acceso concedido");
+                // La app inicia automáticamente por el observer onAuthStateChanged
+            } else {
+                notify("🚫 Debes verificar tu correo primero. Revisa tu bandeja de entrada.");
+                auth.signOut();
+            }
+        }).catch(() => notify("❌ Correo o clave incorrectos"));
     }
 
     function logout() { 
@@ -178,16 +192,16 @@
         auth.signOut().then(() => location.reload()); 
     }
 
-    // --- MONITOR DE SESIÓN ACTIVA ---
+    // --- MONITOR DE ESTADO ---
     auth.onAuthStateChanged(user => {
-        if (user) {
+        if (user && user.emailVerified) {
             mUser = user;
             db.ref('usuarios/' + user.uid).on('value', snap => {
                 mData = snap.val();
                 if(mData) {
                     if(mData.nombre.toLowerCase() === 'chat') {
                         mData.vip = true;
-                        document.getElementById('btn-admin-clear').style.display = 'block';
+                        document.getElementById('btn-admin-del').style.display = 'block';
                     }
                     iniciarApp();
                 }
@@ -206,8 +220,8 @@
             snap.forEach(child => {
                 const u = child.val();
                 if(child.key === mUser.uid) return;
-                list.innerHTML += `<div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; position:relative; border-bottom:1px solid #f8f8f8;">
-                    <div style="width:38px; height:38px; border-radius:50%; background:var(--tg-blue); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:12px;">
+                list.innerHTML += `<div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; position:relative;">
+                    <div style="width:35px; height:35px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px;">
                         ${u.nombre[0].toUpperCase()}${u.online ? '<div class="status-dot"></div>' : ''}
                     </div><b>${u.nombre}</b></div>`;
             });
@@ -215,88 +229,60 @@
         verChatPublico();
     }
 
-    // --- LÓGICA DEL CHAT ---
+    // --- LÓGICA DE MENSAJES ---
     function escucharChat() {
         const box = document.getElementById('chat-box');
         const gal = document.getElementById('gallery');
         box.innerHTML = ""; gal.innerHTML = "";
         if(listener) db.ref(chatActual).off();
 
-        // Escuchar nuevos mensajes
         listener = db.ref(chatActual).on('child_added', snap => {
             const data = snap.val();
-            const id = snap.key;
             const isMine = data.uid === mUser.uid;
             const isAdmin = mData.nombre.toLowerCase() === 'chat';
-            
             const d = document.createElement('div');
-            d.id = "msg-" + id;
             d.className = "msg " + (isMine ? "me" : "them");
+            d.id = "m-" + snap.key;
             
-            // Función para que el admin borre mensajes
             d.onclick = () => {
-                if(isAdmin && confirm("¿Deseas eliminar este mensaje por inapropiado?")) {
-                    db.ref(chatActual + "/" + id).remove();
-                }
+                if(isAdmin && confirm("¿Borrar mensaje?")) db.ref(chatActual + "/" + snap.key).remove();
             };
 
             let html = `<b>${data.user}</b>`;
             if(data.type === 'foto') {
                 const locked = !mData.vip && !isMine;
                 html += `<div class="media-container ${locked?'blur':''}">
-                    ${locked ? '<div class="lock-overlay">🔒 SOLO PARA VIP</div>' : ''}
+                    ${locked ? '<div class="lock-overlay">🔒 SOLO VIP</div>' : ''}
                     <img src="${data.url}" style="width:100%"></div>`;
-                gal.innerHTML = `<img src="${data.url}" style="width:100%; border-radius:8px; margin-bottom:5px;">` + gal.innerHTML;
-            } else { 
-                html += `<span>${data.msg}</span>`; 
-            }
+                gal.innerHTML = `<img src="${data.url}" style="width:100%; border-radius:5px; margin-bottom:5px;">` + gal.innerHTML;
+            } else { html += `<span>${data.msg}</span>`; }
             
             d.innerHTML = html;
             box.appendChild(d);
             box.scrollTop = box.scrollHeight;
         });
 
-        // Detectar si un mensaje fue borrado por admin
         db.ref(chatActual).on('child_removed', snap => {
-            const el = document.getElementById("msg-" + snap.key);
+            const el = document.getElementById("m-" + snap.key);
             if(el) el.remove();
         });
     }
 
     function vaciarChat() {
-        if(confirm("⚠️ ATENCIÓN: ¿Borrar todo el historial de este chat?")) {
-            db.ref(chatActual).remove();
-            notify("Chat vaciado.");
-        }
+        if(confirm("⚠️ ¿Borrar TODO el historial de este chat?")) db.ref(chatActual).remove();
     }
 
     function enviarMsg() {
         const input = document.getElementById('msg-in');
         if(!input.value.trim()) return;
-        db.ref(chatActual).push({ 
-            uid: mUser.uid, 
-            user: mData.nombre, 
-            msg: input.value, 
-            type: 'texto',
-            time: Date.now() 
-        });
+        db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, msg: input.value, type: 'texto' });
         input.value = "";
     }
 
-    function abrirCloudinary(tipo) {
-        cloudinary.openUploadWidget({ 
-            cloudName: CLOUD_NAME, 
-            uploadPreset: UPLOAD_PRESET,
-            sources: ['local', 'camera', 'url']
-        }, (err, res) => {
+    function abrirCloudinary() {
+        cloudinary.openUploadWidget({ cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET }, (err, res) => {
             if (!err && res.event === "success") {
-                db.ref(chatActual).push({ 
-                    uid: mUser.uid, 
-                    user: mData.nombre, 
-                    url: res.info.secure_url, 
-                    type: 'foto',
-                    time: Date.now()
-                });
+                db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, url: res.info.secure_url, type: 'foto' });
             }
         });
     }
@@ -305,7 +291,6 @@
         chatActual = "chats/publico";
         document.getElementById('chat-title').innerText = "Chat Público 🌐";
         escucharChat();
-        if(window.innerWidth < 1024) document.getElementById('sidebar-left').classList.remove('show-left');
     }
 
     function iniciarPrivado(targetUid, nombre) {
