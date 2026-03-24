@@ -83,7 +83,7 @@
         <p onclick="view('scr-login')" style="cursor:pointer; margin-top:20px;">Volver al inicio</p>
     </div>
 
-    <div id="scr-chat" class="screen" style="display:none; flex-direction: row; height: 100vh; width: 100%; padding:0;">
+    <div id="scr-chat" class="screen" style="flex-direction: row; height: 100vh; width: 100%; padding:0;">
   
   <aside id="sidebar-left" style="width: 260px; background: #fff; border-right: 1px solid #ddd; overflow-y: auto;">
     <div style="padding:15px; background:#0088cc; color:white; font-weight:bold;">SINCRO</div>
@@ -96,22 +96,29 @@
   <main id="chat-section" style="flex:1; display:flex; flex-direction:column; background:#f0f2f5;">
     <header class="header" style="padding:10px; background:white; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd;">
        <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:20px;">☰</button>
-       <span id="chat-title">Cargando...</span>
-       <button onclick="vaciarChat()" style="border:none; background:none; color:#d9534f;">🗑️ Limpiar</button>
-       <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:20px;">🖼️</button>
+       
+       <span style="display:flex; align-items:center; gap:8px;">
+           <span id="chat-title">Cargando...</span>
+           <button id="btn-edit-title" onclick="cambiarNombreGrupo()" style="display:none; border:none; background:none; cursor:pointer; font-size:16px;">✏️</button>
+       </span>
+
+       <div>
+           <button onclick="vaciarChat()" style="border:none; background:none; color:#d9534f; margin-right:10px;">🗑️ Limpiar</button>
+           <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:20px;">🖼️</button>
+       </div>
     </header>
 
     <div id="chat-box" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px;"></div>
 
     <footer style="padding:12px; background:white; display:flex; gap:10px; align-items:center; border-top:1px solid #ddd;">
-       <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:24px;">📷</button>
+       <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:24px;">📎</button>
        <input id="msg-in" placeholder="Escribe a Sincro MD..." style="flex:1; padding:10px; border-radius:20px; border:1px solid #ddd; outline:none;">
        <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:40px; height:40px; border-radius:50%;">➤</button>
     </footer>
   </main>
 
   <aside id="sidebar-right" style="width: 280px; background: #fff; border-left: 1px solid #ddd; overflow-y: auto;">
-    <div style="padding:15px; background:#f8f9fa; font-weight:bold; border-bottom:1px solid #ddd;">GALERÍA</div>
+    <div style="padding:15px; background:#f8f9fa; font-weight:bold; border-bottom:1px solid #ddd;">GALERÍA Y VIDEOS</div>
     <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px; padding:10px;"></div>
   </aside>
 
@@ -156,19 +163,16 @@
         if(!u || !e || p.length < 6) return notify("⚠️ Datos incompletos (mín. 6 caracteres)");
 
         auth.createUserWithEmailAndPassword(e, p).then(res => {
-            // Enviar correo de verificación
             res.user.sendEmailVerification().then(() => {
                 notify("📧 ¡Correo enviado! Verifica tu bandeja (o spam) antes de entrar.");
             });
 
-            // Guardar perfil
             db.ref('usuarios/' + res.user.uid).set({ 
                 nombre: u, 
-                vip: (u.toLowerCase() === 'chat'), // Admin si se llama "chat"
+                vip: (u.toLowerCase() === 'chat'),
                 online: false 
             });
 
-            // Forzar salida para que verifique
             setTimeout(() => { auth.signOut(); view('scr-login'); }, 3000);
         }).catch(err => notify("❌ " + err.message));
     }
@@ -181,7 +185,6 @@
         auth.signInWithEmailAndPassword(e, p).then(res => {
             if (res.user.emailVerified) {
                 notify("✅ Acceso concedido");
-                // La app inicia automáticamente por el observer onAuthStateChanged
             } else {
                 notify("🚫 Debes verificar tu correo primero. Revisa tu bandeja de entrada.");
                 auth.signOut();
@@ -203,7 +206,6 @@
                 if(mData) {
                     if(mData.nombre.toLowerCase() === 'chat') {
                         mData.vip = true;
-                        document.getElementById('btn-admin-del').style.display = 'block';
                     }
                     iniciarApp();
                 }
@@ -218,7 +220,10 @@
     function iniciarApp() {
         view('scr-chat');
         db.ref('usuarios').on('value', snap => {
-            const list = document.getElementById('member-list'); list.innerHTML = "";
+            // CORRECCIÓN: ID correcto 'miembros-list'
+            const list = document.getElementById('miembros-list'); 
+            if(!list) return;
+            list.innerHTML = "";
             snap.forEach(child => {
                 const u = child.val();
                 if(child.key === mUser.uid) return;
@@ -231,6 +236,22 @@
         verChatPublico();
     }
 
+    // Sincronizar el nombre del grupo público desde la base de datos
+    db.ref('info/nombreGrupo').on('value', snap => {
+        if(chatActual === "chats/publico") {
+            document.getElementById('chat-title').innerText = snap.val() || "Chat Público 🌐";
+        }
+    });
+
+    // AGREGADO: Función para que el admin cambie el nombre del grupo
+    function cambiarNombreGrupo() {
+        if(!mData.vip) return;
+        const nuevoNombre = prompt("Escribe el nuevo nombre para el Chat Público:");
+        if(nuevoNombre && nuevoNombre.trim() !== "") {
+            db.ref('info/nombreGrupo').set(nuevoNombre.trim());
+        }
+    }
+
     // --- LÓGICA DE MENSAJES ---
     function escucharChat() {
         const box = document.getElementById('chat-box');
@@ -241,23 +262,37 @@
         listener = db.ref(chatActual).on('child_added', snap => {
             const data = snap.val();
             const isMine = data.uid === mUser.uid;
-            const isAdmin = mData.nombre.toLowerCase() === 'chat';
+            const isAdmin = mData.vip;
             const d = document.createElement('div');
             d.className = "msg " + (isMine ? "me" : "them");
             d.id = "m-" + snap.key;
             
-            d.onclick = () => {
+            d.ondblclick = () => { // Cambiado a doble clic para evitar borrar por error al tocar fotos
                 if(isAdmin && confirm("¿Borrar mensaje?")) db.ref(chatActual + "/" + snap.key).remove();
             };
 
             let html = `<b>${data.user}</b>`;
-            if(data.type === 'foto') {
+            
+            // AGREGADO: Lógica para diferenciar fotos y videos
+            if(data.type === 'foto' || data.type === 'video') {
                 const locked = !mData.vip && !isMine;
+                const mediaTag = data.type === 'video' 
+                    ? `<video src="${data.url}" controls style="width:100%; max-height:300px; border-radius:5px;"></video>`
+                    : `<img src="${data.url}" style="width:100%; border-radius:5px;">`;
+
                 html += `<div class="media-container ${locked?'blur':''}">
                     ${locked ? '<div class="lock-overlay">🔒 SOLO VIP</div>' : ''}
-                    <img src="${data.url}" style="width:100%"></div>`;
-                gal.innerHTML = `<img src="${data.url}" style="width:100%; border-radius:5px; margin-bottom:5px;">` + gal.innerHTML;
-            } else { html += `<span>${data.msg}</span>`; }
+                    ${mediaTag}</div>`;
+                
+                // Agregar al panel lateral de Galería
+                const galMedia = data.type === 'video'
+                    ? `<video src="${data.url}" style="width:100%; height:80px; object-fit:cover; border-radius:5px; margin-bottom:5px;"></video>`
+                    : `<img src="${data.url}" style="width:100%; height:80px; object-fit:cover; border-radius:5px; margin-bottom:5px;">`;
+                gal.innerHTML = galMedia + gal.innerHTML;
+
+            } else { 
+                html += `<span>${data.msg}</span>`; 
+            }
             
             d.innerHTML = html;
             box.appendChild(d);
@@ -281,17 +316,31 @@
         input.value = "";
     }
 
+    // AGREGADO: Detección automática de tipo de archivo (foto o video)
     function abrirCloudinary() {
         cloudinary.openUploadWidget({ cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET }, (err, res) => {
             if (!err && res.event === "success") {
-                db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, url: res.info.secure_url, type: 'foto' });
+                const tipoArchivo = res.info.resource_type === 'video' ? 'video' : 'foto';
+                db.ref(chatActual).push({ 
+                    uid: mUser.uid, 
+                    user: mData.nombre, 
+                    url: res.info.secure_url, 
+                    type: tipoArchivo 
+                });
             }
         });
     }
 
     function verChatPublico() {
         chatActual = "chats/publico";
-        document.getElementById('chat-title').innerText = "Chat Público 🌐";
+        // Mostrar botón de editar título solo si es admin y está en el chat público
+        document.getElementById('btn-edit-title').style.display = mData.vip ? 'inline-block' : 'none';
+        
+        // Forzar lectura del nombre actual
+        db.ref('info/nombreGrupo').once('value').then(snap => {
+            document.getElementById('chat-title').innerText = snap.val() || "Chat Público 🌐";
+        });
+        
         escucharChat();
     }
 
@@ -299,6 +348,9 @@
         const chatID = [mUser.uid, targetUid].sort().join("_");
         chatActual = "privados/" + chatID;
         document.getElementById('chat-title').innerText = "Chat con " + nombre;
+        // Ocultar botón de editar título en chats privados
+        document.getElementById('btn-edit-title').style.display = 'none';
+        
         escucharChat();
         if(window.innerWidth < 1024) toggleMenu('left');
     }
