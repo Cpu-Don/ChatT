@@ -83,38 +83,40 @@
         <p onclick="view('scr-login')" style="cursor:pointer; margin-top:20px;">Volver al inicio</p>
     </div>
 
-    <div id="scr-chat" class="screen" style="padding:0;">
-        <div id="main-layout">
-            <aside id="sidebar-left">
-                <div class="header">SINCRO <button onclick="toggleMenu('left')" style="border:none; background:none;">✕</button></div>
-                <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; cursor:pointer; font-weight:bold;">🌐 Chat Público</div>
-                <div style="padding:10px; font-size:11px; color:#999;">MIEMBROS</div>
-                <div id="member-list" style="overflow-y:auto; flex:1;"></div>
-                <button onclick="logout()" style="padding:15px; background:#fff0f0; border:none; color:#d9534f; cursor:pointer;">Cerrar Sesión</button>
-            </aside>
+    <div id="scr-chat" class="screen" style="display:none; flex-direction: row; height: 100vh; width: 100%; padding:0;">
+  
+  <aside id="sidebar-left" style="width: 260px; background: #fff; border-right: 1px solid #ddd; overflow-y: auto;">
+    <div style="padding:15px; background:#0088cc; color:white; font-weight:bold;">SINCRO</div>
+    <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; cursor:pointer;"><b>Chat Público 🌐</b></div>
+    <div style="padding:10px; font-size:11px; color:#999;">MIEMBROS</div>
+    <div id="miembros-list" style="overflow-y:auto; flex:1;"></div>
+    <button onclick="logout()" style="padding:15px; width:100%; background:#FFF0F0; border:none; color:#d9534f; cursor:pointer;">Cerrar Sesión</button>
+  </aside>
 
-            <main id="chat-section">
-                <div class="header">
-                    <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:20px;">☰</button>
-                    <span id="chat-title">Cargando...</span>
-                    <button id="btn-admin-del" onclick="vaciarChat()">🗑️ Limpiar</button>
-                    <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:20px;">ℹ️</button>
-                </div>
-                <div id="chat-box"></div>
-                <div class="footer" style="padding:12px; background:white; display:flex; gap:10px; border-top:1px solid #eee;">
-                    <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:24px;">📷</button>
-                    <input id="msg-in" placeholder="Escribe..." style="flex:1; padding:12px; border-radius:20px; border:1px solid #eee; outline:none;" onkeypress="if(event.key === 'Enter') enviarMsg()">
-                    <button onclick="enviarMsg()" style="background:#0088cc; color:white; border-radius:50%; width:45px; height:45px; border:none;">➤</button>
-                </div>
-            </main>
+  <main id="chat-section" style="flex:1; display:flex; flex-direction:column; background:#f0f2f5;">
+    <header class="header" style="padding:10px; background:white; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd;">
+       <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:20px;">☰</button>
+       <span id="chat-title">Cargando...</span>
+       <button onclick="vaciarChat()" style="border:none; background:none; color:#d9534f;">🗑️ Limpiar</button>
+       <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:20px;">🖼️</button>
+    </header>
 
-            <aside id="sidebar-right">
-                <div class="header">GALERÍA <button onclick="toggleMenu('right')" style="border:none; background:none;">✕</button></div>
-                <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px; padding:10px;"></div>
-            </aside>
-        </div>
-    </div>
+    <div id="chat-box" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px;"></div>
+
+    <footer style="padding:12px; background:white; display:flex; gap:10px; align-items:center; border-top:1px solid #ddd;">
+       <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:24px;">📷</button>
+       <input id="msg-in" placeholder="Escribe a Sincro MD..." style="flex:1; padding:10px; border-radius:20px; border:1px solid #ddd; outline:none;">
+       <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:40px; height:40px; border-radius:50%;">➤</button>
+    </footer>
+  </main>
+
+  <aside id="sidebar-right" style="width: 280px; background: #fff; border-left: 1px solid #ddd; overflow-y: auto;">
+    <div style="padding:15px; background:#f8f9fa; font-weight:bold; border-bottom:1px solid #ddd;">GALERÍA</div>
+    <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px; padding:10px;"></div>
+  </aside>
+
 </div>
+
 
 <script>
     // --- CONFIGURACIÓN ---
