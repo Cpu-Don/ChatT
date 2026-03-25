@@ -229,7 +229,7 @@
         if(!u || !e || p.length < 6) return notify("⚠️ Datos incompletos");
         auth.createUserWithEmailAndPassword(e, p).then(res => {
             res.user.sendEmailVerification().then(() => notify("📧 Verifica tu correo."));
-            db.ref('usuarios/' + res.user.uid).set({ nombre: u, vip: (u.toLowerCase() === 'chat'), online: false });
+            db.ref('usuarios/sincro/' + res.user.uid).set({ nombre: u, vip: (u.toLowerCase() === 'chat'), online: false });
             setTimeout(() => { auth.signOut(); view('scr-login'); }, 3000);
         }).catch(err => notify("❌ " + err.message));
     }
@@ -248,12 +248,12 @@
     auth.onAuthStateChanged(user => {
         if (user && user.emailVerified) {
             mUser = user;
-            db.ref('usuarios/' + user.uid).on('value', snap => {
+            db.ref('usuarios/sincro/' + user.uid).on('value', snap => {
                 mData = snap.val();
                 if(mData) iniciarApp();
             });
-            db.ref('usuarios/' + user.uid + '/online').set(true);
-            db.ref('usuarios/' + user.uid + '/online').onDisconnect().set(false);
+            db.ref('usuarios/sincro/' + user.uid + '/online').set(true);
+            db.ref('usuarios/sincro/' + user.uid + '/online').onDisconnect().set(false);
         } else {
             view('scr-login');
         }
@@ -266,7 +266,7 @@
             document.getElementById('btn-edit-group').style.display = 'inline-block';
         }
 
-        db.ref('usuarios').on('value', snap => {
+        db.ref('usuarios/sincro').on('value', snap => {
             const list = document.getElementById('miembros-list'); list.innerHTML = "";
             snap.forEach(child => {
                 const u = child.val(); if(child.key === mUser.uid) return;
