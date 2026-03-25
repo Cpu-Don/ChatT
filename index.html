@@ -185,7 +185,7 @@
     const db = firebase.database(), auth = firebase.auth();
     const CLOUD_NAME = "dhtyepcjg", UPLOAD_PRESET = "Historial";
 
-    let mUser = null, mData = { vip: false, nombre: "" }, chatActual = "chats/publico", listener = null;
+    let mUser = null, mData = { vip: false, nombre: "" }, chatActual = "Sincro_Chat_Publico", listener = null;
 
     function notify(t) {
         const c = document.getElementById('toast-container');
@@ -229,7 +229,7 @@
         if(!u || !e || p.length < 6) return notify("⚠️ Datos incompletos");
         auth.createUserWithEmailAndPassword(e, p).then(res => {
             res.user.sendEmailVerification().then(() => notify("📧 Verifica tu correo."));
-            db.ref('usuarios/sincro/' + res.user.uid).set({ nombre: u, vip: (u.toLowerCase() === 'chat'), online: false });
+            db.ref('Sincro_Usuarios/' + res.user.uid).set({ nombre: u, vip: (u.toLowerCase() === 'chat'), online: false });
             setTimeout(() => { auth.signOut(); view('scr-login'); }, 3000);
         }).catch(err => notify("❌ " + err.message));
     }
@@ -241,7 +241,7 @@
     }
 
     function logout() { 
-        if(mUser) db.ref('usuarios/sincro/' + mUser.uid + '/online').set(false);
+        if(mUser) db.ref('Sincro_Usuarios/' + mUser.uid + '/online').set(false);
         auth.signOut().then(() => location.reload()); 
     }
 
