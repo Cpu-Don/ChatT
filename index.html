@@ -329,15 +329,37 @@
         db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, msg: input.value, type: 'texto' });
         input.value = "";
     }
+function abrirCloudinary() {
+    cloudinary.openUploadWidget({ 
+        cloudName: CLOUD_NAME, 
+        uploadPreset: UPLOAD_PRESET,
+        sources: ['local', 'url', 'camera'],
+        showAdvancedOptions: false,
+        cropping: false,
+        multiple: false,
+        defaultSource: "local"
+    }, (err, res) => {
+        if (!err && res.event === "success") {
+            const info = res.info;
+            const tipo = info.resource_type === 'video' ? 'video' : 'foto';
+            
+            // ESTO ES LO QUE HACE QUE SE QUEDE GUARDADO AL RECARGAR
+            db.ref(chatActual).push({ 
+                uid: mUser.uid, 
+                user: mData.nombre, 
+                url: info.secure_url, 
+                type: tipo,
+                timestamp: Date.now() 
+            }).then(() => {
+                alert("✅ Archivo enviado y guardado con éxito");
+            }).catch(e => {
+                console.error("Error al guardar en Firebase:", e);
+                alert("❌ Error al guardar en el historial");
+            });
+        }
+    });
+}
 
-    function abrirCloudinary() {
-        cloudinary.openUploadWidget({ cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET }, (err, res) => {
-            if (!err && res.event === "success") {
-                const tipo = res.info.resource_type === 'video' ? 'video' : 'foto';
-                db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, url: res.info.secure_url, type: tipo });
-            }
-        });
-    }
 
     function verChatPublico() {
         chatActual = "chats/publico";
