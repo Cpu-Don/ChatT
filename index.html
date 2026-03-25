@@ -245,59 +245,50 @@
         auth.signOut().then(() => location.reload()); 
     }
 
+// --- MANEJO DE SESIÓN Y CARPETA DE USUARIOS AFUERA ---
 auth.onAuthStateChanged(user => {
     if (user && user.emailVerified) {
         mUser = user;
-        
-        // Referencia a tus datos en Sincro
-        const userRef = db.ref('usuarios/sincro/' + user.uid);
+        // Referencia a la carpeta INDEPENDIENTE en la raíz
+        const userRef = db.ref('Sincro_Usuarios/' + user.uid);
         
         userRef.on('value', snap => {
             mData = snap.val();
-            
-            // Si mData NO existe (porque borraste la DB), lo creamos forzosamente
-            if (!mData) {
-                console.log("Creando datos faltantes...");
-                const nombreNuevo = user.email.split('@')[0];
+            if(!mData) {
+                // Si el usuario no existe en esta carpeta nueva, lo creamos
+                const nombreAuto = user.email.split('@')[0];
                 userRef.set({ 
-                    nombre: nombreNuevo, 
+                    nombre: nombreAuto, 
                     online: true, 
-                    vip: (nombreNuevo.toLowerCase() === 'chat') 
+                    vip: (nombreAuto.toLowerCase() === 'chat') 
                 });
-                // No llamamos a iniciarApp aquí, porque el 'on value' 
-                // se volverá a disparar solo en un segundo con los datos nuevos.
             } else {
-                // Si mData YA existe, arrancamos la interfaz
-                iniciarApp(); 
+                iniciarApp(); // Ya existen los datos, iniciamos la interfaz
             }
         });
-        
-        // Marcar online siempre que esté conectado
-        db.ref('usuarios/sincro/' + user.uid + '/online').set(true);
-        db.ref('usuarios/sincro/' + user.uid + '/online').onDisconnect().set(false);
+
+        // Estado online/offline en la carpeta de afuera
+        db.ref('Sincro_Usuarios/' + user.uid + '/online').set(true);
+        db.ref('Sincro_Usuarios/' + user.uid + '/online').onDisconnect().set(false);
         
     } else {
         view('scr-login');
     }
 });
 
-
-
+// --- LISTA DE MIEMBROS DESDE LA CARPETA INDEPENDIENTE ---
 function iniciarApp() {
     view('scr-chat');
-    if(mData.nombre.toLowerCase() === 'chat') {
-        mData.vip = true;
-        document.getElementById('btn-edit-group').style.display = 'inline-block';
-    }
-
-    // BUSCAR USUARIOS EN LA RUTA CORRECTA SEGÚN TUS REGLAS
-    db.ref('usuarios/sincro').on('value', snap => {
+    
+    // Leemos directamente de Sincro_Usuarios
+    db.ref('Sincro_Usuarios').on('value', snap => {
         const list = document.getElementById('miembros-list'); 
+        if (!list) return;
         list.innerHTML = "";
+        
         snap.forEach(child => {
             const u = child.val(); 
-            // No mostrarse a uno mismo en la lista
-            //if(child.key === mUser.uid) return;
+            if(!u || !u.nombre) return; 
 
             list.innerHTML += `
                 <div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
@@ -315,16 +306,8 @@ function iniciarApp() {
         });
     });
 
-    db.ref('config/nombreGrupo').on('value', snap => {
-        const n = snap.val() || "Sincro MD";
-        if(chatActual === "chats/sincro") {
-            document.getElementById('chat-title').innerText = n;
-            document.getElementById('info-name').innerText = n;
-            document.getElementById('info-icon').innerText = n[0].toUpperCase();
-        }
-    });
-
     if(!listener) verChatPublico();
+
 }
 
 
