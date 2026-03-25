@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sincro MD - Oficial</title>
+    <title>Sincro MD - v2.0</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -11,143 +11,99 @@
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
 
     <style>
-        :root { --tg-blue: #0088cc; --tg-bg: #54759e; --msg-out: #efffde; --side-bg: #ffffff; }
-        * { box-sizing: border-box; transition: all 0.2s ease; }
-        
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #0e1621; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
-        
+        :root { --tg-blue: #0088cc; --tg-bg: #54759e; --side-bg: #ffffff; }
+        * { box-sizing: border-box; transition: 0.2s; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #0e1621; font-family: sans-serif; overflow: hidden; }
         #app { width: 100%; height: 100%; background: white; display: flex; overflow: hidden; position: relative; }
-        @media (min-width: 1024px) { #app { width: 98%; height: 96vh; margin: 2vh auto; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); } }
-
-        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; }
-        .toast { background: #333; color: white; padding: 12px 25px; border-radius: 30px; font-size: 14px; margin-bottom: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border-left: 5px solid #0088cc; animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        #sidebar-left, #sidebar-right { width: 300px; background: var(--side-bg); border: 1px solid #dfe5ec; display: flex; flex-direction: column; z-index: 10; overflow: hidden; flex-shrink: 0; }
-        .collapsed-left { width: 0 !important; border: none !important; }
-        .collapsed-right { width: 0 !important; border: none !important; }
         
-        #chat-section { flex: 1; display: flex; flex-direction: column; background: var(--tg-bg); position: relative; min-width: 0; height: 100%; }
+        /* Notificaciones */
+        #toast-container { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 9999; }
+        .toast { background: #333; color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; margin-bottom: 5px; }
 
-        @media (max-width: 1023px) {
-            #sidebar-left { position: absolute; left: 0; transform: translateX(-100%); height: 100%; width: 85%; }
-            #sidebar-right { position: absolute; right: 0; transform: translateX(100%); height: 100%; width: 85%; }
-            .show-left { transform: translateX(0) !important; }
-            .show-right { transform: translateX(0) !important; }
-        }
-
-        .header { height: 60px; padding: 0 15px; background: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; flex-shrink: 0; }
-        #chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); }
+        /* Estructura */
+        #sidebar-left { width: 280px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; flex-shrink: 0; }
+        #chat-section { flex: 1; display: flex; flex-direction: column; background: var(--tg-bg); }
         
-        .msg { padding: 10px 14px; border-radius: 15px; max-width: 85%; background: white; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); position: relative; word-wrap: break-word; }
-        .me { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 2px; }
-        .them { align-self: flex-start; background: #ffffff; border-bottom-left-radius: 2px; }
-        .msg b { display: block; color: var(--tg-blue); font-size: 11px; margin-bottom: 4px; cursor: pointer; }
+        .header { height: 55px; background: white; display: flex; align-items: center; padding: 0 15px; justify-content: space-between; border-bottom: 1px solid #eee; }
+        #chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        
+        .msg { padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 14px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .me { align-self: flex-end; background: #efffde; }
+        .them { align-self: flex-start; background: white; }
+        .msg b { display: block; color: var(--tg-blue); font-size: 11px; cursor: pointer; margin-bottom: 3px; }
 
-        .media-container { margin-top: 5px; border-radius: 10px; overflow: hidden; background: #000; cursor: pointer; display: flex; justify-content: center; position: relative; }
-        .media-container img, .media-container video { max-width: 100%; max-height: 300px; display: block; }
-        .blur { filter: blur(30px); opacity: 0.5; pointer-events: none; }
-        .lock-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; }
+        footer { padding: 8px; background: white; display: flex; gap: 8px; align-items: center; }
+        #msg-in { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
 
-        footer { padding: 10px; background: white; display: flex; gap: 10px; align-items: center; border-top: 1px solid #ddd; flex-shrink: 0; }
-        #msg-in { flex: 1; padding: 12px; border-radius: 25px; border: 1px solid #ddd; outline: none; font-size: 15px; }
-
-        .screen { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        /* Pantallas */
+        .screen { display: none; width: 100%; height: 100%; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: #0088cc; color: white; }
         .active { display: flex; }
-        .bg-blue { background: linear-gradient(135deg, #0088cc, #004466); color: white; }
-        .in-style { padding:14px; width:85%; max-width: 320px; margin-top:10px; border-radius:10px; border:none; outline:none; }
-        .btn-main { padding:14px; width:85%; max-width: 320px; margin-top:20px; border-radius:10px; border:none; background: white; color:#0088cc; font-weight:bold; cursor:pointer; }
+        .in-style { padding: 12px; width: 80%; max-width: 300px; margin: 5px; border-radius: 8px; border: none; }
         
-        .status-dot { width: 10px; height: 10px; background: #4caf50; border-radius: 50%; border: 2px solid white; position: absolute; bottom: 0; right: 0; }
-        .section-label { padding: 8px 15px; background: #f1f4f7; font-size: 10px; font-weight: bold; color: #888; letter-spacing: 1px; }
-
-        #media-viewer { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
-        #viewer-main-container { max-width: 95%; max-height: 80%; display: flex; justify-content: center; }
-        #close-viewer { position: absolute; top: 20px; right: 20px; color: white; font-size: 40px; cursor: pointer; background: none; border: none; }
+        .status-dot { width: 9px; height: 9px; background: #4caf50; border-radius: 50%; border: 2px solid white; position: absolute; bottom: 0; right: 0; }
+        .section-label { padding: 8px 15px; background: #f4f4f4; font-size: 10px; color: #888; font-weight: bold; }
+        
+        @media (max-width: 1023px) {
+            #sidebar-left { position: absolute; left: -280px; height: 100%; z-index: 100; transition: 0.3s; }
+            .show-left { left: 0 !important; }
+        }
     </style>
 </head>
 <body>
 
 <div id="toast-container"></div>
 
-<div id="media-viewer">
-    <button id="close-viewer" onclick="cerrarMedia()">×</button>
-    <div id="viewer-main-container"></div>
-</div>
-
 <div id="app">
-    <div id="scr-login" class="screen bg-blue active">
-        <h1 style="font-size: 45px; margin: 0;">Sincro MD</h1>
-        <p style="opacity: 0.8; margin-bottom: 25px;">Plataforma de comunicación</p>
-        <input type="email" id="log-mail" class="in-style" placeholder="Correo electrónico">
+    <div id="scr-login" class="screen active">
+        <h1>Sincro MD</h1>
+        <input type="email" id="log-mail" class="in-style" placeholder="Correo">
         <input type="password" id="log-pass" class="in-style" placeholder="Contraseña">
-        <button onclick="login()" class="btn-main">ENTRAR</button>
-        <p onclick="view('scr-reg')" style="cursor:pointer; margin-top:20px; font-size: 14px; text-decoration: underline;">Registrar cuenta nueva</p>
+        <button onclick="login()" style="padding:10px 40px; border-radius:20px; border:none; margin-top:10px; font-weight:bold;">ENTRAR</button>
+        <p onclick="view('scr-reg')" style="font-size:12px; margin-top:20px; cursor:pointer;">Crear cuenta nueva</p>
     </div>
 
-    <div id="scr-reg" class="screen bg-blue">
+    <div id="scr-reg" class="screen">
         <h1>Registro</h1>
         <input type="text" id="reg-user" class="in-style" placeholder="Nombre de Usuario">
-        <input type="email" id="reg-mail" class="in-style" placeholder="Tu Correo">
-        <input type="password" id="reg-pass" class="in-style" placeholder="Clave (6+ caracteres)">
-        <button onclick="registro()" class="btn-main">CREAR CUENTA</button>
-        <p onclick="view('scr-login')" style="cursor:pointer; margin-top:20px;">Ya tengo cuenta</p>
+        <input type="email" id="reg-mail" class="in-style" placeholder="Correo">
+        <input type="password" id="reg-pass" class="in-style" placeholder="Clave (6+ carac.)">
+        <button onclick="registro()" style="padding:10px 40px; border-radius:20px; border:none; margin-top:10px; font-weight:bold;">REGISTRAR</button>
+        <p onclick="view('scr-login')" style="font-size:12px; margin-top:20px; cursor:pointer;">Volver al login</p>
     </div>
 
-    <div id="scr-chat" class="screen" style="flex-direction: row; padding: 0;">
+    <div id="scr-chat" class="screen" style="flex-direction: row; padding: 0; background: white; color: black;">
         <aside id="sidebar-left">
-            <div style="padding:15px; background:#0088cc; color:white; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
-                SINCRO <span onclick="toggleMenu('left')" style="cursor:pointer; font-size:20px;">✕</span>
+            <div style="padding:15px; background:#0088cc; color:white; display:flex; justify-content:space-between; align-items:center;">
+                <b id="mi-nombre-perfil">Cargando...</b>
+                <button onclick="editarMiPerfil()" style="background:none; border:1px solid white; color:white; border-radius:5px; font-size:10px; cursor:pointer;">EDITAR</button>
             </div>
             
-            <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; cursor:pointer; border-bottom:1px solid #ddd;">
-                <b>Chat Público 🌐</b>
+            <div onclick="verChatPublico()" style="padding:15px; background:#eef5f9; cursor:pointer; font-weight:bold; border-bottom:1px solid #ddd;">
+                Chat Público 🌐
             </div>
 
             <div class="section-label">CHATS RECIENTES</div>
-            <div id="recent-list" style="max-height: 180px; overflow-y: auto; background: #fff;"></div>
+            <div id="recent-list" style="max-height: 150px; overflow-y:auto; border-bottom:1px solid #eee;"></div>
 
             <div class="section-label">EN LÍNEA</div>
-            <div id="online-list" style="max-height: 150px; overflow-y: auto;"></div>
+            <div id="online-list" style="flex:1; overflow-y:auto;"></div>
 
-            <div class="section-label">TODOS LOS MIEMBROS</div>
-            <div id="miembros-list" style="overflow-y:auto; flex:1; background: #fff;"></div>
-
-            <button onclick="logout()" style="padding:15px; width:100%; background:#fcfcfc; border:none; border-top:1px solid #eee; color:#d9534f; cursor:pointer;">Cerrar Sesión</button>
+            <button onclick="logout()" style="padding:10px; border:none; background:#fff; color:red; cursor:pointer; border-top:1px solid #eee;">Cerrar Sesión</button>
         </aside>
 
         <main id="chat-section">
             <header class="header">
-               <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;">☰</button>
-               <div style="text-align:center;">
-                   <b id="chat-title" style="display:block; font-size: 15px;">Cargando...</b>
-                   <small id="chat-status" style="font-size:10px; color:#888;"></small>
-               </div>
-               <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;">ℹ️</button>
+               <button onclick="toggleMenu()" style="border:none; background:none; font-size:20px;">☰</button>
+               <b id="chat-title">Sincro MD</b>
+               <div style="width:20px;"></div>
             </header>
             <div id="chat-box"></div>
             <footer>
-               <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:26px; cursor:pointer;">📎</button>
-               <input id="msg-in" placeholder="Escribe un mensaje..." autocomplete="off">
-               <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:42px; height:42px; border-radius:50%; cursor:pointer; font-size: 18px;">➤</button>
+               <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:22px; cursor:pointer;">📎</button>
+               <input id="msg-in" placeholder="Escribe algo..." autocomplete="off">
+               <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:35px; height:35px; border-radius:50%; cursor:pointer;">➤</button>
             </footer>
         </main>
-
-        <aside id="sidebar-right">
-            <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                <b style="color:#0088cc;">Info</b>
-                <span onclick="toggleMenu('right')" style="cursor:pointer; font-size:20px;">✕</span>
-            </div>
-            <div style="padding:20px; text-align:center;">
-                <div id="info-icon" style="width:70px; height:70px; background:#0088cc; color:white; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:bold;">S</div>
-                <h3 id="info-name" style="margin:5px 0; font-size: 16px;">Sincro MD</h3>
-            </div>
-            <div class="section-label">GALERÍA</div>
-            <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; padding:10px; overflow-y:auto; flex:1; align-content: start;"></div>
-            <div style="padding:10px;">
-                <button onclick="vaciarChat()" style="width:100%; padding:10px; background:#fff; border:1px solid #d9534f; color:#d9534f; border-radius:5px; cursor:pointer; font-size:11px;">Vaciar Historial</button>
-            </div>
-        </aside>
     </div>
 </div>
 
@@ -158,14 +114,13 @@
     };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database(), auth = firebase.auth();
-    const CLOUD_NAME = "dhtyepcjg", UPLOAD_PRESET = "Historial";
-
+    
     let mUser = null, mData = null, chatActual = "Sincro_Chat_Publico", listener = null;
 
     function notify(t) {
         const c = document.getElementById('toast-container');
         const e = document.createElement('div'); e.className = 'toast'; e.innerText = t;
-        c.appendChild(e); setTimeout(() => e.remove(), 4000);
+        c.appendChild(e); setTimeout(() => e.remove(), 3000);
     }
 
     function view(id) {
@@ -173,39 +128,35 @@
         document.getElementById(id).classList.add('active');
     }
 
-    function toggleMenu(side) {
-        const el = document.getElementById('sidebar-' + side);
-        if (window.innerWidth >= 1024) el.classList.toggle('collapsed-' + side);
-        else el.classList.toggle('show-' + side);
-    }
+    function toggleMenu() { document.getElementById('sidebar-left').classList.toggle('show-left'); }
 
-    // AUTH
+    // AUTH LÓGICA
     auth.onAuthStateChanged(user => {
         if (user) {
-            // Quitamos bloqueo de verificación para pruebas
             mUser = user;
             db.ref('Sincro_Usuarios/' + user.uid).on('value', snap => {
                 mData = snap.val();
                 if(!mData) {
-                    const n = user.email.split('@')[0];
-                    db.ref('Sincro_Usuarios/' + user.uid).set({ nombre: n, online: true, vip: (n.toLowerCase()==='chat') });
+                    const nom = user.email.split('@')[0];
+                    db.ref('Sincro_Usuarios/' + user.uid).set({ nombre: nom, online: true });
                 } else {
+                    document.getElementById('mi-nombre-perfil').innerText = mData.nombre;
                     iniciarApp();
                 }
             });
             db.ref('Sincro_Usuarios/' + user.uid + '/online').set(true);
             db.ref('Sincro_Usuarios/' + user.uid + '/online').onDisconnect().set(false);
         } else {
-            if (!document.getElementById('scr-reg').classList.contains('active')) view('scr-login');
+            view('scr-login');
         }
     });
 
     function registro() {
         const u = document.getElementById('reg-user').value.trim(), e = document.getElementById('reg-mail').value.trim(), p = document.getElementById('reg-pass').value;
-        if(!u || !e || p.length < 6) return notify("⚠️ Datos incompletos");
+        if(!u || !e || p.length < 6) return notify("⚠️ Datos inválidos");
         auth.createUserWithEmailAndPassword(e, p).then(res => {
-            db.ref('Sincro_Usuarios/' + res.user.uid).set({ nombre: u, online: false, vip: (u.toLowerCase()==='chat') });
-            notify("✅ Cuenta creada. Inicia sesión.");
+            db.ref('Sincro_Usuarios/' + res.user.uid).set({ nombre: u, online: false });
+            notify("✅ Registrado");
             view('scr-login');
         }).catch(err => notify("❌ " + err.message));
     }
@@ -215,46 +166,45 @@
         auth.signInWithEmailAndPassword(e, p).catch(err => notify("❌ " + err.message));
     }
 
-    function logout() { 
-        if(mUser) db.ref('Sincro_Usuarios/' + mUser.uid + '/online').set(false);
-        auth.signOut().then(() => location.reload()); 
+    function logout() { db.ref('Sincro_Usuarios/' + mUser.uid + '/online').set(false).then(() => auth.signOut()); }
+
+    // FUNCIÓN PARA CAMBIAR NOMBRE
+    function editarMiPerfil() {
+        const nuevoNombre = prompt("Escribe tu nuevo nombre de usuario:", mData.nombre);
+        if(nuevoNombre && nuevoNombre.trim() !== "") {
+            db.ref('Sincro_Usuarios/' + mUser.uid + '/nombre').set(nuevoNombre.trim())
+            .then(() => notify("✅ Nombre actualizado"));
+        }
     }
 
-    // APP LÓGICA
     function iniciarApp() {
         view('scr-chat');
         
-        // Cargar Usuarios
+        // Cargar lista de personas (Solo los que están online)
         db.ref('Sincro_Usuarios').on('value', snap => {
-            const listAll = document.getElementById('miembros-list');
-            const listOnline = document.getElementById('online-list');
-            listAll.innerHTML = ""; listOnline.innerHTML = "";
-
+            const list = document.getElementById('online-list');
+            list.innerHTML = "";
             snap.forEach(child => {
-                const u = child.val(); if(child.key === mUser.uid) return;
-                const html = `<div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:10px; cursor:pointer; border-bottom:1px solid #f9f9f9;">
-                    <div style="width:32px; height:32px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-weight:bold; position:relative; flex-shrink:0; font-size:12px;">
+                const u = child.val();
+                if(child.key === mUser.uid) return;
+                
+                list.innerHTML += `
+                <div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:10px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
+                    <div style="width:30px; height:30px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-weight:bold; position:relative; font-size:12px;">
                         ${u.nombre[0].toUpperCase()}${u.online ? '<div class="status-dot"></div>' : ''}
                     </div>
-                    <div><b style="font-size:13px;">${u.nombre}</b><br><small style="color:${u.online?'#4caf50':'#aaa'}; font-size:10px;">${u.online?'en línea':'desconectado'}</small></div>
+                    <b style="font-size:13px; color:${u.online?'#000':'#aaa'}">${u.nombre}</b>
                 </div>`;
-                listAll.innerHTML += html;
-                if(u.online) listOnline.innerHTML += html;
             });
         });
 
-        // Cargar Chats Recientes
+        // Chats Recientes
         db.ref('Sincro_Recientes/' + mUser.uid).on('value', snap => {
             const listRec = document.getElementById('recent-list');
             listRec.innerHTML = "";
-            if(!snap.exists()) listRec.innerHTML = "<p style='font-size:11px; color:#ccc; padding:10px;'>No hay chats recientes</p>";
-            
             snap.forEach(child => {
                 const r = child.val();
-                listRec.innerHTML += `<div onclick="iniciarPrivado('${child.key}', '${r.nombre}')" style="display:flex; align-items:center; padding:10px; cursor:pointer; background:#fff; border-bottom:1px solid #eee;">
-                    <div style="width:30px; height:30px; border-radius:50%; background:#888; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:12px;">${r.nombre[0]}</div>
-                    <b style="font-size:13px; color:#333;">${r.nombre}</b>
-                </div>`;
+                listRec.innerHTML += `<div onclick="iniciarPrivado('${child.key}', '${r.nombre}')" style="padding:10px; cursor:pointer; font-size:13px; border-bottom:1px solid #f9f9f9;">👤 ${r.nombre}</div>`;
             });
         });
 
@@ -262,28 +212,12 @@
     }
 
     function escucharChat() {
-        const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
-        box.innerHTML = ""; gal.innerHTML = "";
+        const box = document.getElementById('chat-box'); box.innerHTML = "";
         if(listener) db.ref(chatActual).off();
-
         listener = db.ref(chatActual).on('child_added', snap => {
             const data = snap.val(), isMine = data.uid === mUser.uid;
-            const d = document.createElement('div'); d.className = "msg " + (isMine ? "me" : "them"); d.id = "m-" + snap.key;
-            
-            let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
-            if(data.type === 'foto' || data.type === 'video') {
-                html += `<div class="media-container" onclick="abrirMedia('${data.url}','${data.type}')">
-                    ${data.type==='video' ? `<video src="${data.url}"></video>` : `<img src="${data.url}">`}</div>`;
-                
-                // Agregar a galería
-                const imgGal = document.createElement('div');
-                imgGal.style = "height:60px; background:#000; cursor:pointer; overflow:hidden;";
-                imgGal.innerHTML = data.type==='video' ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
-                imgGal.onclick = () => abrirMedia(data.url, data.type);
-                gal.prepend(imgGal);
-            } else { html += `<span>${data.msg}</span>`; }
-            
-            d.innerHTML = html;
+            const d = document.createElement('div'); d.className = "msg " + (isMine ? "me" : "them");
+            d.innerHTML = `<b>${data.user}</b><span>${data.msg}</span>`;
             box.appendChild(d);
             box.scrollTop = box.scrollHeight;
         });
@@ -291,39 +225,23 @@
 
     function enviarMsg() {
         const input = document.getElementById('msg-in'); if(!input.value.trim()) return;
-        const nombre = (mData && mData.nombre) ? mData.nombre : mUser.email.split('@')[0];
-        db.ref(chatActual).push({ uid: mUser.uid, user: nombre, msg: input.value, type: 'texto', timestamp: Date.now() });
+        db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, msg: input.value, timestamp: Date.now() });
         input.value = "";
     }
 
     function verChatPublico() {
         chatActual = "Sincro_Chat_Publico";
         document.getElementById('chat-title').innerText = "Chat Público";
-        document.getElementById('chat-status').innerText = "🌐 Todos pueden ver";
         escucharChat();
     }
 
     function iniciarPrivado(id, nom) {
-        if(id === mUser.uid) return;
         chatActual = "Sincro_Privados/" + [mUser.uid, id].sort().join("_");
         document.getElementById('chat-title').innerText = nom;
-        document.getElementById('chat-status').innerText = "💬 Chat Privado";
-        
-        // Guardar en Recientes
         db.ref('Sincro_Recientes/' + mUser.uid + '/' + id).set({ nombre: nom });
-        
         escucharChat();
-        if(window.innerWidth < 1024) toggleMenu('left');
+        if(window.innerWidth < 1024) toggleMenu();
     }
-
-    function abrirMedia(u, t) {
-        const v = document.getElementById('media-viewer');
-        const c = document.getElementById('viewer-main-container');
-        c.innerHTML = t==='video' ? `<video src="${u}" controls autoplay style="max-width:100%"></video>` : `<img src="${u}" style="max-width:100%">`;
-        v.style.display = 'flex';
-    }
-    function cerrarMedia() { document.getElementById('media-viewer').style.display='none'; }
-    function vaciarChat() { if(confirm("¿Borrar historial?")) db.ref(chatActual).remove(); }
 </script>
 </body>
 </html>
