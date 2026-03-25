@@ -24,7 +24,6 @@
         @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Estructura */
-        #main-layout { display: flex; width: 100%; height: 100%; }
         #sidebar-left, #sidebar-right { width: 300px; background: var(--side-bg); border: 1px solid #dfe5ec; display: flex; flex-direction: column; z-index: 10; transition: transform 0.3s ease; }
         #chat-section { flex: 1; display: flex; flex-direction: column; background: var(--tg-bg); position: relative; }
 
@@ -44,7 +43,7 @@
         .msg b { display: block; color: var(--tg-blue); font-size: 11px; margin-bottom: 3px; }
 
         /* Media */
-        .media-container { margin-top: 5px; border-radius: 10px; overflow: hidden; position: relative; background: #000; min-height: 100px; }
+        .media-container { margin-top: 5px; border-radius: 10px; overflow: hidden; position: relative; background: #000; min-height: 150px; }
         .blur { filter: blur(35px); pointer-events: none; opacity: 0.6; }
         .lock-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; z-index: 5; }
 
@@ -56,8 +55,6 @@
         .bg-blue { background: linear-gradient(135deg, #0088cc, #004466); color: white; }
         .in-style { padding:14px; width:300px; margin-top:10px; border-radius:10px; border:none; outline:none; }
         .btn-main { padding:14px; width:300px; margin-top:20px; border-radius:10px; border:none; background: white; color:#0088cc; font-weight:bold; cursor:pointer; }
-        
-        #btn-admin-del { display: none; background: #ff4d4d; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -84,46 +81,53 @@
     </div>
 
     <div id="scr-chat" class="screen" style="flex-direction: row; height: 100vh; width: 100%; padding:0;">
-  
-  <aside id="sidebar-left" style="width: 260px; background: #fff; border-right: 1px solid #ddd; overflow-y: auto;">
-    <div style="padding:15px; background:#0088cc; color:white; font-weight:bold;">SINCRO</div>
-    <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; cursor:pointer;"><b>Chat Público 🌐</b></div>
-    <div style="padding:10px; font-size:11px; color:#999;">MIEMBROS</div>
-    <div id="miembros-list" style="overflow-y:auto; flex:1;"></div>
-    <button onclick="logout()" style="padding:15px; width:100%; background:#FFF0F0; border:none; color:#d9534f; cursor:pointer;">Cerrar Sesión</button>
-  </aside>
+        
+        <aside id="sidebar-left">
+            <div style="padding:15px; background:#0088cc; color:white; font-weight:bold; display:flex; justify-content:space-between;">
+                SINCRO <span>v2</span>
+            </div>
+            <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; cursor:pointer;"><b>Chat Público 🌐</b></div>
+            <div style="padding:10px; font-size:11px; color:#999;">USUARIOS</div>
+            <div id="miembros-list" style="overflow-y:auto; flex:1;"></div>
+            <button onclick="logout()" style="padding:15px; width:100%; background:#FFF0F0; border:none; color:#d9534f; cursor:pointer; font-weight:bold;">Cerrar Sesión</button>
+        </aside>
 
-  <main id="chat-section" style="flex:1; display:flex; flex-direction:column; background:#f0f2f5;">
-    <header class="header" style="padding:10px; background:white; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd;">
-       <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:20px;">☰</button>
-       
-       <span style="display:flex; align-items:center; gap:8px;">
-           <span id="chat-title">Cargando...</span>
-           <button id="btn-edit-title" onclick="cambiarNombreGrupo()" style="display:none; border:none; background:none; cursor:pointer; font-size:16px;">✏️</button>
-       </span>
+        <main id="chat-section">
+            <header class="header">
+               <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:20px; cursor:pointer;">☰</button>
+               <div style="text-align:center;">
+                   <span id="chat-title" style="display:block;">Cargando...</span>
+                   <small id="chat-status" style="font-size:10px; color:#888; font-weight:normal;"></small>
+               </div>
+               <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:20px; cursor:pointer;">ℹ️</button>
+            </header>
 
-       <div>
-           <button onclick="vaciarChat()" style="border:none; background:none; color:#d9534f; margin-right:10px;">🗑️ Limpiar</button>
-           <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:20px;">🖼️</button>
-       </div>
-    </header>
+            <div id="chat-box"></div>
 
-    <div id="chat-box" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px;"></div>
+            <footer style="padding:12px; background:white; display:flex; gap:10px; align-items:center; border-top:1px solid #ddd;">
+               <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:24px; cursor:pointer;">📎</button>
+               <input id="msg-in" placeholder="Escribe un mensaje..." style="flex:1; padding:10px; border-radius:20px; border:1px solid #ddd; outline:none;">
+               <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:40px; height:40px; border-radius:50%; cursor:pointer;">➤</button>
+            </footer>
+        </main>
 
-    <footer style="padding:12px; background:white; display:flex; gap:10px; align-items:center; border-top:1px solid #ddd;">
-       <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:24px;">📎</button>
-       <input id="msg-in" placeholder="Escribe a Sincro MD..." style="flex:1; padding:10px; border-radius:20px; border:1px solid #ddd; outline:none;">
-       <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:40px; height:40px; border-radius:50%;">➤</button>
-    </footer>
-  </main>
-
-  <aside id="sidebar-right" style="width: 280px; background: #fff; border-left: 1px solid #ddd; overflow-y: auto;">
-    <div style="padding:15px; background:#f8f9fa; font-weight:bold; border-bottom:1px solid #ddd;">GALERÍA Y VIDEOS</div>
-    <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px; padding:10px;"></div>
-  </aside>
-
+        <aside id="sidebar-right">
+            <div style="padding:20px; text-align:center; border-bottom:1px solid #eee;">
+                <div id="group-icon" style="width:70px; height:70px; background:#0088cc; color:white; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold;">S</div>
+                <h3 id="info-name" style="margin:5px 0;">Sincro Group</h3>
+                <button id="btn-edit-group" onclick="editarNombreGrupo()" style="display:none; background:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:3px 8px; font-size:11px; cursor:pointer;">Editar Nombre</button>
+            </div>
+            
+            <div style="padding:10px; background:#f8f9fa; font-weight:bold; font-size:12px; color:#666;">MULTIMEDIA</div>
+            <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; padding:10px; overflow-y:auto; flex:1;"></div>
+            
+            <div style="padding:10px; background:#f8f9fa; font-weight:bold; font-size:12px; color:#666; border-top:1px solid #eee;">ACCIONES</div>
+            <div style="padding:10px;">
+                <button onclick="vaciarChat()" style="width:100%; padding:10px; background:#fff; border:1px solid #d9534f; color:#d9534f; border-radius:5px; cursor:pointer; font-size:12px;">Vaciar Historial</button>
+            </div>
+        </aside>
+    </div>
 </div>
-
 
 <script>
     // --- CONFIGURACIÓN ---
@@ -154,25 +158,20 @@
 
     function toggleMenu(s) { document.getElementById('sidebar-' + s).classList.toggle('show-' + s); }
 
-    // --- ACCESO CON VERIFICACIÓN ---
+    // --- ACCESO ---
     function registro() {
         const u = document.getElementById('reg-user').value.trim();
         const e = document.getElementById('reg-mail').value.trim();
         const p = document.getElementById('reg-pass').value;
-
-        if(!u || !e || p.length < 6) return notify("⚠️ Datos incompletos (mín. 6 caracteres)");
+        if(!u || !e || p.length < 6) return notify("⚠️ Datos incompletos");
 
         auth.createUserWithEmailAndPassword(e, p).then(res => {
-            res.user.sendEmailVerification().then(() => {
-                notify("📧 ¡Correo enviado! Verifica tu bandeja (o spam) antes de entrar.");
-            });
-
+            res.user.sendEmailVerification().then(() => notify("📧 Verifica tu correo."));
             db.ref('usuarios/' + res.user.uid).set({ 
                 nombre: u, 
                 vip: (u.toLowerCase() === 'chat'),
                 online: false 
             });
-
             setTimeout(() => { auth.signOut(); view('scr-login'); }, 3000);
         }).catch(err => notify("❌ " + err.message));
     }
@@ -183,13 +182,11 @@
         if(!e || !p) return notify("⚠️ Ingresa tus datos");
 
         auth.signInWithEmailAndPassword(e, p).then(res => {
-            if (res.user.emailVerified) {
-                notify("✅ Acceso concedido");
-            } else {
-                notify("🚫 Debes verificar tu correo primero. Revisa tu bandeja de entrada.");
+            if (!res.user.emailVerified) {
+                notify("🚫 Verifica tu correo primero.");
                 auth.signOut();
             }
-        }).catch(() => notify("❌ Correo o clave incorrectos"));
+        }).catch(() => notify("❌ Datos incorrectos"));
     }
 
     function logout() { 
@@ -204,9 +201,7 @@
             db.ref('usuarios/' + user.uid).on('value', snap => {
                 mData = snap.val();
                 if(mData) {
-                    if(mData.nombre.toLowerCase() === 'chat') {
-                        mData.vip = true;
-                    }
+                    if(mData.nombre.toLowerCase() === 'chat') mData.vip = true;
                     iniciarApp();
                 }
             });
@@ -219,40 +214,47 @@
 
     function iniciarApp() {
         view('scr-chat');
+        // Botón editar nombre (Solo para el usuario "chat")
+        document.getElementById('btn-edit-group').style.display = mData.vip ? 'inline-block' : 'none';
+
         db.ref('usuarios').on('value', snap => {
-            // CORRECCIÓN: ID correcto 'miembros-list'
-            const list = document.getElementById('miembros-list'); 
-            if(!list) return;
+            const list = document.getElementById('miembros-list');
             list.innerHTML = "";
             snap.forEach(child => {
                 const u = child.val();
                 if(child.key === mUser.uid) return;
-                list.innerHTML += `<div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; position:relative;">
-                    <div style="width:35px; height:35px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px;">
-                        ${u.nombre[0].toUpperCase()}${u.online ? '<div class="status-dot"></div>' : ''}
-                    </div><b>${u.nombre}</b></div>`;
+                list.innerHTML += `<div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; position:relative; border-bottom:1px solid #f9f9f9;">
+                    <div style="width:35px; height:35px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-weight:bold; position:relative;">
+                        ${u.nombre[0].toUpperCase()}
+                        ${u.online ? '<div class="status-dot"></div>' : ''}
+                    </div>
+                    <div>
+                        <b style="font-size:14px;">${u.nombre}</b><br>
+                        <small style="color:${u.online ? '#4caf50' : '#aaa'}; font-size:10px;">${u.online ? 'en línea' : 'desconectado'}</small>
+                    </div>
+                </div>`;
             });
         });
-        verChatPublico();
+
+        // Cargar nombre del grupo desde DB
+        db.ref('config/nombreGrupo').on('value', snap => {
+            const nombre = snap.val() || "Sincro MD";
+            if(chatActual === "chats/publico") {
+                document.getElementById('chat-title').innerText = nombre;
+                document.getElementById('info-name').innerText = nombre;
+                document.getElementById('group-icon').innerText = nombre[0].toUpperCase();
+            }
+        });
+
+        if(!listener) verChatPublico();
     }
 
-    // Sincronizar el nombre del grupo público desde la base de datos
-    db.ref('info/nombreGrupo').on('value', snap => {
-        if(chatActual === "chats/publico") {
-            document.getElementById('chat-title').innerText = snap.val() || "Chat Público 🌐";
-        }
-    });
-
-    // AGREGADO: Función para que el admin cambie el nombre del grupo
-    function cambiarNombreGrupo() {
-        if(!mData.vip) return;
-        const nuevoNombre = prompt("Escribe el nuevo nombre para el Chat Público:");
-        if(nuevoNombre && nuevoNombre.trim() !== "") {
-            db.ref('info/nombreGrupo').set(nuevoNombre.trim());
-        }
+    function editarNombreGrupo() {
+        const n = prompt("Nuevo nombre del grupo:");
+        if(n) db.ref('config/nombreGrupo').set(n);
     }
 
-    // --- LÓGICA DE MENSAJES ---
+    // --- MENSAJES ---
     function escucharChat() {
         const box = document.getElementById('chat-box');
         const gal = document.getElementById('gallery');
@@ -262,37 +264,35 @@
         listener = db.ref(chatActual).on('child_added', snap => {
             const data = snap.val();
             const isMine = data.uid === mUser.uid;
-            const isAdmin = mData.vip;
             const d = document.createElement('div');
             d.className = "msg " + (isMine ? "me" : "them");
             d.id = "m-" + snap.key;
             
-            d.ondblclick = () => { // Cambiado a doble clic para evitar borrar por error al tocar fotos
-                if(isAdmin && confirm("¿Borrar mensaje?")) db.ref(chatActual + "/" + snap.key).remove();
+            d.onclick = () => {
+                if(mData.vip && confirm("¿Borrar mensaje?")) db.ref(chatActual + "/" + snap.key).remove();
             };
 
             let html = `<b>${data.user}</b>`;
-            
-            // AGREGADO: Lógica para diferenciar fotos y videos
             if(data.type === 'foto' || data.type === 'video') {
                 const locked = !mData.vip && !isMine;
-                const mediaTag = data.type === 'video' 
-                    ? `<video src="${data.url}" controls style="width:100%; max-height:300px; border-radius:5px;"></video>`
-                    : `<img src="${data.url}" style="width:100%; border-radius:5px;">`;
+                const mediaHtml = data.type === 'video' 
+                    ? `<video src="${data.url}" controls style="width:100%; border-radius:8px;"></video>`
+                    : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
 
                 html += `<div class="media-container ${locked?'blur':''}">
                     ${locked ? '<div class="lock-overlay">🔒 SOLO VIP</div>' : ''}
-                    ${mediaTag}</div>`;
+                    ${mediaHtml}</div>`;
                 
-                // Agregar al panel lateral de Galería
-                const galMedia = data.type === 'video'
-                    ? `<video src="${data.url}" style="width:100%; height:80px; object-fit:cover; border-radius:5px; margin-bottom:5px;"></video>`
-                    : `<img src="${data.url}" style="width:100%; height:80px; object-fit:cover; border-radius:5px; margin-bottom:5px;">`;
-                gal.innerHTML = galMedia + gal.innerHTML;
+                // Agregar a Galería lateral
+                const itemGal = document.createElement('div');
+                itemGal.style.height = "60px";
+                itemGal.style.background = "#eee";
+                itemGal.style.borderRadius = "4px";
+                itemGal.style.overflow = "hidden";
+                itemGal.innerHTML = data.type === 'video' ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+                gal.prepend(itemGal);
 
-            } else { 
-                html += `<span>${data.msg}</span>`; 
-            }
+            } else { html += `<span>${data.msg}</span>`; }
             
             d.innerHTML = html;
             box.appendChild(d);
@@ -305,10 +305,6 @@
         });
     }
 
-    function vaciarChat() {
-        if(confirm("⚠️ ¿Borrar TODO el historial de este chat?")) db.ref(chatActual).remove();
-    }
-
     function enviarMsg() {
         const input = document.getElementById('msg-in');
         if(!input.value.trim()) return;
@@ -316,43 +312,37 @@
         input.value = "";
     }
 
-    // AGREGADO: Detección automática de tipo de archivo (foto o video)
     function abrirCloudinary() {
         cloudinary.openUploadWidget({ cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET }, (err, res) => {
             if (!err && res.event === "success") {
-                const tipoArchivo = res.info.resource_type === 'video' ? 'video' : 'foto';
-                db.ref(chatActual).push({ 
-                    uid: mUser.uid, 
-                    user: mData.nombre, 
-                    url: res.info.secure_url, 
-                    type: tipoArchivo 
-                });
+                const tipo = res.info.resource_type === 'video' ? 'video' : 'foto';
+                db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, url: res.info.secure_url, type: tipo });
             }
         });
     }
 
     function verChatPublico() {
         chatActual = "chats/publico";
-        // Mostrar botón de editar título solo si es admin y está en el chat público
-        document.getElementById('btn-edit-title').style.display = mData.vip ? 'inline-block' : 'none';
-        
-        // Forzar lectura del nombre actual
-        db.ref('info/nombreGrupo').once('value').then(snap => {
-            document.getElementById('chat-title').innerText = snap.val() || "Chat Público 🌐";
+        document.getElementById('chat-status').innerText = "Grupo Público";
+        db.ref('config/nombreGrupo').once('value', s => {
+            document.getElementById('chat-title').innerText = s.val() || "Chat Público 🌐";
         });
-        
         escucharChat();
     }
 
     function iniciarPrivado(targetUid, nombre) {
         const chatID = [mUser.uid, targetUid].sort().join("_");
         chatActual = "privados/" + chatID;
-        document.getElementById('chat-title').innerText = "Chat con " + nombre;
-        // Ocultar botón de editar título en chats privados
-        document.getElementById('btn-edit-title').style.display = 'none';
-        
+        document.getElementById('chat-title').innerText = nombre;
+        document.getElementById('info-name').innerText = nombre;
+        document.getElementById('group-icon').innerText = nombre[0].toUpperCase();
+        document.getElementById('chat-status').innerText = "Chat Privado";
         escucharChat();
         if(window.innerWidth < 1024) toggleMenu('left');
+    }
+
+    function vaciarChat() {
+        if(confirm("⚠️ ¿Eliminar historial?")) db.ref(chatActual).remove();
     }
 </script>
 </body>
