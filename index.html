@@ -359,11 +359,28 @@ function iniciarApp() {
         });
     }
 
-    function enviarMsg() {
+        function enviarMsg() {
         const input = document.getElementById('msg-in'); 
-        if(input.value.trim() === "") return;
-        db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, msg: input.value, type: 'texto' });
-        input.value = "";
+        const texto = input.value.trim();
+        
+        if(texto === "") return; // Sin el "!" para evitar confusiones
+
+        // Aseguramos que siempre haya un nombre para mostrar
+        const nombreParaMostrar = (mData && mData.nombre) ? mData.nombre : mUser.email.split('@')[0];
+
+        db.ref(chatActual).push({ 
+            uid: mUser.uid, 
+            user: nombreParaMostrar, 
+            msg: texto, 
+            type: 'texto',
+            timestamp: Date.now()
+        }).then(() => {
+            input.value = "";
+        }).catch(e => {
+            notify("❌ Error de envío: " + e.message, "error");
+        });
+    }
+
     }
 function abrirCloudinary() {
     cloudinary.openUploadWidget({ 
