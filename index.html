@@ -381,7 +381,7 @@ function abrirCloudinary() {
 
 
     function verChatPublico() {
-        chatActual = "chats/sincro/publico";
+        chatActual = "chats/sincro";
         document.getElementById('chat-status').innerText = "Grupo Público";
         db.ref('config/nombreGrupo').once('value', s => document.getElementById('chat-title').innerText = s.val() || "Chat Público 🌐");
         escucharChat();
