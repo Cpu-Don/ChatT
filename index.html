@@ -361,7 +361,7 @@ function iniciarApp() {
 
     function enviarMsg() {
         const input = document.getElementById('msg-in'); 
-        if(!input.value.trim()) return;
+        if(input.value.trim() === "") return;
         db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, msg: input.value, type: 'texto' });
         input.value = "";
     }
