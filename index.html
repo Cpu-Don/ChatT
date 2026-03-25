@@ -241,28 +241,46 @@
     }
 
     function logout() { 
-        if(mUser) db.ref('usuarios/' + mUser.uid + '/online').set(false);
+        if(mUser) db.ref('usuarios/sincro/' + mUser.uid + '/online').set(false);
         auth.signOut().then(() => location.reload()); 
     }
 
-    auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged(user => {
     if (user && user.emailVerified) {
         mUser = user;
-        // Cambiado a la ruta de tus reglas: usuarios/sincro/
-        db.ref('usuarios/sincro/' + user.uid).on('value', snap => {
+        
+        // Referencia a tus datos en Sincro
+        const userRef = db.ref('usuarios/sincro/' + user.uid);
+        
+        userRef.on('value', snap => {
             mData = snap.val();
-            if(mData) iniciarApp();
+            
+            // Si mData NO existe (porque borraste la DB), lo creamos forzosamente
+            if (!mData) {
+                console.log("Creando datos faltantes...");
+                const nombreNuevo = user.email.split('@')[0];
+                userRef.set({ 
+                    nombre: nombreNuevo, 
+                    online: true, 
+                    vip: (nombreNuevo.toLowerCase() === 'chat') 
+                });
+                // No llamamos a iniciarApp aquí, porque el 'on value' 
+                // se volverá a disparar solo en un segundo con los datos nuevos.
+            } else {
+                // Si mData YA existe, arrancamos la interfaz
+                iniciarApp(); 
+            }
         });
         
-        // Marcar como online en la ruta correcta
-        const onlineRef = db.ref('usuarios/sincro/' + user.uid + '/online');
-        onlineRef.set(true);
-        onlineRef.onDisconnect().set(false);
+        // Marcar online siempre que esté conectado
+        db.ref('usuarios/sincro/' + user.uid + '/online').set(true);
+        db.ref('usuarios/sincro/' + user.uid + '/online').onDisconnect().set(false);
         
     } else {
         view('scr-login');
     }
 });
+
 
 
 function iniciarApp() {
@@ -279,7 +297,7 @@ function iniciarApp() {
         snap.forEach(child => {
             const u = child.val(); 
             // No mostrarse a uno mismo en la lista
-            if(child.key === mUser.uid) return;
+            //if(child.key === mUser.uid) return;
 
             list.innerHTML += `
                 <div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
