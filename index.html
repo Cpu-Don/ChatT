@@ -20,29 +20,10 @@
         @media (min-width: 1024px) { #app { width: 98%; height: 96vh; margin: 2vh auto; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); } }
 
         /* Notificaciones */
-        /* Estilo para las alertas bonitas */
-#toast-container { 
-    position: fixed; 
-    top: 20px; 
-    left: 50%; 
-    transform: translateX(-50%); 
-    z-index: 9999; 
-}
-.toast { 
-    background: #333; 
-    color: white; 
-    padding: 12px 25px; 
-    border-radius: 30px; 
-    font-size: 14px; 
-    margin-bottom: 8px; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    border-left: 5px solid #0088cc; /* Color azul por defecto */
-    animation: slideIn 0.3s ease;
-}
-@keyframes slideIn {
-    from { transform: translateY(-20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
+        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; pointer-events: none; }
+        .toast { background: rgba(0, 0, 0, 0.9); color: white; padding: 12px 25px; border-radius: 50px; font-size: 14px; margin-bottom: 10px; animation: slideIn 0.3s forwards; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
         /* Estructura Principal */
         #sidebar-left, #sidebar-right { width: 300px; background: var(--side-bg); border: 1px solid #dfe5ec; display: flex; flex-direction: column; z-index: 10; overflow: hidden; flex-shrink: 0; }
         .collapsed-left { width: 0 !important; border: none !important; }
@@ -98,7 +79,7 @@
 <div id="toast-container"></div>
 
 <div id="media-viewer">
-    <button id="close-viewer" onclick="cerrarMedia()">×</button>
+    <button id="close-viewer" onclick="cerrarMedia()">Ã—</button>
     <div id="viewer-main-container" style="display:contents;"></div>
     <div class="viewer-btns">
         <a id="btn-download" class="v-btn" download target="_blank">Descargar</a>
@@ -109,9 +90,9 @@
 <div id="app">
     <div id="scr-login" class="screen bg-blue active">
         <h1 style="font-size: 45px; margin: 0;">Sincro MD</h1>
-        <p style="opacity: 0.8; margin-bottom: 25px;">Plataforma de comunicación</p>
-        <input type="email" id="log-mail" class="in-style" placeholder="Correo electrónico">
-        <input type="password" id="log-pass" class="in-style" placeholder="Contraseña">
+        <p style="opacity: 0.8; margin-bottom: 25px;">Plataforma de comunicaciÃ³n</p>
+        <input type="email" id="log-mail" class="in-style" placeholder="Correo electrÃ³nico">
+        <input type="password" id="log-pass" class="in-style" placeholder="ContraseÃ±a">
         <button onclick="login()" class="btn-main">ENTRAR</button>
         <p onclick="view('scr-reg')" style="cursor:pointer; margin-top:20px; font-size: 14px; text-decoration: underline;">Registrar cuenta nueva</p>
     </div>
@@ -129,36 +110,36 @@
         
         <aside id="sidebar-left">
             <div style="padding:15px; background:#0088cc; color:white; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
-                SINCRO <span onclick="toggleMenu('left')" style="cursor:pointer; font-size:20px;">✕</span>
+                SINCRO <span onclick="toggleMenu('left')" style="cursor:pointer; font-size:20px;">âœ•</span>
             </div>
-            <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; cursor:pointer;"><b>Chat Público 🌐</b></div>
+            <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; cursor:pointer;"><b>Chat PÃºblico ðŸŒ</b></div>
             <div id="miembros-list" style="overflow-y:auto; flex:1; background: #fff;"></div>
-            <button onclick="logout()" style="padding:15px; width:100%; background:#fcfcfc; border:none; border-top:1px solid #eee; color:#d9534f; cursor:pointer;">Cerrar Sesión</button>
+            <button onclick="logout()" style="padding:15px; width:100%; background:#fcfcfc; border:none; border-top:1px solid #eee; color:#d9534f; cursor:pointer;">Cerrar SesiÃ³n</button>
         </aside>
 
         <main id="chat-section">
             <header class="header">
-               <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;">☰</button>
+               <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;">â˜°</button>
                <div style="text-align:center;">
                    <b id="chat-title" style="display:block; font-size: 15px;">Cargando...</b>
                    <small id="chat-status" style="font-size:10px; color:#888;"></small>
                </div>
-               <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;">ℹ️</button>
+               <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;">â„¹ï¸</button>
             </header>
 
             <div id="chat-box"></div>
 
             <footer>
-               <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:26px; cursor:pointer;">📎</button>
+               <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:26px; cursor:pointer;">ðŸ“Ž</button>
                <input id="msg-in" placeholder="Escribe un mensaje..." autocomplete="off">
-               <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:42px; height:42px; border-radius:50%; cursor:pointer; font-size: 18px;">➤</button>
+               <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:42px; height:42px; border-radius:50%; cursor:pointer; font-size: 18px;">âž¤</button>
             </footer>
         </main>
 
         <aside id="sidebar-right">
             <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
                 <b style="color:#0088cc;">Info del Grupo</b>
-                <span onclick="toggleMenu('right')" style="cursor:pointer; font-size:20px;">✕</span>
+                <span onclick="toggleMenu('right')" style="cursor:pointer; font-size:20px;">âœ•</span>
             </div>
             <div style="padding:20px; text-align:center;">
                 <div id="info-icon" style="width:80px; height:80px; background:#0088cc; color:white; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:bold;">S</div>
@@ -176,7 +157,7 @@
 </div>
 
 <script>
-    // --- CONFIGURACIÓN ---
+    // --- CONFIGURACIÃ“N ---
     const firebaseConfig = { 
         databaseURL: "https://micanalmaestro-default-rtdb.firebaseio.com/",
         apiKey: "AIzaSyB2GH_bFRmRwhqtaBb3ll_9eNEMXj7RuMo" 
@@ -185,7 +166,7 @@
     const db = firebase.database(), auth = firebase.auth();
     const CLOUD_NAME = "dhtyepcjg", UPLOAD_PRESET = "Historial";
 
-    let mUser = null, mData = { vip: false, nombre: "" }, chatActual = "Sincro_Chat_Publico", listener = null;
+    let mUser = null, mData = { vip: false, nombre: "" }, chatActual = "chats/publico", listener = null;
 
     function notify(t) {
         const c = document.getElementById('toast-container');
@@ -226,94 +207,77 @@
     // --- ACCESO ---
     function registro() {
         const u = document.getElementById('reg-user').value.trim(), e = document.getElementById('reg-mail').value.trim(), p = document.getElementById('reg-pass').value;
-        if(!u || !e || p.length < 6) return notify("⚠️ Datos incompletos");
+        if(!u || !e || p.length < 6) return notify("âš ï¸ Datos incompletos");
         auth.createUserWithEmailAndPassword(e, p).then(res => {
-            res.user.sendEmailVerification().then(() => notify("📧 Verifica tu correo."));
-            db.ref('Sincro_Usuarios/' + res.user.uid).set({ nombre: u, vip: (u.toLowerCase() === 'chat'), online: false });
+            res.user.sendEmailVerification().then(() => notify("ðŸ“§ Verifica tu correo."));
+            db.ref('usuarios/' + res.user.uid).set({ nombre: u, vip: (u.toLowerCase() === 'chat'), online: false });
             setTimeout(() => { auth.signOut(); view('scr-login'); }, 3000);
-        }).catch(err => notify("❌ " + err.message));
+        }).catch(err => notify("âŒ " + err.message));
     }
 
     function login() {
         const e = document.getElementById('log-mail').value.trim(), p = document.getElementById('log-pass').value;
-        if(!e || !p) return notify("⚠️ Completa los campos");
-        auth.signInWithEmailAndPassword(e, p).catch(err => notify("❌ Error: " + err.message));
+        if(!e || !p) return notify("âš ï¸ Completa los campos");
+        auth.signInWithEmailAndPassword(e, p).catch(err => notify("âŒ Error: " + err.message));
     }
 
     function logout() { 
-        if(mUser) db.ref('Sincro_Usuarios/' + mUser.uid + '/online').set(false);
+        if(mUser) db.ref('usuarios/' + mUser.uid + '/online').set(false);
         auth.signOut().then(() => location.reload()); 
     }
 
-// --- MANEJO DE SESIÓN Y CARPETA DE USUARIOS AFUERA ---
-auth.onAuthStateChanged(user => {
-    if (user && user.emailVerified) {
-        mUser = user;
-        // Referencia a la carpeta INDEPENDIENTE en la raíz
-        const userRef = db.ref('Sincro_Usuarios/' + user.uid);
-        
-        userRef.on('value', snap => {
-            mData = snap.val();
-            if(!mData) {
-                // Si el usuario no existe en esta carpeta nueva, lo creamos
-                const nombreAuto = user.email.split('@')[0];
-                userRef.set({ 
-                    nombre: nombreAuto, 
-                    online: true, 
-                    vip: (nombreAuto.toLowerCase() === 'chat') 
-                });
-            } else {
-                iniciarApp(); // Ya existen los datos, iniciamos la interfaz
-            }
-        });
+    auth.onAuthStateChanged(user => {
+        if (user && user.emailVerified) {
+            mUser = user;
+            db.ref('usuarios/' + user.uid).on('value', snap => {
+                mData = snap.val();
+                if(mData) iniciarApp();
+            });
+            db.ref('usuarios/' + user.uid + '/online').set(true);
+            db.ref('usuarios/' + user.uid + '/online').onDisconnect().set(false);
+        } else {
+            view('scr-login');
+        }
+    });
 
-        // Estado online/offline en la carpeta de afuera
-        db.ref('Sincro_Usuarios/' + user.uid + '/online').set(true);
-        db.ref('Sincro_Usuarios/' + user.uid + '/online').onDisconnect().set(false);
-        
-    } else {
-        view('scr-login');
-    }
-});
+    function iniciarApp() {
+        view('scr-chat');
+        if(mData.nombre.toLowerCase() === 'chat') {
+            mData.vip = true;
+            document.getElementById('btn-edit-group').style.display = 'inline-block';
+        }
 
-// --- LISTA DE MIEMBROS DESDE LA CARPETA INDEPENDIENTE ---
-function iniciarApp() {
-    view('scr-chat');
-    
-    // Leemos directamente de Sincro_Usuarios
-    db.ref('Sincro_Usuarios').on('value', snap => {
-        const list = document.getElementById('miembros-list'); 
-        if (!list) return;
-        list.innerHTML = "";
-        
-        snap.forEach(child => {
-            const u = child.val(); 
-            if(!u || !u.nombre) return; 
-
-            list.innerHTML += `
-                <div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
+        db.ref('usuarios').on('value', snap => {
+            const list = document.getElementById('miembros-list'); list.innerHTML = "";
+            snap.forEach(child => {
+                const u = child.val(); if(child.key === mUser.uid) return;
+                list.innerHTML += `<div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
                     <div style="width:40px; height:40px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:12px; font-weight:bold; position:relative; flex-shrink:0;">
-                        ${u.nombre[0].toUpperCase()}
-                        ${u.online ? '<div class="status-dot"></div>' : ''}
+                        ${u.nombre[0].toUpperCase()}${u.online ? '<div class="status-dot"></div>' : ''}
                     </div>
                     <div style="overflow:hidden;">
                         <b style="font-size:14px; white-space:nowrap;">${u.nombre}</b><br>
-                        <small style="color:${u.online ? '#4caf50' : '#aaa'}; font-size:11px;">
-                            ${u.online ? 'en línea' : 'desconectado'}
-                        </small>
+                        <small style="color:${u.online?'#4caf50':'#aaa'}; font-size:11px;">${u.online?'en lÃ­nea':'desconectado'}</small>
                     </div>
                 </div>`;
+            });
         });
-    });
 
-    if(!listener) verChatPublico();
+        db.ref('config/nombreGrupo').on('value', snap => {
+            const n = snap.val() || "Sincro MD";
+            if(chatActual === "chats/publico") {
+                document.getElementById('chat-title').innerText = n;
+                document.getElementById('info-name').innerText = n;
+                document.getElementById('info-icon').innerText = n[0].toUpperCase();
+            }
+        });
 
-}
-
+        if(!listener) verChatPublico();
+    }
 
     function editarNombreGrupo() {
-    const n = prompt("Nuevo nombre del grupo:");
-    if(n) db.ref('Sincro_Config/nombreGrupo').set(n);
+        const n = prompt("Nuevo nombre del grupo:");
+        if(n) db.ref('config/nombreGrupo').set(n);
     }
 
     // --- MENSAJES ---
@@ -328,7 +292,7 @@ function iniciarApp() {
             
             d.oncontextmenu = (e) => { 
                 e.preventDefault();
-                if(mData.vip && confirm("¿Borrar mensaje?")) db.ref(chatActual + "/" + snap.key).remove(); 
+                if(mData.vip && confirm("Â¿Borrar mensaje?")) db.ref(chatActual + "/" + snap.key).remove(); 
             };
 
             let html = `<b>${data.user}</b>`;
@@ -339,7 +303,7 @@ function iniciarApp() {
                     : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
 
                 html += `<div class="media-container ${locked?'blur':''}" onclick="${!locked ? `abrirMedia('${data.url}', '${data.type}')` : ''}">
-                    ${locked ? '<div class="lock-overlay">🔒 SOLO VIP</div>' : ''}${mediaTag}</div>`;
+                    ${locked ? '<div class="lock-overlay">ðŸ”’ SOLO VIP</div>' : ''}${mediaTag}</div>`;
                 
                 const itemGal = document.createElement('div');
                 itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer;";
@@ -359,28 +323,11 @@ function iniciarApp() {
         });
     }
 
-        function enviarMsg() {
+    function enviarMsg() {
         const input = document.getElementById('msg-in'); 
-        const texto = input.value.trim();
-        
-        if(texto === "") return; // Sin el "!" para evitar confusiones
-
-        // Aseguramos que siempre haya un nombre para mostrar
-        const nombreParaMostrar = (mData && mData.nombre) ? mData.nombre : mUser.email.split('@')[0];
-
-        db.ref(chatActual).push({ 
-            uid: mUser.uid, 
-            user: nombreParaMostrar, 
-            msg: texto, 
-            type: 'texto',
-            timestamp: Date.now()
-        }).then(() => {
-            input.value = "";
-        }).catch(e => {
-            notify("❌ Error de envío: " + e.message, "error");
-        });
-    }
-
+        if(!input.value.trim()) return;
+        db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, msg: input.value, type: 'texto' });
+        input.value = "";
     }
 function abrirCloudinary() {
     cloudinary.openUploadWidget({ 
@@ -404,10 +351,10 @@ function abrirCloudinary() {
                 type: tipo,
                 timestamp: Date.now() 
             }).then(() => {
-                alert("✅ Archivo enviado y guardado con éxito");
+                alert("âœ… Archivo enviado y guardado con Ã©xito");
             }).catch(e => {
                 console.error("Error al guardar en Firebase:", e);
-                alert("❌ Error al guardar en el historial");
+                alert("âŒ Error al guardar en el historial");
             });
         }
     });
@@ -415,56 +362,24 @@ function abrirCloudinary() {
 
 
     function verChatPublico() {
-    // Esto crea la carpeta "Sincro_Chat_Publico" solita en la raíz
-    chatActual = "Sincro_Chat_Publico"; 
-    document.getElementById('chat-status').innerText = "Grupo Público";
-    
-    // Buscamos el nombre del grupo en una ruta limpia
-    db.ref('Sincro_Config/nombreGrupo').on('value', snap => {
-        document.getElementById('chat-title').innerText = snap.val() || "Sincro MD 🌐";
-    });
-    
-    escucharChat();
-}
+        chatActual = "chats/publico";
+        document.getElementById('chat-status').innerText = "Grupo PÃºblico";
+        db.ref('config/nombreGrupo').once('value', s => document.getElementById('chat-title').innerText = s.val() || "Chat PÃºblico ðŸŒ");
+        escucharChat();
+    }
 
-function iniciarPrivado(targetUid, nombre) {
-    const chatID = [mUser.uid, targetUid].sort().join("_");
-    
-    // Esto crea la carpeta "Sincro_Privados" afuera en la raíz
-    chatActual = "Sincro_Privados/" + chatID; 
-    
-    document.getElementById('chat-title').innerText = nombre;
-    document.getElementById('info-name').innerText = nombre;
-    document.getElementById('info-icon').innerText = nombre[0].toUpperCase();
-    document.getElementById('chat-status').innerText = "Chat Privado";
-    
-    escucharChat();
-    
-    if(window.innerWidth < 1024) toggleMenu('left');
-}
+    function iniciarPrivado(targetUid, nombre) {
+        const chatID = [mUser.uid, targetUid].sort().join("_");
+        chatActual = "privados/" + chatID;
+        document.getElementById('chat-title').innerText = nombre;
+        document.getElementById('info-name').innerText = nombre;
+        document.getElementById('info-icon').innerText = nombre[0].toUpperCase();
+        document.getElementById('chat-status').innerText = "Chat Privado";
+        escucharChat();
+        if(window.innerWidth < 1024) toggleMenu('left');
+    }
 
-
-    function vaciarChat() { if(confirm("⚠️ ¿Eliminar historial?")) db.ref(chatActual).remove(); }
-
-    function notify(mensaje, tipo = 'info') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    
-    // Colores: Rojo para error, Verde para éxito
-    if(tipo === 'error') toast.style.borderLeft = "5px solid #ff4b2b";
-    if(tipo === 'success') toast.style.borderLeft = "5px solid #00b09b";
-    
-    toast.innerText = mensaje;
-    container.appendChild(toast);
-    
-    // Se desvanece y elimina solo
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 500);
-    }, 3500);
-}
-
+    function vaciarChat() { if(confirm("âš ï¸ Â¿Eliminar historial?")) db.ref(chatActual).remove(); }
 </script>
 </body>
 </html>
