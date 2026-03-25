@@ -246,53 +246,69 @@
     }
 
     auth.onAuthStateChanged(user => {
-        if (user && user.emailVerified) {
-            mUser = user;
-            db.ref('usuarios/sincro/' + user.uid).on('value', snap => {
-                mData = snap.val();
-                if(mData) iniciarApp();
-            });
-            db.ref('usuarios/sincro/' + user.uid + '/online').set(true);
-            db.ref('usuarios/sincro/' + user.uid + '/online').onDisconnect().set(false);
-        } else {
-            view('scr-login');
-        }
-    });
+    if (user && user.emailVerified) {
+        mUser = user;
+        // Cambiado a la ruta de tus reglas: usuarios/sincro/
+        db.ref('usuarios/sincro/' + user.uid).on('value', snap => {
+            mData = snap.val();
+            if(mData) iniciarApp();
+        });
+        
+        // Marcar como online en la ruta correcta
+        const onlineRef = db.ref('usuarios/sincro/' + user.uid + '/online');
+        onlineRef.set(true);
+        onlineRef.onDisconnect().set(false);
+        
+    } else {
+        view('scr-login');
+    }
+});
 
-    function iniciarApp() {
-        view('scr-chat');
-        if(mData.nombre.toLowerCase() === 'chat') {
-            mData.vip = true;
-            document.getElementById('btn-edit-group').style.display = 'inline-block';
-        }
 
-        db.ref('usuarios/sincro').on('value', snap => {
-            const list = document.getElementById('miembros-list'); list.innerHTML = "";
-            snap.forEach(child => {
-                const u = child.val(); if(child.key === mUser.uid) return;
-                list.innerHTML += `<div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
+function iniciarApp() {
+    view('scr-chat');
+    if(mData.nombre.toLowerCase() === 'chat') {
+        mData.vip = true;
+        document.getElementById('btn-edit-group').style.display = 'inline-block';
+    }
+
+    // BUSCAR USUARIOS EN LA RUTA CORRECTA SEGÚN TUS REGLAS
+    db.ref('usuarios/sincro').on('value', snap => {
+        const list = document.getElementById('miembros-list'); 
+        list.innerHTML = "";
+        snap.forEach(child => {
+            const u = child.val(); 
+            // No mostrarse a uno mismo en la lista
+            if(child.key === mUser.uid) return;
+
+            list.innerHTML += `
+                <div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
                     <div style="width:40px; height:40px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:12px; font-weight:bold; position:relative; flex-shrink:0;">
-                        ${u.nombre[0].toUpperCase()}${u.online ? '<div class="status-dot"></div>' : ''}
+                        ${u.nombre[0].toUpperCase()}
+                        ${u.online ? '<div class="status-dot"></div>' : ''}
                     </div>
                     <div style="overflow:hidden;">
                         <b style="font-size:14px; white-space:nowrap;">${u.nombre}</b><br>
-                        <small style="color:${u.online?'#4caf50':'#aaa'}; font-size:11px;">${u.online?'en línea':'desconectado'}</small>
+                        <small style="color:${u.online ? '#4caf50' : '#aaa'}; font-size:11px;">
+                            ${u.online ? 'en línea' : 'desconectado'}
+                        </small>
                     </div>
                 </div>`;
-            });
         });
+    });
 
-        db.ref('config/nombreGrupo').on('value', snap => {
-            const n = snap.val() || "Sincro MD";
-            if(chatActual === "chats/sincro/publico") {
-                document.getElementById('chat-title').innerText = n;
-                document.getElementById('info-name').innerText = n;
-                document.getElementById('info-icon').innerText = n[0].toUpperCase();
-            }
-        });
+    db.ref('config/nombreGrupo').on('value', snap => {
+        const n = snap.val() || "Sincro MD";
+        if(chatActual === "chats/sincro") {
+            document.getElementById('chat-title').innerText = n;
+            document.getElementById('info-name').innerText = n;
+            document.getElementById('info-icon').innerText = n[0].toUpperCase();
+        }
+    });
 
-        if(!listener) verChatPublico();
-    }
+    if(!listener) verChatPublico();
+}
+
 
     function editarNombreGrupo() {
         const n = prompt("Nuevo nombre del grupo:");
@@ -381,11 +397,14 @@ function abrirCloudinary() {
 
 
     function verChatPublico() {
-        chatActual = "chats/sincro";
-        document.getElementById('chat-status').innerText = "Grupo Público";
-        db.ref('config/nombreGrupo').once('value', s => document.getElementById('chat-title').innerText = s.val() || "Chat Público 🌐");
-        escucharChat();
-    }
+    chatActual = "chats/sincro"; // Ruta corregida
+    document.getElementById('chat-status').innerText = "Grupo Público";
+    db.ref('config/nombreGrupo').once('value', s => {
+        document.getElementById('chat-title').innerText = s.val() || "Sincro MD 🌐";
+    });
+    escucharChat();
+}
+
 
     function iniciarPrivado(targetUid, nombre) {
         const chatID = [mUser.uid, targetUid].sort().join("_");
