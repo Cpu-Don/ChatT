@@ -284,7 +284,7 @@
 
         db.ref('config/nombreGrupo').on('value', snap => {
             const n = snap.val() || "Sincro MD";
-            if(chatActual === "chats/publico") {
+            if(chatActual === "chats/sincro/publico") {
                 document.getElementById('chat-title').innerText = n;
                 document.getElementById('info-name').innerText = n;
                 document.getElementById('info-icon').innerText = n[0].toUpperCase();
