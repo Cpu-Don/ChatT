@@ -20,10 +20,29 @@
         @media (min-width: 1024px) { #app { width: 98%; height: 96vh; margin: 2vh auto; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); } }
 
         /* Notificaciones */
-        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; pointer-events: none; }
-        .toast { background: rgba(0, 0, 0, 0.9); color: white; padding: 12px 25px; border-radius: 50px; font-size: 14px; margin-bottom: 10px; animation: slideIn 0.3s forwards; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-
+        /* Estilo para las alertas bonitas */
+#toast-container { 
+    position: fixed; 
+    top: 20px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    z-index: 9999; 
+}
+.toast { 
+    background: #333; 
+    color: white; 
+    padding: 12px 25px; 
+    border-radius: 30px; 
+    font-size: 14px; 
+    margin-bottom: 8px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    border-left: 5px solid #0088cc; /* Color azul por defecto */
+    animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
         /* Estructura Principal */
         #sidebar-left, #sidebar-right { width: 300px; background: var(--side-bg); border: 1px solid #dfe5ec; display: flex; flex-direction: column; z-index: 10; overflow: hidden; flex-shrink: 0; }
         .collapsed-left { width: 0 !important; border: none !important; }
@@ -362,7 +381,7 @@ function abrirCloudinary() {
 
 
     function verChatPublico() {
-        chatActual = "chats/publico";
+        chatActual = "chats/sincro/publico";
         document.getElementById('chat-status').innerText = "Grupo Público";
         db.ref('config/nombreGrupo').once('value', s => document.getElementById('chat-title').innerText = s.val() || "Chat Público 🌐");
         escucharChat();
@@ -370,7 +389,7 @@ function abrirCloudinary() {
 
     function iniciarPrivado(targetUid, nombre) {
         const chatID = [mUser.uid, targetUid].sort().join("_");
-        chatActual = "privados/" + chatID;
+        chatActual = "privados/sincro/" + chatID;
         document.getElementById('chat-title').innerText = nombre;
         document.getElementById('info-name').innerText = nombre;
         document.getElementById('info-icon').innerText = nombre[0].toUpperCase();
@@ -380,6 +399,26 @@ function abrirCloudinary() {
     }
 
     function vaciarChat() { if(confirm("⚠️ ¿Eliminar historial?")) db.ref(chatActual).remove(); }
+
+    function notify(mensaje, tipo = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    
+    // Colores: Rojo para error, Verde para éxito
+    if(tipo === 'error') toast.style.borderLeft = "5px solid #ff4b2b";
+    if(tipo === 'success') toast.style.borderLeft = "5px solid #00b09b";
+    
+    toast.innerText = mensaje;
+    container.appendChild(toast);
+    
+    // Se desvanece y elimina solo
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 500);
+    }, 3500);
+}
+
 </script>
 </body>
 </html>
