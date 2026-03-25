@@ -312,8 +312,8 @@ function iniciarApp() {
 
 
     function editarNombreGrupo() {
-        const n = prompt("Nuevo nombre del grupo:");
-        if(n) db.ref('config/nombreGrupo').set(n);
+    const n = prompt("Nuevo nombre del grupo:");
+    if(n) db.ref('Sincro_Config/nombreGrupo').set(n);
     }
 
     // --- MENSAJES ---
@@ -398,25 +398,34 @@ function abrirCloudinary() {
 
 
     function verChatPublico() {
-    chatActual = "chats/sincro"; // Ruta corregida
+    // Esto crea la carpeta "Sincro_Chat_Publico" solita en la raíz
+    chatActual = "Sincro_Chat_Publico"; 
     document.getElementById('chat-status').innerText = "Grupo Público";
-    db.ref('config/nombreGrupo').once('value', s => {
-        document.getElementById('chat-title').innerText = s.val() || "Sincro MD 🌐";
+    
+    // Buscamos el nombre del grupo en una ruta limpia
+    db.ref('Sincro_Config/nombreGrupo').on('value', snap => {
+        document.getElementById('chat-title').innerText = snap.val() || "Sincro MD 🌐";
     });
+    
     escucharChat();
 }
 
+function iniciarPrivado(targetUid, nombre) {
+    const chatID = [mUser.uid, targetUid].sort().join("_");
+    
+    // Esto crea la carpeta "Sincro_Privados" afuera en la raíz
+    chatActual = "Sincro_Privados/" + chatID; 
+    
+    document.getElementById('chat-title').innerText = nombre;
+    document.getElementById('info-name').innerText = nombre;
+    document.getElementById('info-icon').innerText = nombre[0].toUpperCase();
+    document.getElementById('chat-status').innerText = "Chat Privado";
+    
+    escucharChat();
+    
+    if(window.innerWidth < 1024) toggleMenu('left');
+}
 
-    function iniciarPrivado(targetUid, nombre) {
-        const chatID = [mUser.uid, targetUid].sort().join("_");
-        chatActual = "privados/sincro/" + chatID;
-        document.getElementById('chat-title').innerText = nombre;
-        document.getElementById('info-name').innerText = nombre;
-        document.getElementById('info-icon').innerText = nombre[0].toUpperCase();
-        document.getElementById('chat-status').innerText = "Chat Privado";
-        escucharChat();
-        if(window.innerWidth < 1024) toggleMenu('left');
-    }
 
     function vaciarChat() { if(confirm("⚠️ ¿Eliminar historial?")) db.ref(chatActual).remove(); }
 
