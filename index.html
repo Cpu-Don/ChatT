@@ -116,6 +116,12 @@
             <div style="padding:15px; background:#0088cc; color:white; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
                 SINCRO <span onclick="toggleMenu('left')" style="cursor:pointer; font-size:20px;">☰</span>
             </div>
+
+            <div id="vip-status-container" style="padding:10px 15px; border-bottom:1px solid #eee; display:none;">
+                <button id="btn-pedir-vip-fijo" onclick="enviarSolicitudVip()" class="btn-solicitud" style="width:100%; margin:0; background:#0088cc; color:white; border:none; padding:10px; border-radius:10px; cursor:pointer; font-weight:bold;">
+                    ⭐ Solicitar Acceso VIP
+                </button>
+            </div>
             
             <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; cursor:pointer; border-bottom:1px solid #ddd;">
                 <b>Chat Público 🌐</b>
@@ -135,6 +141,7 @@
                <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;">☰</button>
                <div style="text-align:center;">
                    <b id="chat-title" style="display:block; font-size: 15px;">Cargando...</b>
+                   <small id="chat-desc" style="font-size:10px; color:#888; display:block; margin-top:-2px;"></small>
                    <small id="chat-status" style="font-size:10px; color:#888;"></small>
                </div>
                <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;">👤</button>
@@ -155,11 +162,12 @@
             <div style="padding:20px; text-align:center;">
                 <div id="info-icon" style="width:80px; height:80px; background:#0088cc; color:white; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:bold;">S</div>
                 <h3 id="info-name" style="margin:5px 0; font-size: 18px;">Sincro MD</h3>
-                <button id="btn-edit-group" onclick="editarNombreGrupo()" style="display:none; background:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:5px 12px; font-size:11px; cursor:pointer; margin-top:8px;">Editar Nombre</button>
+                <button id="btn-edit-group" onclick="editarNombreGrupo()" style="display:none; background:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:5px 12px; font-size:11px; cursor:pointer; margin-top:8px;">Editar Info</button>
             </div>
             <div style="padding:10px; background:#f8f9fa; font-weight:bold; font-size:12px; color:#666;">ARCHIVOS MULTIMEDIA</div>
             <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; padding:10px; overflow-y:auto; flex:1; align-content: start;"></div>
-            <div style="padding:10px; border-top:1px solid #eee;">
+            
+            <div id="admin-actions" style="padding:10px; border-top:1px solid #eee; display:none;">
                 <button onclick="vaciarChat()" style="width:100%; padding:10px; background:#fff; border:1px solid #d9534f; color:#d9534f; border-radius:5px; cursor:pointer; font-size:12px;">Vaciar Historial</button>
             </div>
         </aside>
@@ -254,33 +262,40 @@
         if(soyAdmin) {
             mData.vip = true;
             document.getElementById('btn-edit-group').style.display = 'inline-block';
+            document.getElementById('admin-actions').style.display = 'block';
+        }
+
+        const vipCont = document.getElementById('vip-status-container');
+        if(vipCont) {
+            if(!mData.vip && mData.solicitudVip !== 'pendiente') {
+                vipCont.style.display = 'block';
+            } else if(mData.solicitudVip === 'pendiente') {
+                vipCont.style.display = 'block';
+                const btnFijo = document.getElementById('btn-pedir-vip-fijo');
+                btnFijo.innerText = "⏳ Solicitud Enviada";
+                btnFijo.style.background = "#ff9800";
+                btnFijo.onclick = null;
+            } else {
+                vipCont.style.display = 'none';
+            }
         }
 
         db.ref('Sincro_Usuarios').on('value', snap => {
             const listAll = document.getElementById('miembros-list');
             const listOnline = document.getElementById('online-list');
             if(!listAll || !listOnline) return;
-            
-            listAll.innerHTML = "";
-            listOnline.innerHTML = "";
-
+            listAll.innerHTML = ""; listOnline.innerHTML = "";
             snap.forEach(child => {
-                const u = child.val();
-                const uid = child.key;
+                const u = child.val(); const uid = child.key;
                 if(uid === mUser.uid) return;
-
-                const n = u.nombre || "Usuario"; 
-                const inicial = n.charAt(0).toUpperCase();
-                const online = u.online === true;
-                const esVip = u.vip === true;
+                const n = u.nombre || "Usuario"; const inicial = n.charAt(0).toUpperCase();
+                const online = u.online === true; const esVip = u.vip === true;
                 const pendiente = u.solicitudVip === 'pendiente';
-
                 let adminBtn = "";
                 if(soyAdmin) {
                     if(pendiente && !esVip) adminBtn = `<button class="btn-admin-accept" onclick="aceptarVip('${uid}')">📩 ACEPTAR</button>`;
                     else if(esVip) adminBtn = `<span style="color:#4caf50; font-size:9px; margin-left:5px;">⭐ VIP</span>`;
                 }
-
                 const userHTML = `
                 <div onclick="iniciarPrivado('${uid}', '${n}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
                     <div style="width:35px; height:35px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:12px; font-weight:bold; position:relative; flex-shrink:0; font-size: 13px;">
@@ -291,17 +306,18 @@
                         <small style="color:${online ? '#4caf50' : '#aaa'}; font-size:10px;">${online ? 'en línea' : 'desconectado'}</small>
                     </div>
                 </div>`;
-
-                listAll.innerHTML += userHTML;
-                if(online) listOnline.innerHTML += userHTML;
+                listAll.innerHTML += userHTML; if(online) listOnline.innerHTML += userHTML;
             });
             if(listOnline.innerHTML === "") listOnline.innerHTML = "<p style='font-size:11px; color:#aaa; padding:15px;'>No hay nadie más conectado</p>";
         });
 
-        db.ref('Sincro_Config/nombreGrupo').on('value', snap => {
-            const n = snap.val() || "Sincro MD";
+        db.ref('Sincro_Config').on('value', snap => {
+            const config = snap.val() || {};
+            const n = config.nombreGrupo || "Sincro MD";
+            const d = config.descripcionGrupo || "";
             if(chatActual === "Sincro_Chat_Publico") {
                 document.getElementById('chat-title').innerText = n;
+                document.getElementById('chat-desc').innerText = d;
                 document.getElementById('info-name').innerText = n;
                 document.getElementById('info-icon').innerText = n[0].toUpperCase();
             }
@@ -311,7 +327,7 @@
 
     function enviarSolicitudVip() {
         db.ref('Sincro_Usuarios/' + mUser.uid).update({ solicitudVip: 'pendiente' })
-        .then(() => notify("Solicitud enviada al Admin"));
+        .then(() => notify("🚀 Solicitud enviada al Admin"));
     }
 
     function aceptarVip(uid) {
@@ -320,8 +336,19 @@
     }
 
     function editarNombreGrupo() {
-        const n = prompt("Nuevo nombre del grupo:");
-        if(n) db.ref('Sincro_Config/nombreGrupo').set(n);
+        const n = prompt("Nombre del grupo:", document.getElementById('chat-title').innerText);
+        const d = prompt("Descripción corta:", document.getElementById('chat-desc').innerText);
+        if(n !== null) { db.ref('Sincro_Config').update({ nombreGrupo: n, descripcionGrupo: d || "" }); }
+    }
+
+    function vaciarChat() { 
+        if(mData.nombre && mData.nombre.toLowerCase() === 'chat') {
+            if(confirm("⚠️ ¿Eliminar historial para TODOS los usuarios?")) {
+                db.ref(chatActual).remove().then(() => notify("✅ Chat vaciado")); 
+            }
+        } else {
+            notify("❌ Solo el administrador puede vaciar el chat.");
+        }
     }
 
     function escucharChat() {
@@ -333,28 +360,19 @@
         listener = db.ref(chatActual).on('child_added', snap => {
             const data = snap.val(), isMine = data.uid === mUser.uid;
             const d = document.createElement('div'); d.className = "msg " + (isMine ? "me" : "them"); d.id = "m-" + snap.key;
-            
             d.oncontextmenu = (e) => { 
                 e.preventDefault();
                 if(mData.vip && confirm("¿Borrar mensaje?")) db.ref(chatActual + "/" + snap.key).remove(); 
             };
-
             let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
-            
             if(data.type === 'foto' || data.type === 'video') {
                 const locked = !mData.vip && !isMine;
                 const mediaTag = data.type === 'video' ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
-                
                 if(locked) {
                     const txtBtn = mData.solicitudVip === 'pendiente' ? 'Solicitud pendiente...' : 'Solicitar Acceso';
                     const onclickS = mData.solicitudVip === 'pendiente' ? '' : 'onclick="enviarSolicitudVip()"';
-                    html += `<div class="media-container blur">
-                        <div class="lock-overlay"><span>🔒 PRIVADO</span><button class="btn-solicitud ${mData.solicitudVip==='pendiente'?'pendiente':''}" ${onclickS}>${txtBtn}</button></div>
-                        ${mediaTag}</div>`;
-                } else {
-                    html += `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`;
-                }
-                
+                    html += `<div class="media-container blur"><div class="lock-overlay"><span>🔒 PRIVADO</span><button class="btn-solicitud ${mData.solicitudVip==='pendiente'?'pendiente':''}" ${onclickS}>${txtBtn}</button></div>${mediaTag}</div>`;
+                } else { html += `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`; }
                 const itemGal = document.createElement('div');
                 itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;";
                 if(locked) {
@@ -366,20 +384,13 @@
                 }
                 gal.prepend(itemGal);
             } else { html += `<span>${data.msg}</span>`; }
-            
-            d.innerHTML = html;
-            box.appendChild(d);
-            box.scrollTop = box.scrollHeight;
+            d.innerHTML = html; box.appendChild(d); box.scrollTop = box.scrollHeight;
         });
-
-        db.ref(chatActual).on('child_removed', snap => { 
-            const el = document.getElementById("m-" + snap.key); if(el) el.remove(); 
-        });
+        db.ref(chatActual).on('child_removed', snap => { const el = document.getElementById("m-" + snap.key); if(el) el.remove(); });
     }
 
     function enviarMsg() {
-        const input = document.getElementById('msg-in'); 
-        const texto = input.value.trim();
+        const input = document.getElementById('msg-in'); const texto = input.value.trim();
         if(texto === "") return;
         db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre || "Usuario", msg: texto, type: 'texto', timestamp: Date.now() }).then(() => { input.value = ""; });
     }
@@ -396,7 +407,11 @@
     function verChatPublico() {
         chatActual = "Sincro_Chat_Publico";
         document.getElementById('chat-status').innerText = "Grupo Público";
-        db.ref('Sincro_Config/nombreGrupo').once('value', s => document.getElementById('chat-title').innerText = s.val() || "Chat Público 🌐");
+        db.ref('Sincro_Config').once('value', s => {
+            const config = s.val() || {};
+            document.getElementById('chat-title').innerText = config.nombreGrupo || "Chat Público 🌐";
+            document.getElementById('chat-desc').innerText = config.descripcionGrupo || "";
+        });
         escucharChat();
     }
 
@@ -405,14 +420,13 @@
         const chatID = [mUser.uid, targetUid].sort().join("_");
         chatActual = "Sincro_Privados/" + chatID;
         document.getElementById('chat-title').innerText = nombre;
+        document.getElementById('chat-desc').innerText = "";
         document.getElementById('info-name').innerText = nombre;
         document.getElementById('info-icon').innerText = nombre[0].toUpperCase();
         document.getElementById('chat-status').innerText = "Chat Privado";
         escucharChat();
         if(window.innerWidth < 1024) toggleMenu('left');
     }
-
-    function vaciarChat() { if(confirm("⚠️ ¿Eliminar historial?")) db.ref(chatActual).remove(); }
 </script>
 </body>
 </html>
