@@ -74,6 +74,30 @@
         
         .status-dot { width: 10px; height: 10px; background: #4caf50; border-radius: 50%; border: 2px solid white; position: absolute; bottom: 0; right: 0; }
         .section-label { padding: 10px 15px; background: #f1f4f7; font-size: 11px; font-weight: bold; color: #888; letter-spacing: 1px; }
+         /* Contenedor del modal */
+.modal-confirm {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; backdrop-filter: blur(5px);
+}
+
+/* La tarjeta blanca/cristal */
+.modal-card {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px; border-radius: 15px;
+    width: 280px; text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.modal-card p { color: #333; margin-bottom: 20px; font-weight: bold; }
+
+/* Botones personalizados */
+.btn-del { background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin: 5px; }
+.btn-can { background: #ccc; color: #333; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin: 5px; }
+
     </style>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script>
@@ -441,15 +465,36 @@
         listener = db.ref(chatActual).on('child_added', snap => {
             const data = snap.val(), isMine = data.uid === mUser.uid;
             const d = document.createElement('div'); d.className = "msg " + (isMine ? "me" : "them"); d.id = "m-" + snap.key;
-                    d.oncontextmenu = (e) => {
+                            d.oncontextmenu = (e) => {
             e.preventDefault();
             const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+            
             if (isMine || soyAdmin) {
-                if(confirm("¿Borrar mensaje?")) {
+                // Crear el modal bonito
+                const modal = document.createElement('div');
+                modal.className = 'modal-confirm';
+                modal.innerHTML = `
+                    <div class="modal-card">
+                        <p>¿Eliminar este mensaje?</p>
+                        <button class="btn-del" id="confirm-del">Eliminar</button>
+                        <button class="btn-can" id="cancel-del">Cancelar</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                // Botón de Eliminar
+                modal.querySelector('#confirm-del').onclick = () => {
                     db.ref(chatActual + "/" + snap.key).remove();
-                }
+                    modal.remove();
+                };
+                
+                // Botón de Cancelar
+                modal.querySelector('#cancel-del').onclick = () => {
+                    modal.remove();
+                };
             }
         };
+
 
 
             let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
