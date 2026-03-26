@@ -523,11 +523,30 @@
     }
 
     function enviarMsg() {
-        const input = document.getElementById('msg-in'); const texto = input.value.trim();
-        if(texto === "") return;
-        db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre || "Usuario", msg: texto, type: 'texto', timestamp: Date.now() }).then(() => { input.value = ""; });
-    }
+    const input = document.getElementById('msg-in'); 
+    const texto = input.value.trim();
+    if(texto === "") return;
 
+    db.ref(chatActual).push({ 
+        uid: mUser.uid, 
+        user: mData.nombre || "Usuario", 
+        msg: texto, 
+        type: 'texto', 
+        timestamp: Date.now() 
+    });
+
+    input.value = ""; // <--- ¡AÑADE ESTA LÍNEA AQUÍ!
+}
+
+// Enviar mensaje con la tecla Enter
+document.getElementById('msg-in').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        enviarMsg();
+    }
+});
+
+    
     function abrirCloudinary() {
         cloudinary.openUploadWidget({ cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET, sources: ['local', 'url', 'camera'], multiple: false }, (err, res) => {
             if (!err && res.event === "success") {
