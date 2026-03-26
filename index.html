@@ -19,12 +19,10 @@
         #app { width: 100%; height: 100%; background: white; display: flex; overflow: hidden; position: relative; }
         @media (min-width: 1024px) { #app { width: 98%; height: 96vh; margin: 2vh auto; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); } }
 
-        /* Notificaciones */
         #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; }
         .toast { background: #333; color: white; padding: 12px 25px; border-radius: 30px; font-size: 14px; margin-bottom: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border-left: 5px solid #0088cc; animation: slideIn 0.3s ease; }
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* Estructura Principal */
         #sidebar-left, #sidebar-right { width: 300px; background: var(--side-bg); border: 1px solid #dfe5ec; display: flex; flex-direction: column; z-index: 10; overflow: hidden; flex-shrink: 0; }
         .collapsed-left { width: 0 !important; border: none !important; }
         .collapsed-right { width: 0 !important; border: none !important; }
@@ -45,16 +43,15 @@
         .me { align-self: flex-end; background: var(--msg-out); border-bottom-right-radius: 2px; }
         .them { align-self: flex-start; background: #ffffff; border-bottom-left-radius: 2px; }
         .msg b { display: block; color: var(--tg-blue); font-size: 11px; margin-bottom: 4px; cursor: pointer; }
-        .msg b:hover { text-decoration: underline; }
 
-        /* --- SISTEMA DE BLOQUEO Y VIP --- */
+        /* --- ESTILOS VIP Y BLOQUEO --- */
         .media-container { margin-top: 5px; border-radius: 10px; overflow: hidden; background: #000; cursor: pointer; display: flex; justify-content: center; position: relative; }
         .media-container img, .media-container video { max-width: 100%; max-height: 300px; display: block; }
         .blur { filter: blur(35px); opacity: 0.4; pointer-events: none; }
-        .lock-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; z-index: 5; text-align: center; padding: 5px; }
+        .lock-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5; }
         
-        .btn-solicitud { background: #0088cc; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; cursor: pointer; margin-top: 5px; }
-        .btn-solicitud.pendiente { background: #ff9800; }
+        .btn-solicitud { background: #0088cc; color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 10px; cursor: pointer; margin-top: 5px; font-weight: bold; }
+        .btn-solicitud.pendiente { background: #ff9800; cursor: default; }
         .btn-admin-accept { background: #4caf50; color: white; border: none; border-radius: 4px; font-size: 9px; padding: 3px 6px; margin-left: 5px; cursor: pointer; }
 
         footer { padding: 10px; background: white; display: flex; gap: 10px; align-items: center; border-top: 1px solid #ddd; flex-shrink: 0; }
@@ -75,9 +72,6 @@
         .status-dot { width: 10px; height: 10px; background: #4caf50; border-radius: 50%; border: 2px solid white; position: absolute; bottom: 0; right: 0; }
         .section-label { padding: 10px 15px; background: #f1f4f7; font-size: 11px; font-weight: bold; color: #888; letter-spacing: 1px; }
     </style>
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
-
 </head>
 <body>
 
@@ -295,7 +289,6 @@
                 listAll.innerHTML += userHTML;
                 if(online) listOnline.innerHTML += userHTML;
             });
-            if(listOnline.innerHTML === "") listOnline.innerHTML = "<p style='font-size:11px; color:#aaa; padding:15px;'>No hay nadie más conectado</p>";
         });
 
         db.ref('Sincro_Config/nombreGrupo').on('value', snap => {
@@ -346,7 +339,7 @@
                 const mediaTag = data.type === 'video' ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
                 
                 if(locked) {
-                    const txtBtn = mData.solicitudVip === 'pendiente' ? 'Solicitud pendiente...' : 'Solicitar Acceso';
+                    const txtBtn = mData.solicitudVip === 'pendiente' ? 'Pendiente...' : 'Solicitar VIP';
                     const onclickS = mData.solicitudVip === 'pendiente' ? '' : 'onclick="enviarSolicitudVip()"';
                     html += `<div class="media-container blur">
                         <div class="lock-overlay"><span>🔒 PRIVADO</span><button class="btn-solicitud ${mData.solicitudVip==='pendiente'?'pendiente':''}" ${onclickS}>${txtBtn}</button></div>
@@ -359,7 +352,6 @@
                 itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;";
                 if(locked) {
                     itemGal.innerHTML = `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; z-index:5;">🔒</div><div class="blur" style="height:100%">${mediaTag}</div>`;
-                    itemGal.onclick = () => notify("Solicita acceso VIP");
                 } else {
                     itemGal.innerHTML = data.type === 'video' ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
                     itemGal.onclick = () => abrirMedia(data.url, data.type);
