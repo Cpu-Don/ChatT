@@ -441,12 +441,16 @@
         listener = db.ref(chatActual).on('child_added', snap => {
             const data = snap.val(), isMine = data.uid === mUser.uid;
             const d = document.createElement('div'); d.className = "msg " + (isMine ? "me" : "them"); d.id = "m-" + snap.key;
-            d.oncontextmenu = (e) => { 
-                e.preventDefault();
-                            const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+                    d.oncontextmenu = (e) => {
+            e.preventDefault();
+            const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
             if (isMine || soyAdmin) {
-                if(confirm("¿Borrar mensaje?")) db.ref(chatActual + "/" + snap.key).remove();
+                if(confirm("¿Borrar mensaje?")) {
+                    db.ref(chatActual + "/" + snap.key).remove();
+                }
             }
+        };
+
 
             let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
             if(data.type === 'foto' || data.type === 'video') {
