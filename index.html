@@ -263,20 +263,26 @@
                 const u = child.val();
                 if(child.key === mUser.uid) return;
 
+                           // --- PROTECCIÓN CONTRA NOMBRES VACÍOS ---
+                const n = u.nombre || "Usuario"; 
+                const inicial = n.charAt(0).toUpperCase();
+                const onlineTxt = u.online ? 'en línea' : 'desconectado';
+                const onlineCol = u.online ? '#4caf50' : '#aaa';
+
                 const userHTML = `
-                <div onclick="iniciarPrivado('${child.key}', '${u.nombre}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
+                <div onclick="iniciarPrivado('${child.key}', '${n}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
                     <div style="width:35px; height:35px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:12px; font-weight:bold; position:relative; flex-shrink:0; font-size: 13px;">
-                        ${u.nombre[0].toUpperCase()}${u.online ? '<div class="status-dot"></div>' : ''}
+                        ${inicial}${u.online ? '<div class="status-dot"></div>' : ''}
                     </div>
                     <div style="overflow:hidden;">
-                        <b style="font-size:13px; white-space:nowrap;">${u.nombre}</b><br>
-                        <small style="color:${u.online?'#4caf50':'#aaa'}; font-size:10px;">${u.online?'en línea':'desconectado'}</small>
+                        <b style="font-size:13px; white-space:nowrap;">${n}</b><br>
+                        <small style="color:${onlineCol}; font-size:10px;">${onlineTxt}</small>
                     </div>
                 </div>`;
 
                 listAll.innerHTML += userHTML;
                 if(u.online) listOnline.innerHTML += userHTML;
-            });
+  });
 
             if(listOnline.innerHTML === "") listOnline.innerHTML = "<p style='font-size:11px; color:#aaa; padding:15px;'>No hay nadie más conectado</p>";
         });
