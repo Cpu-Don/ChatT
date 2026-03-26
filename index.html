@@ -443,8 +443,11 @@
             const d = document.createElement('div'); d.className = "msg " + (isMine ? "me" : "them"); d.id = "m-" + snap.key;
             d.oncontextmenu = (e) => { 
                 e.preventDefault();
-                if(mData.vip && confirm("¿Borrar mensaje?")) db.ref(chatActual + "/" + snap.key).remove(); 
-            };
+                            const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+            if (isMine || soyAdmin) {
+                if(confirm("¿Borrar mensaje?")) db.ref(chatActual + "/" + snap.key).remove();
+            }
+
             let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
             if(data.type === 'foto' || data.type === 'video') {
                 const locked = !mData.vip && !isMine;
