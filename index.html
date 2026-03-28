@@ -873,17 +873,22 @@ function mostrarListaParaAgregar() {
 }
 // Función para que el usuario envíe el reporte
 function abrirReporte(uidMalo, nombreMalo, contenido) {
-    let motivo = prompt(`¿Por qué reportas a ${nombreMalo}?\nContenido: "${contenido}"`);
+    let esMultimedia = contenido.startsWith('http');
+    let motivo = prompt(`¿Motivo del reporte contra ${nombreMalo}?`);
+    
     if (motivo) {
         db.ref('Sincro_Reportes').push({
             reportadoPor: mData.nombre || "Anónimo",
             usuarioReportado: nombreMalo,
+            uidReportado: uidMalo, // Guardamos el ID para poder banearlo después
             motivo: motivo,
             evidencia: contenido,
+            esMultimedia: esMultimedia,
             fecha: Date.now()
-        }).then(() => notify("✅ Gracias. El reporte ha sido enviado al administrador."));
+        }).then(() => notify("✅ Reporte enviado con éxito."));
     }
 }
+
 
 // Función para que TÚ veas los reportes (Panel Admin)
 function abrirPanelReportes() {
@@ -895,18 +900,37 @@ function abrirPanelReportes() {
         cont.innerHTML = "";
         snap.forEach(child => {
             const r = child.val();
+            
+            // Lógica que ya detecta si es foto o video
+            let vistaEvidencia = "";
+            if (r.esMultimedia) {
+                if (r.evidencia.includes('.mp4') || r.evidencia.includes('.mov')) {
+                    vistaEvidencia = `<video src="${r.evidencia}" controls style="width:100%; border-radius:8px; margin-top:5px;"></video>`;
+                } else {
+                    vistaEvidencia = `<img src="${r.evidencia}" style="width:100%; border-radius:8px; margin-top:5px;">`;
+                }
+            } else {
+                vistaEvidencia = `<p style="background:#f0f2f5; padding:10px; border-radius:5px; font-size:12px;">${r.evidencia}</p>`;
+            }
+
             cont.innerHTML += `
-                <div style="background:white; padding:15px; border-radius:10px; margin-bottom:10px; border-left:5px solid #d9534f; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+                <div style="background:white; padding:15px; border-radius:12px; margin-bottom:15px; border-left:5px solid #d9534f; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
                     <b style="color:#d9534f;">🚩 REPORTE DE: ${r.reportadoPor}</b><br>
                     <small>Contra: <b>${r.usuarioReportado}</b></small><hr>
                     <p style="margin:5px 0; font-size:13px;"><b>Motivo:</b> ${r.motivo}</p>
-                    <p style="margin:5px 0; font-size:12px; color:#666;"><b>Mensaje:</b> ${r.evidencia}</p>
-                    <button onclick="db.ref('Sincro_Reportes/${child.key}').remove()" style="margin-top:10px; background:#eee; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:11px;">Eliminar reporte</button>
+                    ${vistaEvidencia}
+                    
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button onclick="ejecutarBaneo('${r.uidReportado}', '${r.usuarioReportado}')" style="flex:2; background:#d9534f; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">🔨 BANEAR</button>
+                        
+                        <button onclick="db.ref('Sincro_Reportes/${child.key}').remove()" style="flex:1; background:#eee; border:none; padding:10px; border-radius:6px; cursor:pointer;">Descartar</button>
+                    </div>
                 </div>`;
         });
         if(cont.innerHTML === "") cont.innerHTML = "<p style='text-align:center; color:#888;'>No hay reportes pendientes.</p>";
     });
 }
+
 
 
 </script>
