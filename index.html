@@ -283,6 +283,8 @@
 
     <button onclick="vaciarChat()" style="width:100%; padding:10px; background:#fff; border:1px solid #d9534f; color:#d9534f; border-radius:5px; cursor:pointer; font-size:12px;">🗑️ Vaciar Chat</button>
 </div>
+           <button id="btn-delete-group" onclick="eliminarGrupoCompleto()" style="display:none; width:100%; padding:10px; background:#000; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:12px; margin-top:10px; border: 1px solid red;">🗑️ ELIMINAR GRUPO</button>
+ 
 
         </aside>
     </div>
@@ -767,39 +769,92 @@ html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.ur
         });
     }
 
-    function cargarGrupos() {
-        const listGrupos = document.getElementById('grupos-list');
-        db.ref('Sincro_InfoGrupos').on('value', snap => {
-            listGrupos.innerHTML = "";
-            let hayGrupos = false;
-            snap.forEach(child => {
-                const g = child.val();
-                const idGrupo = child.key;
-                hayGrupos = true;
-                const esMio = g.owner === mUser.uid;
-                listGrupos.innerHTML += `
-                <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" style="padding:10px 15px; cursor:pointer; border-bottom:1px solid #f2f2f2; display:flex; align-items:center; background:#f4f9f9;">
-                    <div style="width:25px; height:25px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:10px; font-weight:bold;">G</div>
-                    <b style="font-size:12px; color:#333; flex:1;">${g.nombre}</b>
-                    ${esMio ? '<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px;">Dueño</span>' : ''}
-                </div>`;
-            });
-            if(!hayGrupos) listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay grupos disponibles</p>";
+function cargarGrupos() {
+    const listGrupos = document.getElementById('grupos-list');
+    // Escuchamos los metadatos de los grupos
+    db.ref('Sincro_InfoGrupos').on('value', snap => {
+        listGrupos.innerHTML = "";
+        let hayGruposParaMi = false;
+
+        snap.forEach(child => {
+            const g = child.val();
+            const idGrupo = child.key;
+            const esMio = g.owner === mUser.uid;
+
+            // Opción A: Es mi grupo
+            if (esMio) {
+                renderizarItemGrupo(listGrupos, idGrupo, g, true);
+                hayGruposParaMi = true;
+            } 
+            // Opción B: Fui invitado (Buscamos si existe el mensaje de sistema con mi nombre)
+            else {
+                db.ref('Sincro_Grupos/' + idGrupo).orderByChild("msg").equalTo(`¡${mData.nombre} ha sido invitado al grupo!`).once('value', s => {
+                    if(s.exists()){
+                        renderizarItemGrupo(listGrupos, idGrupo, g, false);
+                    }
+                });
+                hayGruposParaMi = true; 
+            }
         });
+        
+        // Si después de un segundo no se detectan grupos, mostramos el mensaje vacío
+        setTimeout(() => {
+            if (listGrupos.innerHTML === "") {
+                listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No tienes grupos aún</p>";
+            }
+        }, 1000);
+    });
+}
+
+// Función auxiliar para no repetir código de diseño
+function renderizarItemGrupo(contenedor, id, data, esMio) {
+    contenedor.innerHTML += `
+    <div onclick="abrirGrupo('${id}', '${data.nombre}', '${data.owner}')" style="padding:10px 15px; cursor:pointer; border-bottom:1px solid #f2f2f2; display:flex; align-items:center; background:#f4f9f9;">
+        <div style="width:25px; height:25px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:10px; font-weight:bold;">G</div>
+        <b style="font-size:12px; color:#333; flex:1;">${data.nombre}</b>
+        ${esMio ? '<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px;">Mío</span>' : ''}
+    </div>`;
+}
+
+
+    // Función para entrar a un grupo y verificar si somos el dueño
+function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
+    chatActual = "Sincro_Grupos/" + idGrupo;
+    window.grupoIdActual = idGrupo; // Guardamos el ID para poder borrarlo luego
+    window.grupoOwnerActual = ownerUid;
+    
+    // Solo el dueño ve el botón de eliminar y las acciones de admin
+    const esDuenio = (ownerUid === mUser.uid);
+    
+    if(document.getElementById('btn-delete-group')) {
+        document.getElementById('btn-delete-group').style.display = esDuenio ? 'block' : 'none';
+    }
+    if(document.getElementById('admin-actions')) {
+        document.getElementById('admin-actions').style.display = esDuenio ? 'block' : 'none';
     }
 
-    function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
-        chatActual = "Sincro_Grupos/" + idGrupo;
-        window.grupoOwnerActual = ownerUid; // Guardamos quién es el dueño
-        
-        document.getElementById('chat-title').innerText = nombreGrupo;
-        document.getElementById('chat-desc').innerText = "Regla de Libertad Activada (Sin candados)";
-        document.getElementById('info-name').innerText = nombreGrupo;
-        document.getElementById('info-icon').innerText = "G";
-        document.getElementById('chat-status').innerText = "Grupo Creado";
-        escucharChat();
-        if(window.innerWidth < 1024) toggleMenu('left');
+    document.getElementById('chat-title').innerText = nombreGrupo;
+    document.getElementById('chat-desc').innerText = "Grupo Privado";
+    escucharChat();
+    
+    if(window.innerWidth < 1024) toggleMenu('left');
+}
+
+// Función para borrar el grupo de la base de datos
+function eliminarGrupoCompleto() {
+    if(!window.grupoIdActual) return;
+    
+    if(confirm("🚨 ¿ESTÁS SEGURO? Se borrará el grupo y todos los mensajes para siempre.")) {
+        // 1. Borrar los mensajes del chat
+        db.ref('Sincro_Grupos/' + window.grupoIdActual).remove();
+        // 2. Borrar la existencia del grupo
+        db.ref('Sincro_InfoGrupos/' + window.grupoIdActual).remove().then(() => {
+            notify("✅ Grupo eliminado correctamente");
+            verChatPublico(); // Te saca al chat general automáticamente
+        });
     }
+}
+
 
     function expulsarDeGrupo(uidAExpulsar, nombreUser) {
         // Modal de cristal para confirmar kick
