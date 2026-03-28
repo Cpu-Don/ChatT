@@ -557,19 +557,36 @@
                 }
             };
 
-            // Si el mensaje es del sistema, no ponemos el nombre (html vacío)
-            // Si es un usuario real, ponemos su nombre con el clic para privado
-            let html = (data.uid === 'sistema') 
-                ? "" 
-                : `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')" style="cursor: pointer; color: #0088cc;">${data.user}</b>`;
+            // --- MODIFICACIÓN DESDE LA LÍNEA 560 ---
+let html = (data.uid === 'sistema') 
+    ? "" 
+    : `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')" style="cursor: pointer; color: #0088cc;">${data.user}</b>`;
 
-html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Multimedia'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
+// Solo mostramos reporte si no es el sistema
+if (data.uid !== 'sistema') {
+    html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Multimedia'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
+}
 
-            // --- INICIO AGREGADO: BOTÓN KICK EN GRUPOS ---
-            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-            if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
-                html += ` <button onclick="expulsarDeGrupo('${data.uid}', '${data.user}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK</button>`;
-            }
+const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
+    
+    // LÓGICA INTELIGENTE: Si es sistema, buscamos el nombre dentro del mensaje
+    let nombreAEchar = data.user;
+    let uidAEchar = data.uid;
+
+    if(data.uid === 'sistema' && data.msg.includes('ha sido invitado')) {
+        // Extraemos el nombre que está entre el "¡" y el " ha sido"
+        nombreAEchar = data.msg.split('¡')[1].split(' ha sido')[0];
+        // Buscamos su UID real en tu mapa de usuarios para que el baneo funcione
+        uidAEchar = Object.keys(usuariosMap).find(key => usuariosMap[key] === nombreAEchar) || 'sistema';
+    }
+
+    // Si logramos encontrar a quién echar, mostramos el botón con su nombre
+    if(uidAEchar !== 'sistema') {
+        html += ` <button onclick="expulsarDeGrupo('${uidAEchar}', '${nombreAEchar}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK a ${nombreAEchar}</button>`;
+    }
+}
+
             // --- FIN AGREGADO ---
 
             if(data.type === 'foto' || data.type === 'video') {
@@ -792,11 +809,18 @@ function cargarGrupos() {
             } 
             // Opción B: Fui invitado (Buscamos si existe el mensaje de sistema con mi nombre)
             else {
-                db.ref('Sincro_Grupos/' + idGrupo).orderByChild("msg").equalTo(`¡${mData.nombre} ha sido invitado al grupo!`).once('value', s => {
-                    if(s.exists()){
-                        renderizarItemGrupo(listGrupos, idGrupo, g, false);
-                    }
-                });
+                // Opción B: Fui invitado (Buscamos si existe la invitación PERO revisamos baneo)
+db.ref('Sincro_Grupos_Baneados/' + idGrupo + '/' + mUser.uid).once('value', banSnap => {
+    if(!banSnap.exists()) {
+        // SOLO si NO está baneado, buscamos la invitación
+        db.ref('Sincro_Grupos/' + idGrupo).orderByChild("msg").equalTo(`¡${mData.nombre} ha sido invitado al grupo!`).once('value', s => {
+            if(s.exists()){
+                renderizarItemGrupo(listGrupos, idGrupo, g, false);
+            }
+        });
+    }
+});
+
                 hayGruposParaMi = true; 
             }
         });
@@ -861,40 +885,22 @@ function eliminarGrupoCompleto() {
 
 
     function expulsarDeGrupo(uidAExpulsar, nombreUser) {
-        // Modal de cristal para confirmar kick
-        const modal = document.createElement('div');
-        modal.className = 'modal-confirm';
-        modal.style.zIndex = '9999';
-        modal.innerHTML = `
-            <div class="modal-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);">
-                <p>¿Expulsar a <b style="color:#d9534f;">${nombreUser}</b> de este grupo?</p>
-                <button class="btn-del" id="confirm-kick">Sí, Expulsar</button>
-                <button class="btn-can" id="cancel-kick">Cancelar</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
-
-        modal.querySelector('#confirm-kick').onclick = () => {
-            // Un KICK simple: Borramos todos los mensajes de este usuario en este grupo para "limpiarlo"
-            // (En Firebase RTDB básico, prohibir escritura requiere reglas de seguridad complejas, 
-            // la solución Frontend es borrar sus msgs y notificar).
-            db.ref(chatActual).orderByChild("uid").equalTo(uidAExpulsar).once('value', snap => {
-                snap.forEach(child => { child.ref.remove(); });
-            });
-            db.ref(chatActual).push({ 
-                uid: 'sistema', user: 'SISTEMA', 
-                msg: `El administrador del grupo ha expulsado a ${nombreUser}.`, 
-                type: 'texto', timestamp: Date.now() 
-            });
-            modal.remove();
-            notify(` ${nombreUser} expulsado`);
-        };
+    if(confirm(`¿Expulsar permanentemente a ${nombreUser} de este grupo?`)) {
+        const idGrupo = chatActual.split('/')[1];
         
-        modal.querySelector('#cancel-kick').onclick = () => modal.remove();
+        // 1. Lo metemos en una "Lista Negra" dentro del grupo en Firebase
+        db.ref('Sincro_Grupos_Baneados/' + idGrupo + '/' + uidAExpulsar).set(true);
+
+        // 2. Ponemos el aviso de expulsión
+        db.ref(chatActual).push({ 
+            uid: 'sistema', user: 'SISTEMA', 
+            msg: `🚫 ${nombreUser} ha sido expulsado permanentemente.`, 
+            type: 'texto', timestamp: Date.now() 
+        });
+
+        notify(`${nombreUser} eliminado y bloqueado`);
     }
-    // =====================================================================
-    // --- FIN BLOQUE NUEVO ---
-    // =====================================================================
+============================================
 
     // Función para activar el botón de añadir personas
 // Función para activar el botón de añadir personas (Versión Mejorada por Nombre)
