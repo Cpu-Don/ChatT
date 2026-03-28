@@ -74,28 +74,8 @@
         
         .status-dot { width: 10px; height: 10px; background: #4caf50; border-radius: 50%; border: 2px solid white; position: absolute; bottom: 0; right: 0; }
         .section-label { padding: 10px 15px; background: #f1f4f7; font-size: 11px; font-weight: bold; color: #888; letter-spacing: 1px; }
-
-        /* --- MODALES ELEGANTES SINCRO --- */
-        .modal-sincro {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px); display: none; align-items: center;
-            justify-content: center; z-index: 10000; animation: fadeIn 0.3s ease;
-        }
-        .modal-card-sincro {
-            background: rgba(255, 255, 255, 0.98); width: 90%; max-width: 350px;
-            padding: 25px; border-radius: 20px; text-align: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2);
-        }
-        .modal-card-sincro h3 { margin: 0 0 10px; color: #0088cc; }
-        .modal-card-sincro p { font-size: 14px; color: #666; margin-bottom: 20px; }
-        .in-modal { width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 12px; border: 1px solid #ddd; outline: none; }
-        .btn-flex { display: flex; gap: 10px; }
-        .btn-modal-sincro { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-confirm-sincro { background: #0088cc; color: white; }
-        .btn-danger-sincro { background: #ff4757; color: white; }
-        .btn-cancel-sincro { background: #f1f1f1; color: #666; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
+         
+        /* Contenedor del modal */
         .modal-confirm {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -103,6 +83,8 @@
             display: flex; align-items: center; justify-content: center;
             z-index: 1000; backdrop-filter: blur(5px);
         }
+
+        /* La tarjeta blanca/cristal */
         .modal-card {
             background: rgba(255, 255, 255, 0.95);
             padding: 20px; border-radius: 15px;
@@ -110,11 +92,12 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             border: 1px solid rgba(255,255,255,0.3);
         }
+
         .modal-card p { color: #333; margin-bottom: 20px; font-weight: bold; }
+
+        /* Botones personalizados */
         .btn-del { background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin: 5px; }
         .btn-can { background: #ccc; color: #333; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin: 5px; }
-        .group-item { padding: 12px 15px; border-bottom: 1px solid #f2f2f2; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 10px; }
-        .group-item:hover { background: #f0f8ff; }
 
     </style>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
@@ -125,47 +108,33 @@
 
 <div id="toast-container"></div>
 
-<div id="modal-crear-g" class="modal-sincro">
-    <div class="modal-card-sincro">
-        <h3>Nuevo Grupo 👥</h3>
-        <input type="text" id="name-g" class="in-modal" placeholder="Nombre del grupo...">
-        <div class="btn-flex">
-            <button class="btn-modal-sincro btn-cancel-sincro" onclick="cerrarModales()">Cerrar</button>
-            <button class="btn-modal-sincro btn-confirm-sincro" onclick="confirmarCrearG()">Crear</button>
-        </div>
+<div id="modal-crear-grupo" class="modal-confirm" style="display:none; z-index:9001;">
+    <div class="modal-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);">
+        <h3 style="color:#0088cc; margin-top:0;">Crear Nuevo Grupo</h3>
+        <p style="font-size:12px; color:#666; font-weight:normal; margin-bottom:15px;">Los grupos no tienen candados multimedia (Regla de Libertad).</p>
+        <input type="text" id="nombre-nuevo-grupo" placeholder="Nombre del grupo..." style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd; outline:none; margin-bottom:15px; text-align:center;">
+        <button onclick="guardarNuevoGrupo()" style="background:#0088cc; color:white; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold; width:100%; margin-bottom:10px;">Crear Grupo</button>
+        <button onclick="document.getElementById('modal-crear-grupo').style.display='none'" style="background:#ccc; color:#333; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; width:100%;">Cancelar</button>
     </div>
 </div>
-
-<div id="modal-add-p" class="modal-sincro">
-    <div class="modal-card-sincro">
-        <h3>Invitar a Grupo 📩</h3>
-        <p id="txt-add-p"></p>
-        <div class="btn-flex">
-            <button class="btn-modal-sincro btn-cancel-sincro" onclick="cerrarModales()">No</button>
-            <button class="btn-modal-sincro btn-confirm-sincro" id="btn-confirm-add">Sí, Agregar</button>
-        </div>
-    </div>
-</div>
-
-<div id="modal-kick-p" class="modal-sincro">
-    <div class="modal-card-sincro">
-        <h3 style="color:#ff4757;">¿Expulsar Miembro? 🚫</h3>
-        <p id="txt-kick-p"></p>
-        <div class="btn-flex">
-            <button class="btn-modal-sincro btn-cancel-sincro" onclick="cerrarModales()">Cancelar</button>
-            <button class="btn-modal-sincro btn-danger-sincro" id="btn-confirm-kick">Expulsar</button>
-        </div>
-    </div>
-</div>
-
 <div id="modal-reglas" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9000; justify-content:center; align-items:center;">
     <div style="background:white; width:90%; max-width:400px; padding:25px; border-radius:15px; position:relative; max-height: 80vh; overflow-y: auto; text-align:left;">
         <button onclick="document.getElementById('modal-reglas').style.display='none'" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:24px; cursor:pointer; color:#888;">&times;</button>
-        <h2 style="color:#0088cc; margin-top:0; font-size:18px;">Reglas de la Comunidad - Sincro</h2>
+        <h2 style="color:#0088cc; margin-top:0; font-size:18px;"> Reglas de la Comunidad - Sincro</h2>
+        <p style="font-size:13px; color:#555;">Bienvenido a Sincro. Nuestra misión es conectar personas en tiempo real en un ambiente seguro y divertido. Al usar nuestro chat, aceptas seguir estas normas:</p>
+        
         <div style="font-size:13px; line-height:1.5;">
-            <b>1. Respeto Ante Todo</b><br>No se permite el acoso.<br><br>
-            <b>2. Contenido Permitido</b><br>SÍ: Memes, fotos amigables. NO: Ilegal o explícito.<br><br>
-            <b>3. Cero Spam</b><br>No satures el chat.<br><br>
+            <b style="color:#333;">1. Respeto Ante Todo</b><br>No se permite el acoso, los insultos ni el discurso de odio. Tratamos a todos los usuarios con dignidad, sin importar su origen o identidad.<br><br>
+            
+            <b style="color:#333;">2. Contenido Permitido</b><br>
+            <span style="color:#4caf50; font-weight:bold;">Sí:</span> Compartir ideas, fotos de tus actividades, memes amigables y hacer nuevos amigos.<br>
+            <span style="color:#d9534f; font-weight:bold;">NO:</span> Está estrictamente prohibido compartir contenido ilegal, violento, sexualmente explícito o que vulnere la privacidad de otros.<br><br>
+            
+            <b style="color:#333;">3. Cero Spam</b><br>No satures el chat con mensajes repetitivos ni enlaces a sitios sospechosos. Queremos conversaciones reales, no bots.<br><br>
+            
+            <b style="color:#333;">4. Seguridad de Cuenta</b><br>Tú eres responsable de tu actividad en Sincro. Te recomendamos no compartir información sensible como contraseñas o datos bancarios en chats públicos.<br><br>
+            
+            <b style="color:#333;">5. Moderación</b><br>El equipo de Sincro se reserva el derecho de eliminar contenido o suspender cuentas que no cumplan con estas reglas para mantener la armonía del grupo.
         </div>
         <button onclick="document.getElementById('modal-reglas').style.display='none'" class="btn-main" style="width:100%; margin-top:20px; background:#0088cc; color:white;">ENTENDIDO</button>
     </div>
@@ -174,15 +143,16 @@
 <div id="modal-blacklist" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9000; justify-content:center; align-items:center;">
     <div style="background:white; width:90%; max-width:400px; height:70vh; border-radius:15px; display:flex; flex-direction:column; overflow:hidden;">
         <div style="background:#333; color:white; padding:15px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
-            <span>LISTA NEGRA</span>
+            <span> LISTA NEGRA</span>
             <button onclick="document.getElementById('modal-blacklist').style.display='none'" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
         </div>
-        <div id="lista-baneados-content" style="flex:1; overflow-y:auto; padding:15px; background:#f9f9f9;"></div>
+        <div id="lista-baneados-content" style="flex:1; overflow-y:auto; padding:15px; background:#f9f9f9;">
+            </div>
     </div>
 </div>
 
 <div id="media-viewer">
-    <button id="close-viewer" onclick="cerrarMedia()">×</button>
+    <button id="close-viewer" onclick="cerrarMedia()"></button>
     <div id="viewer-main-container" style="display:contents;"></div>
     <div class="viewer-btns">
         <a id="btn-download" class="v-btn" download target="_blank">Descargar</a>
@@ -194,25 +164,31 @@
     <div id="scr-banned" class="screen" style="background: #1a1a1a; color: white;">
         <div style="background: white; color: #333; padding: 30px; border-radius: 20px; max-width: 350px; width: 90%;">
             <h1 style="color: #d9534f; margin: 0; font-size:24px;">CUENTA SUSPENDIDA</h1>
-            <p id="ban-reason-text"></p>
-            <p id="ban-time-text"></p>
-            <button onclick="location.reload()" class="btn-main" style="background:#d9534f; color:white; width:100%;">REINTENTAR</button>
+            <p style="color: #666; font-size: 14px;">Se ha detectado una infracción en tu cuenta.</p>
+            <div style="background: #fff5f5; padding: 15px; border-radius: 10px; text-align: left; border-left: 4px solid #d9534f; margin: 15px 0;">
+                <b style="font-size: 11px; color: #d9534f;">MOTIVO DE SUSPENSIÓN:</b><br>
+                <span id="ban-reason-text" style="font-size: 14px;"></span><br><br>
+                <b style="font-size: 11px; color: #d9534f;">RECUPERARÁS TU ACCESO EL:</b><br>
+                <span id="ban-time-text" style="font-size: 14px; font-weight:bold;"></span>
+            </div>
+            <button onclick="location.reload()" class="btn-main" style="background:#d9534f; color:white; width:100%;">REINTENTAR ACCESO</button>
         </div>
     </div>
 
     <div id="scr-login" class="screen bg-blue active">
-        <h1>Sincro MD</h1>
-        <input type="email" id="log-mail" class="in-style" placeholder="Correo">
+        <h1 style="font-size: 45px; margin: 0;">Sincro MD</h1>
+        <p style="opacity: 0.8; margin-bottom: 25px;">Plataforma de comunicación</p>
+        <input type="email" id="log-mail" class="in-style" placeholder="Correo electrónico">
         <input type="password" id="log-pass" class="in-style" placeholder="Contraseña">
         <button onclick="login()" class="btn-main">ENTRAR</button>
-        <p onclick="view('scr-reg')" style="cursor:pointer; margin-top:20px;">Registrar cuenta</p>
+        <p onclick="view('scr-reg')" style="cursor:pointer; margin-top:20px; font-size: 14px; text-decoration: underline;">Registrar cuenta nueva</p>
     </div>
 
     <div id="scr-reg" class="screen bg-blue">
         <h1>Registro</h1>
-        <input type="text" id="reg-user" class="in-style" placeholder="Usuario">
-        <input type="email" id="reg-mail" class="in-style" placeholder="Correo">
-        <input type="password" id="reg-pass" class="in-style" placeholder="Clave">
+        <input type="text" id="reg-user" class="in-style" placeholder="Nombre de Usuario">
+        <input type="email" id="reg-mail" class="in-style" placeholder="Tu Correo">
+        <input type="password" id="reg-pass" class="in-style" placeholder="Clave (6+ caracteres)">
         <button onclick="registro()" class="btn-main">CREAR CUENTA</button>
         <p onclick="view('scr-login')" style="cursor:pointer; margin-top:20px;">Ya tengo cuenta</p>
     </div>
@@ -220,67 +196,75 @@
     <div id="scr-chat" class="screen" style="flex-direction: row; padding: 0;">
         <aside id="sidebar-left">
             <div style="padding:15px; background:#0088cc; color:white; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
-                SINCRO <span onclick="toggleMenu('left')" style="cursor:pointer; font-size:20px;">×</span>
+                SINCRO <span onclick="toggleMenu('left')" style="cursor:pointer; font-size:20px;"></span>
+            </div>
+
+            <div id="vip-status-container" style="padding:10px 15px; border-bottom:1px solid #eee; display:none;">
+                <button id="btn-pedir-vip-fijo" onclick="enviarSolicitudVip()" class="btn-solicitud" style="width:100%; margin:0; background:#0088cc; color:white; border:none; padding:10px; border-radius:10px; cursor:pointer; font-weight:bold;">
+                     Solicitar Acceso VIP
+                </button>
             </div>
             
-            <div class="section-label">CHATS PRIVADOS</div>
-            <div id="inbox-list" style="max-height:150px; overflow-y:auto; border-bottom:1px solid #eee;"></div>
+            <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; cursor:pointer; border-bottom:1px solid #ddd;">
+                <b>Chat Público </b>
+            </div>
+
+            <div onclick="document.getElementById('modal-reglas').style.display='flex'" style="padding:12px 15px; background:#f0f8ff; cursor:pointer; border-bottom:1px solid #ddd; color:#0088cc; font-size:13px;">
+                <b> Ver Reglas de la Comunidad</b>
+            </div>
+
+            <div class="section-label">INBOX (ACTIVOS)</div>
+            <div id="inbox-list" style="max-height: 120px; overflow-y: auto; border-bottom: 1px solid #eee;"></div>
 
             <div class="section-label" style="display:flex; justify-content:space-between; align-items:center;">
-                GRUPOS <button onclick="abrirCrearGrupo()" style="background:none; border:none; color:#0088cc; font-size:10px; cursor:pointer; font-weight:bold;">+ CREAR</button>
+                MIS GRUPOS
+                <button onclick="document.getElementById('modal-crear-grupo').style.display='flex'" style="background:#0088cc; color:white; border:none; border-radius:4px; font-size:10px; padding:3px 8px; cursor:pointer;">+ CREAR</button>
             </div>
-            <div id="groups-list" style="max-height:150px; overflow-y:auto; border-bottom:1px solid #eee;"></div>
-
-            <div onclick="verChatPublico()" style="padding:15px; cursor:pointer; border-bottom:1px solid #ddd;">
-                <b>Chat Público 🌐</b>
-            </div>
-
+            <div id="grupos-list" style="max-height: 120px; overflow-y: auto; border-bottom: 1px solid #eee;"></div>
             <div class="section-label">CONECTADOS</div>
             <div id="online-list" style="max-height: 150px; overflow-y: auto; border-bottom: 1px solid #eee;"></div>
 
             <div class="section-label">TODOS LOS MIEMBROS</div>
             <div id="miembros-list" style="overflow-y:auto; flex:1; background: #fff;"></div>
 
-            <button onclick="logout()" style="padding:15px; width:100%; border:none; border-top:1px solid #eee; color:#d9534f; cursor:pointer;">Cerrar Sesión</button>
+            <button onclick="logout()" style="padding:15px; width:100%; background:#fcfcfc; border:none; border-top:1px solid #eee; color:#d9534f; cursor:pointer;">Cerrar Sesión</button>
         </aside>
 
         <main id="chat-section">
             <header class="header">
-               <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;">☰</button>
+               <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;"></button>
                <div style="text-align:center;">
-                   <b id="chat-title">Cargando...</b>
-                   <small id="chat-desc" style="display:block; font-size:10px; color:#888;"></small>
+                   <b id="chat-title" style="display:block; font-size: 15px;">Cargando...</b>
+                   <small id="chat-desc" style="font-size:10px; color:#888; display:block; margin-top:-2px;"></small>
                    <small id="chat-status" style="font-size:10px; color:#888;"></small>
                </div>
-               <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;">ⓘ</button>
+               <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;"></button>
             </header>
             <div id="chat-box"></div>
             <footer>
-               <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:26px; cursor:pointer;">📷</button>
-               <input id="msg-in" placeholder="Mensaje..." autocomplete="off">
-               <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:42px; height:42px; border-radius:50%; cursor:pointer;">🚀</button>
+               <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:26px; cursor:pointer;"></button>
+               <input id="msg-in" placeholder="Escribe un mensaje..." autocomplete="off">
+               <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:42px; height:42px; border-radius:50%; cursor:pointer; font-size: 18px;"></button>
             </footer>
         </main>
 
         <aside id="sidebar-right">
             <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                <b style="color:#0088cc;">Info</b>
-                <span onclick="toggleMenu('right')" style="cursor:pointer; font-size:20px;">×</span>
+                <b style="color:#0088cc;">Info del Grupo</b>
+                <span onclick="toggleMenu('right')" style="cursor:pointer; font-size:20px;"></span>
             </div>
             <div style="padding:20px; text-align:center;">
-                <div id="info-icon" style="width:60px; height:60px; background:#0088cc; color:white; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:24px;">S</div>
-                <h3 id="info-name" style="margin:5px 0;">Sincro MD</h3>
-                <button id="btn-edit-group" onclick="editarNombreGrupo()" style="display:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:4px 10px; font-size:10px; cursor:pointer;">Editar</button>
+                <div id="info-icon" style="width:80px; height:80px; background:#0088cc; color:white; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:bold;">S</div>
+                <h3 id="info-name" style="margin:5px 0; font-size: 18px;">Sincro MD</h3>
+                <button id="btn-edit-group" onclick="editarNombreGrupo()" style="display:none; background:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:5px 12px; font-size:11px; cursor:pointer; margin-top:8px;">Editar Info</button>
             </div>
-            <div class="section-label">GALERÍA DEL CHAT</div>
-            <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; padding:10px; overflow-y:auto; flex:1;"></div>
+            <div style="padding:10px; background:#f8f9fa; font-weight:bold; font-size:12px; color:#666;">ARCHIVOS MULTIMEDIA</div>
+            <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; padding:10px; overflow-y:auto; flex:1; align-content: start;"></div>
             
-            <div id="admin-actions" style="padding:10px; display:none;">
-                <button onclick="abrirListaNegra()" style="width:100%; padding:8px; background:#333; color:white; border:none; border-radius:5px; font-size:11px; margin-bottom:5px;">Lista Negra</button>
-                <button onclick="vaciarChat()" style="width:100%; padding:8px; border:1px solid #d9534f; color:#d9534f; border-radius:5px; font-size:11px;">Vaciar Chat</button>
+            <div id="admin-actions" style="padding:10px; border-top:1px solid #eee; display:none;">
+                <button onclick="abrirListaNegra()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:5px; cursor:pointer; font-size:12px; margin-bottom:10px;"> Ver Lista Negra</button>
+                <button onclick="vaciarChat()" style="width:100%; padding:10px; background:#fff; border:1px solid #d9534f; color:#d9534f; border-radius:5px; cursor:pointer; font-size:12px;">Vaciar Historial</button>
             </div>
-            <div class="section-label">MIEMBROS DEL GRUPO</div>
-            <div id="group-members-list" style="padding:10px; overflow-y:auto; max-height:200px;"></div>
         </aside>
     </div>
 </div>
@@ -295,6 +279,11 @@
     const CLOUD_NAME = "dhtyepcjg", UPLOAD_PRESET = "Historial";
 
     let mUser = null, mData = { vip: false, nombre: "" }, chatActual = "Sincro_Chat_Publico", listener = null;
+    
+    // --- INICIO AGREGADO: VARIABLES GLOBALES PARA GRUPOS ---
+    let grupoOwnerActual = null;
+    let usuariosMap = {}; // Para el Inbox
+    // --- FIN AGREGADO ---
 
     function notify(t) {
         const c = document.getElementById('toast-container');
@@ -316,8 +305,9 @@
     function abrirMedia(url, tipo) {
         const modal = document.getElementById('media-viewer');
         const container = document.getElementById('viewer-main-container');
+        const btnDL = document.getElementById('btn-download');
         container.innerHTML = tipo === 'video' ? `<video id="viewer-content" src="${url}" controls autoplay></video>` : `<img id="viewer-content" src="${url}">`;
-        document.getElementById('btn-download').href = url;
+        btnDL.href = url;
         modal.style.display = 'flex';
     }
 
@@ -328,18 +318,18 @@
 
     function registro() {
         const u = document.getElementById('reg-user').value.trim(), e = document.getElementById('reg-mail').value.trim(), p = document.getElementById('reg-pass').value;
-        if(!u || !e || p.length < 6) return notify("Datos incompletos");
+        if(!u || !e || p.length < 6) return notify(" Datos incompletos");
         auth.createUserWithEmailAndPassword(e, p).then(res => {
-            res.user.sendEmailVerification().then(() => notify("Verifica tu correo."));
+            res.user.sendEmailVerification().then(() => notify(" Verifica tu correo."));
             db.ref('Sincro_Usuarios/' + res.user.uid).set({ nombre: u, vip: (u.toLowerCase() === 'chat'), online: false, solicitudVip: 'ninguna' });
             setTimeout(() => { auth.signOut(); view('scr-login'); }, 3000);
-        }).catch(err => notify(err.message));
+        }).catch(err => notify(" " + err.message));
     }
 
     function login() {
         const e = document.getElementById('log-mail').value.trim(), p = document.getElementById('log-pass').value;
-        if(!e || !p) return notify("Completa los campos");
-        auth.signInWithEmailAndPassword(e, p).catch(err => notify(err.message));
+        if(!e || !p) return notify(" Completa los campos");
+        auth.signInWithEmailAndPassword(e, p).catch(err => notify(" Error: " + err.message));
     }
 
     function logout() { 
@@ -347,130 +337,158 @@
         auth.signOut().then(() => location.reload()); 
     }
 
+    /* --- LÓGICA DE SEGURIDAD MODIFICADA PARA EL BANEO --- */
     auth.onAuthStateChanged(user => {
         if (user) {
-            if (!user.emailVerified) { auth.signOut(); view('scr-login'); return; }
+            if (!user.emailVerified) {
+                if (document.getElementById('scr-reg').classList.contains('active')) return;
+                auth.signOut(); view('scr-login'); return;
+            }
             mUser = user;
             db.ref('Sincro_Usuarios/' + user.uid).on('value', snap => {
                 mData = snap.val();
                 if(mData) {
                     const ahora = Date.now();
-                    if(mData.banned && mData.banUntil > ahora) { view('scr-banned'); auth.signOut(); }
-                    else { iniciarApp(); }
+                    // NUEVO: Verificación de Baneo
+                    if(mData.banned && mData.banUntil > ahora) {
+                        document.getElementById('ban-reason-text').innerText = mData.banReason || "Infracción de las reglas.";
+                        document.getElementById('ban-time-text').innerText = new Date(mData.banUntil).toLocaleString();
+                        view('scr-banned'); // Pantalla fija
+                        auth.signOut(); // Desconecta la sesión en segundo plano
+                    } else if (mData.banned && mData.banUntil <= ahora) {
+                        // El castigo expiró, se perdona automáticamente
+                        db.ref('Sincro_Usuarios/' + user.uid).update({ banned: false, banUntil: 0, banReason: "" });
+                        iniciarApp();
+                    } else {
+                        iniciarApp();
+                    }
                 }
             });
             db.ref('Sincro_Usuarios/' + user.uid + '/online').set(true);
             db.ref('Sincro_Usuarios/' + user.uid + '/online').onDisconnect().set(false);
         } else {
-            if (!document.getElementById('scr-reg').classList.contains('active')) view('scr-login');
+            // NUEVO: Esto arregla el "rebote". No manda al login si está en la pantalla roja.
+            const enRegistro = document.getElementById('scr-reg') && document.getElementById('scr-reg').classList.contains('active');
+            const enBaneo = document.getElementById('scr-banned') && document.getElementById('scr-banned').classList.contains('active');
+            if (!enRegistro && !enBaneo) {
+                view('scr-login');
+            }
         }
     });
 
     function iniciarApp() {
         view('scr-chat');
-        cargarInboxYGrupos();
         const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-        if(soyAdmin) document.getElementById('admin-actions').style.display = 'block';
+
+        if(soyAdmin) {
+            mData.vip = true;
+            document.getElementById('btn-edit-group').style.display = 'inline-block';
+            document.getElementById('admin-actions').style.display = 'block';
+        }
+
+        const vipCont = document.getElementById('vip-status-container');
+        if(vipCont) {
+            if(!mData.vip && mData.solicitudVip !== 'pendiente') {
+                vipCont.style.display = 'block';
+            } else if(mData.solicitudVip === 'pendiente') {
+                vipCont.style.display = 'block';
+                const btnFijo = document.getElementById('btn-pedir-vip-fijo');
+                btnFijo.innerText = " Solicitud Enviada";
+                btnFijo.style.background = "#ff9800";
+                btnFijo.onclick = null;
+            } else {
+                vipCont.style.display = 'none';
+            }
+        }
 
         db.ref('Sincro_Usuarios').on('value', snap => {
             const listAll = document.getElementById('miembros-list');
             const listOnline = document.getElementById('online-list');
             if(!listAll || !listOnline) return;
             listAll.innerHTML = ""; listOnline.innerHTML = "";
+            
+            usuariosMap = {}; // --- AGREGADO PARA INBOX ---
+
             snap.forEach(child => {
-                const u = child.val(), uid = child.key;
-                if(uid === mUser.uid) return;
-                const online = u.online === true;
+                const u = child.val(); const uid = child.key;
                 
+                usuariosMap[uid] = u.nombre; // --- AGREGADO PARA INBOX ---
+
+                if(uid === mUser.uid) return;
+                const n = u.nombre || "Usuario"; const inicial = n.charAt(0).toUpperCase();
+                const online = u.online === true; const esVip = u.vip === true;
+                const pendiente = u.solicitudVip === 'pendiente';
+                let adminBtn = "";
+                
+                if(soyAdmin) {
+                    if(pendiente && !esVip) adminBtn = `<button class="btn-admin-accept" onclick="aceptarVip('${uid}')"> ACEPTAR</button>`;
+                    else if(esVip) adminBtn = `<span style="color:#4caf50; font-size:9px; margin-left:5px;"> VIP</span>`;
+                    
+                    // NUEVO: Botón de baneo inyectado directo en la lista de usuarios
+                    if (!u.banned) {
+                        adminBtn += `<button onclick="ejecutarBaneo('${uid}', '${n}')" style="background:#d9534f; color:white; border:none; border-radius:4px; font-size:9px; padding:3px 6px; margin-left:5px; cursor:pointer;"> BAN</button>`;
+                    }
+                }
+
                 const userHTML = `
-                <div onclick="abrirModalInvitacion('${uid}', '${u.nombre}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
-                    <div style="width:35px; height:35px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:12px; font-weight:bold; position:relative; font-size: 13px;">
-                        ${u.nombre.charAt(0).toUpperCase()}${online ? '<div class="status-dot"></div>' : ''}
+                <div onclick="iniciarPrivado('${uid}', '${n}')" style="display:flex; align-items:center; padding:12px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
+                    <div style="width:35px; height:35px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:12px; font-weight:bold; position:relative; flex-shrink:0; font-size: 13px;">
+                        ${inicial}${online ? '<div class="status-dot"></div>' : ''}
                     </div>
-                    <div style="flex:1;">
-                        <b style="font-size:13px;">${u.nombre}</b><br>
-                        <small style="color:#888; font-size:10px;">Toca para invitar</small>
+                    <div style="flex:1; overflow:hidden;">
+                        <b style="font-size:13px; white-space:nowrap;">${n}</b> ${adminBtn}<br>
+                        <small style="color:${online ? '#4caf50' : '#aaa'}; font-size:10px;">${online ? 'en línea' : 'desconectado'}</small>
                     </div>
                 </div>`;
                 listAll.innerHTML += userHTML; if(online) listOnline.innerHTML += userHTML;
             });
+            if(listOnline.innerHTML === "") listOnline.innerHTML = "<p style='font-size:11px; color:#aaa; padding:15px;'>No hay nadie más conectado</p>";
         });
+
+        db.ref('Sincro_Config').on('value', snap => {
+            const config = snap.val() || {};
+            const n = config.nombreGrupo || "Sincro MD";
+            const d = config.descripcionGrupo || "";
+            if(chatActual === "Sincro_Chat_Publico") {
+                document.getElementById('chat-title').innerText = n;
+                document.getElementById('chat-desc').innerText = d;
+                document.getElementById('info-name').innerText = n;
+                document.getElementById('info-icon').innerText = n[0].toUpperCase();
+            }
+        });
+
+        // --- INICIO AGREGADO: INICIALIZAR INBOX Y GRUPOS ---
+        cargarInbox();
+        cargarGrupos();
+        // --- FIN AGREGADO ---
+
         if(!listener) verChatPublico();
     }
 
-    // --- MODALES Y GRUPOS LÓGICA ---
-    function cerrarModales() { document.querySelectorAll('.modal-sincro').forEach(m => m.style.display='none'); }
-    function abrirCrearGrupo() { document.getElementById('modal-crear-g').style.display='flex'; }
-
-    function confirmarCrearG() {
-        const n = document.getElementById('name-g').value.trim();
-        if(!n) return notify("Escribe un nombre");
-        const id = "Grupo_" + Date.now();
-        db.ref('Sincro_Grupos/' + id).set({ nombre: n, owner: mUser.uid, miembros: { [mUser.uid]: true } })
-        .then(() => { notify("Grupo creado"); cerrarModales(); iniciarGrupo(id, n); });
+    function enviarSolicitudVip() {
+        db.ref('Sincro_Usuarios/' + mUser.uid).update({ solicitudVip: 'pendiente' })
+        .then(() => notify(" Solicitud enviada al Admin"));
     }
 
-    function cargarInboxYGrupos() {
-        db.ref('Sincro_Privados').on('value', snap => {
-            const list = document.getElementById('inbox-list'); if(!list) return;
-            list.innerHTML = "";
-            snap.forEach(child => {
-                if(child.key.includes(mUser.uid)) {
-                    const target = child.key.split("_").find(id => id !== mUser.uid);
-                    db.ref('Sincro_Usuarios/' + target).once('value', u => {
-                        if(u.val()) list.innerHTML += `<div class="group-item" onclick="iniciarPrivado('${target}','${u.val().nombre}')">💬 ${u.val().nombre}</div>`;
-                    });
-                }
-            });
-        });
-        db.ref('Sincro_Grupos').on('value', snap => {
-            const list = document.getElementById('groups-list'); if(!list) return;
-            list.innerHTML = "";
-            snap.forEach(child => {
-                if(child.val().miembros && child.val().miembros[mUser.uid])
-                    list.innerHTML += `<div class="group-item" onclick="iniciarGrupo('${child.key}','${child.val().nombre}')">👥 ${child.val().nombre}</div>`;
-            });
-        });
+    function aceptarVip(uid) {
+        db.ref('Sincro_Usuarios/' + uid).update({ vip: true, solicitudVip: 'aceptada' })
+        .then(() => notify("Usuario aceptado como VIP"));
     }
 
-    function iniciarGrupo(id, nombre) {
-        chatActual = "Sincro_Chat_Grupal/" + id;
-        document.getElementById('chat-title').innerText = nombre;
-        document.getElementById('chat-status').innerText = "Chat Grupal";
-        db.ref('Sincro_Grupos/' + id).on('value', snap => {
-            const g = snap.val(); if(!g) return;
-            document.getElementById('btn-edit-group').style.display = (g.owner === mUser.uid) ? 'inline-block' : 'none';
-            // Cargar miembros del grupo en lateral derecha
-            const mList = document.getElementById('group-members-list'); mList.innerHTML = "";
-            for(let uid in g.miembros) {
-                db.ref('Sincro_Usuarios/' + uid).once('value', u => {
-                    const esOwner = g.owner === mUser.uid;
-                    const btnKick = (esOwner && uid !== mUser.uid) ? `<button onclick="abrirModalKick('${id}','${uid}','${u.val().nombre}')" style="background:none; border:none; color:red; cursor:pointer;">✖</button>` : '';
-                    mList.innerHTML += `<div style="display:flex; justify-content:space-between; padding:5px; font-size:12px;"><span>${u.val().nombre}</span> ${btnKick}</div>`;
-                });
+    function editarNombreGrupo() {
+        const n = prompt("Nombre del grupo:", document.getElementById('chat-title').innerText);
+        const d = prompt("Descripción corta:", document.getElementById('chat-desc').innerText);
+        if(n !== null) { db.ref('Sincro_Config').update({ nombreGrupo: n, descripcionGrupo: d || "" }); }
+    }
+
+    function vaciarChat() { 
+        if(mData.nombre && mData.nombre.toLowerCase() === 'chat') {
+            if(confirm(" ¿Eliminar historial para TODOS los usuarios?")) {
+                db.ref(chatActual).remove().then(() => notify(" Chat vaciado")); 
             }
-        });
-        escucharChat();
-    }
-
-    function abrirModalInvitacion(uid, nombre) {
-        if(!chatActual.includes("Grupal")) return iniciarPrivado(uid, nombre);
-        const gID = chatActual.split("/")[1];
-        document.getElementById('txt-add-p').innerText = "¿Invitar a " + nombre + "?";
-        document.getElementById('modal-add-p').style.display = 'flex';
-        document.getElementById('btn-confirm-add').onclick = () => {
-            db.ref('Sincro_Grupos/' + gID + '/miembros/' + uid).set(true);
-            notify("Invitado"); cerrarModales();
-        };
-    }
-
-    function abrirModalKick(gID, uid, nombre) {
-        document.getElementById('txt-kick-p').innerText = "¿Expulsar a " + nombre + "?";
-        document.getElementById('modal-kick-p').style.display = 'flex';
-        document.getElementById('btn-confirm-kick').onclick = () => {
-            db.ref('Sincro_Grupos/' + gID + '/miembros/' + uid).remove();
-            notify("Expulsado"); cerrarModales();
-        };
+        } else {
+            notify(" Solo el administrador puede vaciar el chat.");
+        }
     }
 
     function escucharChat() {
@@ -481,38 +499,70 @@
 
         listener = db.ref(chatActual).on('child_added', snap => {
             const data = snap.val(), isMine = data.uid === mUser.uid;
+            
+            // --- INICIO AGREGADO: REVISAR EXPULSADOS (KICK) EN GRUPOS ---
+            if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; } // Ignorar msgs de expulsados si se requiere
+            // --- FIN AGREGADO ---
+
             const d = document.createElement('div'); d.className = "msg " + (isMine ? "me" : "them"); d.id = "m-" + snap.key;
             
             d.oncontextmenu = (e) => {
                 e.preventDefault();
                 const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+                
                 if (isMine || soyAdmin) {
-                    const modal = document.createElement('div'); modal.className = 'modal-confirm';
-                    modal.innerHTML = `<div class="modal-card"><p>¿Eliminar?</p><button class="btn-del" id="confirm-del">Sí</button><button class="btn-can" onclick="this.parentElement.parentElement.remove()">No</button></div>`;
+                    // Crear el modal bonito
+                    const modal = document.createElement('div');
+                    modal.className = 'modal-confirm';
+                    modal.innerHTML = `
+                        <div class="modal-card">
+                            <p>¿Eliminar este mensaje?</p>
+                            <button class="btn-del" id="confirm-del">Eliminar</button>
+                            <button class="btn-can" id="cancel-del">Cancelar</button>
+                        </div>
+                    `;
                     document.body.appendChild(modal);
-                    modal.querySelector('#confirm-del').onclick = () => { db.ref(chatActual + "/" + snap.key).remove(); modal.remove(); };
+
+                    // Botón de Eliminar
+                    modal.querySelector('#confirm-del').onclick = () => {
+                        db.ref(chatActual + "/" + snap.key).remove();
+                        modal.remove();
+                    };
+                    
+                    // Botón de Cancelar
+                    modal.querySelector('#cancel-del').onclick = () => {
+                        modal.remove();
+                    };
                 }
             };
 
             let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
+            
+            // --- INICIO AGREGADO: BOTÓN KICK EN GRUPOS ---
+            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+            if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
+                html += ` <button onclick="expulsarDeGrupo('${data.uid}', '${data.user}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK</button>`;
+            }
+            // --- FIN AGREGADO ---
+
             if(data.type === 'foto' || data.type === 'video') {
-                // REGLA: SIN CANDADOS EN GRUPOS
-                const esGrupo = chatActual.includes("Grupal");
-                const locked = !esGrupo && !mData.vip && !isMine;
+                
+                // --- INICIO AGREGADO: REGLA DE LIBERTAD (SIN CANDADOS EN GRUPOS) ---
+                const enGrupoLibre = chatActual.startsWith("Sincro_Grupos/");
+                const locked = !mData.vip && !isMine && !enGrupoLibre; // Única línea modificada aquí
+                // --- FIN AGREGADO ---
 
                 const mediaTag = data.type === 'video' ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
-                
                 if(locked) {
+                    const txtBtn = mData.solicitudVip === 'pendiente' ? 'Solicitud pendiente...' : 'Solicitar Acceso';
                     const onclickS = mData.solicitudVip === 'pendiente' ? '' : 'onclick="enviarSolicitudVip()"';
-                    html += `<div class="media-container blur"><div class="lock-overlay"><span>🔒 PRIVADO</span><button class="btn-solicitud" ${onclickS}>Solicitar</button></div>${mediaTag}</div>`;
-                } else { 
-                    html += `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`; 
-                }
-
+                    html += `<div class="media-container blur"><div class="lock-overlay"><span> PRIVADO</span><button class="btn-solicitud ${mData.solicitudVip==='pendiente'?'pendiente':''}" ${onclickS}>${txtBtn}</button></div>${mediaTag}</div>`;
+                } else { html += `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`; }
                 const itemGal = document.createElement('div');
                 itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;";
                 if(locked) {
-                    itemGal.innerHTML = `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:white; font-size:10px;">🔒</div>`;
+                    itemGal.innerHTML = `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; z-index:5;"></div><div class="blur" style="height:100%">${mediaTag}</div>`;
+                    itemGal.onclick = () => notify("Solicita acceso VIP");
                 } else {
                     itemGal.innerHTML = data.type === 'video' ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
                     itemGal.onclick = () => abrirMedia(data.url, data.type);
@@ -528,44 +578,244 @@
         const input = document.getElementById('msg-in'); 
         const texto = input.value.trim();
         if(texto === "") return;
-        db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, msg: texto, type: 'texto', timestamp: Date.now() });
-        input.value = "";
+
+        db.ref(chatActual).push({ 
+            uid: mUser.uid, 
+            user: mData.nombre || "Usuario", 
+            msg: texto, 
+            type: 'texto', 
+            timestamp: Date.now() 
+        });
+
+        // --- INICIO AGREGADO: GUARDAR EN INBOX AL ENVIAR MENSAJE PRIVADO ---
+        if(chatActual.startsWith("Sincro_Privados/")) {
+            const uids = chatActual.replace("Sincro_Privados/", "").split("_");
+            const targetUid = uids[0] === mUser.uid ? uids[1] : uids[0];
+            db.ref('Sincro_Inbox/' + mUser.uid + '/' + targetUid).set(Date.now());
+            db.ref('Sincro_Inbox/' + targetUid + '/' + mUser.uid).set(Date.now());
+        }
+        // --- FIN AGREGADO ---
+
+        input.value = ""; // <--- ¡AÑADE ESTA LÍNEA AQUÍ!
     }
 
-    document.getElementById('msg-in').addEventListener('keydown', e => { if (e.key === 'Enter') enviarMsg(); });
+    // Enviar mensaje con la tecla Enter
+    document.getElementById('msg-in').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            enviarMsg();
+        }
+    });
 
     function abrirCloudinary() {
-        cloudinary.openUploadWidget({ cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET, sources: ['local', 'camera'], multiple: false }, (err, res) => {
+        cloudinary.openUploadWidget({ cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET, sources: ['local', 'url', 'camera'], multiple: false }, (err, res) => {
             if (!err && res.event === "success") {
                 const tipo = res.info.resource_type === 'video' ? 'video' : 'foto';
-                db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, url: res.info.secure_url, type: tipo, timestamp: Date.now() });
+                db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre || "Usuario", url: res.info.secure_url, type: tipo, timestamp: Date.now() });
+                
+                // --- INICIO AGREGADO: INBOX PARA MULTIMEDIA ---
+                if(chatActual.startsWith("Sincro_Privados/")) {
+                    const uids = chatActual.replace("Sincro_Privados/", "").split("_");
+                    const targetUid = uids[0] === mUser.uid ? uids[1] : uids[0];
+                    db.ref('Sincro_Inbox/' + mUser.uid + '/' + targetUid).set(Date.now());
+                    db.ref('Sincro_Inbox/' + targetUid + '/' + mUser.uid).set(Date.now());
+                }
+                // --- FIN AGREGADO ---
             }
         });
     }
 
     function verChatPublico() {
         chatActual = "Sincro_Chat_Publico";
-        document.getElementById('chat-status').innerText = "Chat Público";
+        window.grupoOwnerActual = null; // --- AGREGADO ---
+        document.getElementById('chat-status').innerText = "Grupo Público";
         db.ref('Sincro_Config').once('value', s => {
-            const c = s.val() || {};
-            document.getElementById('chat-title').innerText = c.nombreGrupo || "Sincro MD";
-            document.getElementById('chat-desc').innerText = c.descripcionGrupo || "";
+            const config = s.val() || {};
+            document.getElementById('chat-title').innerText = config.nombreGrupo || "Chat Público ";
+            document.getElementById('chat-desc').innerText = config.descripcionGrupo || "";
         });
         escucharChat();
     }
 
     function iniciarPrivado(targetUid, nombre) {
         if(targetUid === mUser.uid) return;
-        chatActual = "Sincro_Privados/" + [mUser.uid, targetUid].sort().join("_");
+        const chatID = [mUser.uid, targetUid].sort().join("_");
+        chatActual = "Sincro_Privados/" + chatID;
+        window.grupoOwnerActual = null; // --- AGREGADO ---
         document.getElementById('chat-title').innerText = nombre;
+        document.getElementById('chat-desc').innerText = "";
+        document.getElementById('info-name').innerText = nombre;
+        document.getElementById('info-icon').innerText = nombre[0].toUpperCase();
         document.getElementById('chat-status').innerText = "Chat Privado";
         escucharChat();
+        if(window.innerWidth < 1024) toggleMenu('left');
     }
 
-    function aceptarVip(uid) { db.ref('Sincro_Usuarios/' + uid).update({ vip: true, solicitudVip: 'aceptada' }); }
-    function enviarSolicitudVip() { db.ref('Sincro_Usuarios/' + mUser.uid).update({ solicitudVip: 'pendiente' }); }
-    
-    function vaciarChat() { if(confirm("¿Vaciar?")) db.ref(chatActual).remove(); }
+    /* --- NUEVAS FUNCIONES DE ADMINISTRACIÓN Y BANEO --- */
+    function ejecutarBaneo(uid, nombre) {
+        const tiempo = prompt("DURACIÓN DEL BANEO para " + nombre + ":\n1 = 1 Hora\n2 = 5 Días\n3 = 1 Año\n4 = Permanente", "1");
+        if(!tiempo) return;
+        
+        const motivo = prompt("Motivo del baneo (Obligatorio):");
+        if(!motivo) return notify(" El motivo es obligatorio para banear.");
+
+        let ms = 0; const ahora = Date.now();
+        if (tiempo === "1") ms = ahora + 3600000; // 1 Hora
+        else if (tiempo === "2") ms = ahora + 432000000; // 5 Días
+        else if (tiempo === "3") ms = ahora + 31536000000; // 1 Año
+        else ms = 9999999999999; // Permanente
+
+        db.ref('Sincro_Usuarios/' + uid).update({ banned: true, banReason: motivo, banUntil: ms })
+        .then(() => notify(" Usuario " + nombre + " baneado correctamente."));
+    }
+
+    function abrirListaNegra() {
+        const modal = document.getElementById('modal-blacklist');
+        modal.style.display = 'flex';
+        const contenedor = document.getElementById('lista-baneados-content');
+        contenedor.innerHTML = "<p style='text-align:center;'>Buscando usuarios suspendidos...</p>";
+
+        db.ref('Sincro_Usuarios').once('value', snap => {
+            contenedor.innerHTML = "";
+            let hayBaneados = false;
+            snap.forEach(child => {
+                const u = child.val();
+                if(u.banned) {
+                    hayBaneados = true;
+                    contenedor.innerHTML += `
+                    <div style="background:white; padding:15px; border-radius:8px; border:1px solid #ddd; margin-bottom:10px; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+                        <b style="color:#333; font-size:14px;">${u.nombre}</b><br>
+                        <small style="color:#666;">Motivo: ${u.banReason}</small><br>
+                        <small style="color:#d9534f; font-weight:bold;">Hasta: ${new Date(u.banUntil).toLocaleString()}</small>
+                        <button onclick="ejecutarDesbaneo('${child.key}')" style="position:absolute; right:10px; top:15px; background:#4caf50; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:11px; font-weight:bold;">Desbanear</button>
+                    </div>`;
+                }
+            });
+            if(!hayBaneados) contenedor.innerHTML = "<p style='text-align:center; color:#888; margin-top:20px;'>No hay usuarios en la lista negra.</p>";
+        });
+    }
+
+    function ejecutarDesbaneo(uid) {
+        if(confirm("¿Estás seguro de devolver el acceso a este usuario?")) {
+            db.ref('Sincro_Usuarios/' + uid).update({ banned: false, banUntil: 0, banReason: "" })
+            .then(() => { 
+                notify(" Usuario perdonado. Acceso restaurado."); 
+                abrirListaNegra(); // Refrescar la lista
+            });
+        }
+    }
+
+    // =====================================================================
+    // --- INICIO BLOQUE 100% NUEVO: INBOX, GRUPOS Y KICK ---
+    // =====================================================================
+
+    function cargarInbox() {
+        const listInbox = document.getElementById('inbox-list');
+        db.ref('Sincro_Inbox/' + mUser.uid).on('value', snap => {
+            listInbox.innerHTML = "";
+            let hayInbox = false;
+            snap.forEach(child => {
+                const targetUid = child.key;
+                const targetNombre = usuariosMap[targetUid] || "Usuario";
+                hayInbox = true;
+                listInbox.innerHTML += `
+                <div onclick="iniciarPrivado('${targetUid}', '${targetNombre}')" style="padding:10px 15px; cursor:pointer; border-bottom:1px solid #f2f2f2; display:flex; align-items:center; background:#fafafa;">
+                    <div style="width:25px; height:25px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:10px; font-weight:bold;">${targetNombre.charAt(0).toUpperCase()}</div>
+                    <b style="font-size:12px; color:#333;">${targetNombre}</b>
+                </div>`;
+            });
+            if(!hayInbox) listInbox.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay chats activos</p>";
+        });
+    }
+
+    function guardarNuevoGrupo() {
+        const input = document.getElementById('nombre-nuevo-grupo');
+        const nombreGrupo = input.value.trim();
+        if(!nombreGrupo) return notify("Escribe un nombre para el grupo");
+        
+        const idGrupo = "g_" + Date.now();
+        db.ref('Sincro_InfoGrupos/' + idGrupo).set({
+            nombre: nombreGrupo,
+            owner: mUser.uid,
+            creadoEn: Date.now()
+        }).then(() => {
+            input.value = "";
+            document.getElementById('modal-crear-grupo').style.display = 'none';
+            notify(" Grupo Creado con Éxito");
+            abrirGrupo(idGrupo, nombreGrupo, mUser.uid);
+        });
+    }
+
+    function cargarGrupos() {
+        const listGrupos = document.getElementById('grupos-list');
+        db.ref('Sincro_InfoGrupos').on('value', snap => {
+            listGrupos.innerHTML = "";
+            let hayGrupos = false;
+            snap.forEach(child => {
+                const g = child.val();
+                const idGrupo = child.key;
+                hayGrupos = true;
+                const esMio = g.owner === mUser.uid;
+                listGrupos.innerHTML += `
+                <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" style="padding:10px 15px; cursor:pointer; border-bottom:1px solid #f2f2f2; display:flex; align-items:center; background:#f4f9f9;">
+                    <div style="width:25px; height:25px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:10px; font-weight:bold;">G</div>
+                    <b style="font-size:12px; color:#333; flex:1;">${g.nombre}</b>
+                    ${esMio ? '<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px;">Dueño</span>' : ''}
+                </div>`;
+            });
+            if(!hayGrupos) listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay grupos disponibles</p>";
+        });
+    }
+
+    function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
+        chatActual = "Sincro_Grupos/" + idGrupo;
+        window.grupoOwnerActual = ownerUid; // Guardamos quién es el dueño
+        
+        document.getElementById('chat-title').innerText = nombreGrupo;
+        document.getElementById('chat-desc').innerText = "Regla de Libertad Activada (Sin candados)";
+        document.getElementById('info-name').innerText = nombreGrupo;
+        document.getElementById('info-icon').innerText = "G";
+        document.getElementById('chat-status').innerText = "Grupo Creado";
+        escucharChat();
+        if(window.innerWidth < 1024) toggleMenu('left');
+    }
+
+    function expulsarDeGrupo(uidAExpulsar, nombreUser) {
+        // Modal de cristal para confirmar kick
+        const modal = document.createElement('div');
+        modal.className = 'modal-confirm';
+        modal.style.zIndex = '9999';
+        modal.innerHTML = `
+            <div class="modal-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);">
+                <p>¿Expulsar a <b style="color:#d9534f;">${nombreUser}</b> de este grupo?</p>
+                <button class="btn-del" id="confirm-kick">Sí, Expulsar</button>
+                <button class="btn-can" id="cancel-kick">Cancelar</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#confirm-kick').onclick = () => {
+            // Un KICK simple: Borramos todos los mensajes de este usuario en este grupo para "limpiarlo"
+            // (En Firebase RTDB básico, prohibir escritura requiere reglas de seguridad complejas, 
+            // la solución Frontend es borrar sus msgs y notificar).
+            db.ref(chatActual).orderByChild("uid").equalTo(uidAExpulsar).once('value', snap => {
+                snap.forEach(child => { child.ref.remove(); });
+            });
+            db.ref(chatActual).push({ 
+                uid: 'sistema', user: 'SISTEMA', 
+                msg: `El administrador del grupo ha expulsado a ${nombreUser}.`, 
+                type: 'texto', timestamp: Date.now() 
+            });
+            modal.remove();
+            notify(` ${nombreUser} expulsado`);
+        };
+        
+        modal.querySelector('#cancel-kick').onclick = () => modal.remove();
+    }
+    // =====================================================================
+    // --- FIN BLOQUE NUEVO ---
+    // =====================================================================
+
 </script>
 </body>
 </html>
