@@ -83,35 +83,10 @@
         .badge-count { background: #ff4757; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
         .btn-kick { background: #ff4757; color: white; border: none; border-radius: 4px; font-size: 9px; padding: 3px 6px; margin-left: 5px; cursor: pointer; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
 </head>
 <body>
 
 <div id="toast-container"></div>
-
-<div id="modal-reglas" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9000; justify-content:center; align-items:center;">
-    <div style="background:white; width:90%; max-width:400px; padding:25px; border-radius:15px; position:relative; max-height: 80vh; overflow-y: auto; text-align:left;">
-        <button onclick="document.getElementById('modal-reglas').style.display='none'" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:24px; cursor:pointer; color:#888;">&times;</button>
-        <h2 style="color:#0088cc; margin-top:0; font-size:18px;">📜 Reglas de la Comunidad - Sincro</h2>
-        <div style="font-size:13px; line-height:1.5;">
-            <b style="color:#333;">1. Respeto Ante Todo</b><br>No se permite el acoso.<br><br>
-            <b style="color:#333;">2. Contenido Permitido</b><br>No compartir contenido ilegal.<br><br>
-            <b style="color:#333;">3. Cero Spam</b><br>No satures el chat.<br><br>
-        </div>
-        <button onclick="document.getElementById('modal-reglas').style.display='none'" class="btn-main" style="width:100%; margin-top:20px; background:#0088cc; color:white;">ENTENDIDO</button>
-    </div>
-</div>
-
-<div id="modal-blacklist" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9000; justify-content:center; align-items:center;">
-    <div style="background:white; width:90%; max-width:400px; height:70vh; border-radius:15px; display:flex; flex-direction:column; overflow:hidden;">
-        <div style="background:#333; color:white; padding:15px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
-            <span>🚫 LISTA NEGRA</span>
-            <button onclick="document.getElementById('modal-blacklist').style.display='none'" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
-        </div>
-        <div id="lista-baneados-content" style="flex:1; overflow-y:auto; padding:15px; background:#f9f9f9;"></div>
-    </div>
-</div>
 
 <div id="media-viewer">
     <button id="close-viewer" onclick="cerrarMedia()">×</button>
@@ -159,10 +134,6 @@
                 <b>🌐 Chat Público</b>
             </div>
 
-            <div onclick="document.getElementById('modal-reglas').style.display='flex'" style="padding:12px 15px; cursor:pointer; border-bottom:1px solid #ddd; color:#0088cc; font-size:13px;">
-                <b>📜 Reglas de la Comunidad</b>
-            </div>
-
             <div class="section-label">💬 MENSAJES</div>
             <div id="inbox-list" style="max-height: 150px; overflow-y: auto; background: #fff; border-bottom: 1px solid #eee;"></div>
 
@@ -186,7 +157,6 @@
                <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;">☰</button>
                <div style="text-align:center;">
                    <b id="chat-title" style="display:block; font-size: 15px;">Cargando...</b>
-                   <small id="chat-desc" style="font-size:10px; color:#888; display:block;"></small>
                    <small id="chat-status" style="font-size:10px; color:#888;"></small>
                </div>
                <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;">👤</button>
@@ -207,7 +177,6 @@
             <div style="padding:20px; text-align:center;">
                 <div id="info-icon" style="width:80px; height:80px; background:#0088cc; color:white; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:bold;">S</div>
                 <h3 id="info-name" style="margin:5px 0;">Sincro MD</h3>
-                
                 <div id="group-admin-tools" style="display:none; margin-top:10px;">
                     <button onclick="editarNombreGrupo()" style="background:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:5px; font-size:10px; cursor:pointer;">✏️ Renombrar</button>
                 </div>
@@ -222,7 +191,6 @@
             <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; padding:10px; overflow-y:auto; flex:1; align-content: start;"></div>
             
             <div id="admin-actions" style="padding:10px; border-top:1px solid #eee; display:none;">
-                <button onclick="abrirListaNegra()" style="width:100%; padding:8px; background:#333; color:white; border:none; border-radius:5px; cursor:pointer; font-size:11px; margin-bottom:5px;">🚫 Lista Negra</button>
                 <button onclick="vaciarChat()" style="width:100%; padding:8px; background:#fff; border:1px solid #d9534f; color:#d9534f; border-radius:5px; cursor:pointer; font-size:11px;">Vaciar Historial</button>
             </div>
         </aside>
@@ -275,7 +243,7 @@
         if(!u || !e || p.length < 6) return notify("⚠️ Datos incompletos");
         auth.createUserWithEmailAndPassword(e, p).then(res => {
             res.user.sendEmailVerification().then(() => notify("📧 Verifica tu correo."));
-            db.ref('Sincro_Usuarios/' + res.user.uid).set({ nombre: u, vip: (u.toLowerCase() === 'chat'), online: false, solicitudVip: 'ninguna' });
+            db.ref('Sincro_Usuarios/' + res.user.uid).set({ nombre: u, email: e, vip: (u.toLowerCase() === 'chat'), online: false });
             setTimeout(() => { auth.signOut(); view('scr-login'); }, 3000);
         }).catch(err => notify("❌ " + err.message));
     }
@@ -316,7 +284,7 @@
             db.ref('Sincro_Usuarios/' + user.uid + '/online').set(true);
             db.ref('Sincro_Usuarios/' + user.uid + '/online').onDisconnect().set(false);
         } else {
-            if (!document.getElementById('scr-reg').classList.contains('active') && !document.getElementById('scr-banned').classList.contains('active')) view('scr-login');
+            if (!document.getElementById('scr-reg').classList.contains('active')) view('scr-login');
         }
     });
 
@@ -327,88 +295,55 @@
             mData.vip = true;
             document.getElementById('admin-actions').style.display = 'block';
         }
-
-        // Cargar Listas
         cargarUsuarios(soyAdmin);
         cargarInbox();
         cargarGrupos();
-
-        db.ref('Sincro_Config').on('value', snap => {
-            const config = snap.val() || {};
-            if(chatActual === "Sincro_Chat_Publico") {
-                document.getElementById('chat-title').innerText = config.nombreGrupo || "Sincro MD";
-                document.getElementById('chat-desc').innerText = config.descripcionGrupo || "Bienvenidos";
-            }
-        });
         if(!listener) verChatPublico();
     }
 
     function cargarUsuarios(soyAdmin) {
         db.ref('Sincro_Usuarios').on('value', snap => {
-            const listAll = document.getElementById('miembros-list');
-            const listOnline = document.getElementById('online-list');
+            const listAll = document.getElementById('miembros-list'), listOnline = document.getElementById('online-list');
             listAll.innerHTML = ""; listOnline.innerHTML = "";
             snap.forEach(child => {
-                const u = child.val(); const uid = child.key;
-                if(uid === mUser.uid) return;
+                const u = child.val(); const uid = child.key; if(uid === mUser.uid) return;
                 const online = u.online === true;
-                let adminBtn = "";
-                if(soyAdmin) {
-                    if(u.solicitudVip === 'pendiente') adminBtn += `<button class="btn-admin-accept" onclick="aceptarVip('${uid}')">✓ VIP</button>`;
-                    if(!u.banned) adminBtn += `<button onclick="ejecutarBaneo('${uid}', '${u.nombre}')" class="btn-kick">🚫 BAN</button>`;
-                }
+                let adminBtn = soyAdmin && !u.banned ? `<button onclick="ejecutarBaneo('${uid}', '${u.nombre}')" class="btn-kick">🚫 BAN</button>` : "";
                 const html = `
                 <div onclick="iniciarPrivado('${uid}', '${u.nombre}')" style="display:flex; align-items:center; padding:10px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
                     <div style="width:30px; height:30px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-weight:bold; position:relative; font-size:12px;">
                         ${u.nombre[0].toUpperCase()}${online ? '<div class="status-dot"></div>' : ''}
                     </div>
-                    <div style="flex:1;">
-                        <b style="font-size:12px;">${u.nombre}</b> ${u.vip?'⭐':''} ${adminBtn}
-                    </div>
+                    <div style="flex:1;"><b>${u.nombre}</b> ${u.vip?'⭐':''} ${adminBtn}</div>
                 </div>`;
                 listAll.innerHTML += html; if(online) listOnline.innerHTML += html;
             });
         });
     }
 
-    /* --- LÓGICA DE INBOX (MENSAJES) --- */
     function cargarInbox() {
         const inbox = document.getElementById('inbox-list');
         db.ref('Sincro_Privados').on('value', snap => {
             inbox.innerHTML = "";
-            let hayChats = false;
             snap.forEach(child => {
                 if(child.key.includes(mUser.uid)) {
-                    hayChats = true;
                     const IDs = child.key.split("_");
                     const targetUid = IDs[0] === mUser.uid ? IDs[1] : IDs[0];
                     db.ref('Sincro_Usuarios/' + targetUid).once('value', uSnap => {
-                        const u = uSnap.val();
-                        if(!u) return;
-                        inbox.innerHTML += `
-                        <div onclick="iniciarPrivado('${targetUid}', '${u.nombre}')" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; display:flex; align-items:center;">
-                            <div style="width:25px; height:25px; border-radius:50%; background:#eee; margin-right:8px; display:flex; align-items:center; justify-content:center;">💬</div>
-                            <b>${u.nombre}</b>
-                        </div>`;
+                        const u = uSnap.val(); if(!u) return;
+                        inbox.innerHTML += `<div onclick="iniciarPrivado('${targetUid}', '${u.nombre}')" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; display:flex; align-items:center;"><div style="width:25px; height:25px; border-radius:50%; background:#eee; margin-right:8px; display:flex; align-items:center; justify-content:center;">💬</div><b>${u.nombre}</b></div>`;
                     });
                 }
             });
-            if(!hayChats) inbox.innerHTML = "<p style='font-size:10px; color:#aaa; padding:10px;'>Sin mensajes aún</p>";
         });
     }
 
-    /* --- LÓGICA DE GRUPOS --- */
     function abrirCrearGrupo() {
-        const n = prompt("Nombre del nuevo grupo:");
+        const n = prompt("Nombre del grupo:");
         if(n) {
             const gId = "G_" + Date.now();
-            db.ref('Sincro_Grupos/' + gId).set({
-                nombre: n,
-                owner: mUser.uid,
-                miembros: { [mUser.uid]: true }
-            }).then(() => {
-                notify("Grupo creado con éxito");
-                iniciarGrupo(gId, n);
+            db.ref('Sincro_Grupos/' + gId).set({ nombre: n, owner: mUser.uid, miembros: { [mUser.uid]: true } }).then(() => {
+                notify("Grupo creado"); iniciarGrupo(gId, n);
             });
         }
     }
@@ -420,11 +355,7 @@
             snap.forEach(child => {
                 const g = child.val();
                 if(g.miembros && g.miembros[mUser.uid]) {
-                    list.innerHTML += `
-                    <div onclick="iniciarGrupo('${child.key}', '${g.nombre}')" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; display:flex; align-items:center;">
-                        <div style="width:25px; height:25px; border-radius:50%; background:#0088cc; color:white; margin-right:8px; display:flex; align-items:center; justify-content:center;">G</div>
-                        <b>${g.nombre}</b>
-                    </div>`;
+                    list.innerHTML += `<div onclick="iniciarGrupo('${child.key}', '${g.nombre}')" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; display:flex; align-items:center;"><div style="width:25px; height:25px; border-radius:50%; background:#0088cc; color:white; margin-right:8px; display:flex; align-items:center; justify-content:center;">G</div><b>${g.nombre}</b></div>`;
                 }
             });
         });
@@ -436,80 +367,63 @@
         document.getElementById('chat-status').innerText = "Chat Grupal";
         document.getElementById('info-name').innerText = nombre;
         document.getElementById('info-icon').innerText = nombre[0].toUpperCase();
-        
-        // Ver si soy el dueño
         db.ref('Sincro_Grupos/' + id).once('value', snap => {
-            const g = snap.val();
-            const soyOwner = g.owner === mUser.uid;
+            const g = snap.val(); const soyOwner = g.owner === mUser.uid;
             document.getElementById('group-admin-tools').style.display = soyOwner ? 'block' : 'none';
             mostrarMiembrosGrupo(id, g.miembros, soyOwner);
         });
-
         escucharChat();
         if(window.innerWidth < 1024) toggleMenu('left');
     }
 
     function mostrarMiembrosGrupo(gId, miembros, soyOwner) {
-        const cont = document.getElementById('group-members-section');
-        const list = document.getElementById('group-members-list');
-        cont.style.display = 'block';
-        list.innerHTML = "";
-        
-        // Botón para invitar (cualquiera puede)
-        list.innerHTML = `<button onclick="invitarAlGrupo('${gId}')" style="width:100%; border:none; background:#e1e9f2; padding:5px; font-size:10px; cursor:pointer;">+ Añadir Miembro</button>`;
-
+        const cont = document.getElementById('group-members-section'), list = document.getElementById('group-members-list');
+        cont.style.display = 'block'; list.innerHTML = `<button onclick="invitarAlGrupo('${gId}')" style="width:100%; border:none; background:#e1e9f2; padding:5px; font-size:10px; cursor:pointer;">+ Añadir Miembro</button>`;
         Object.keys(miembros).forEach(uid => {
             db.ref('Sincro_Usuarios/' + uid).once('value', uSnap => {
-                const u = uSnap.val();
-                let kickBtn = (soyOwner && uid !== mUser.uid) ? `<button onclick="expulsarGrupo('${gId}', '${uid}')" class="btn-kick">KICK</button>` : "";
-                list.innerHTML += `<div style="padding:5px 10px; font-size:11px; display:flex; justify-content:space-between; align-items:center;">
-                    <span>${u.nombre}</span> ${kickBtn}
-                </div>`;
+                const u = uSnap.val(); if(!u) return;
+                let kickBtn = soyOwner && uid !== mUser.uid ? `<button onclick="expulsarGrupo('${gId}', '${uid}')" class="btn-kick">KICK</button>` : "";
+                list.innerHTML += `<div style="padding:5px 10px; font-size:11px; display:flex; justify-content:space-between; align-items:center;"><span>${u.nombre}</span> ${kickBtn}</div>`;
             });
         });
     }
 
     function invitarAlGrupo(gId) {
-        const mail = prompt("Introduce el correo del usuario a invitar:");
+        const mail = prompt("Introduce el correo del usuario:");
         if(!mail) return;
         db.ref('Sincro_Usuarios').once('value', snap => {
             let found = false;
             snap.forEach(u => {
-                if(u.val().email === mail || u.key === mail) { // Simplificado para pruebas
+                if(u.val().email === mail) {
                     db.ref('Sincro_Grupos/' + gId + '/miembros/' + u.key).set(true);
-                    found = true;
-                    notify("Usuario añadido");
+                    found = true; notify("Añadido");
                 }
             });
-            if(!found) notify("No se encontró el usuario");
+            if(!found) notify("No encontrado");
         });
     }
 
     function expulsarGrupo(gId, uid) {
-        if(confirm("¿Expulsar a este miembro?")) {
-            db.ref('Sincro_Grupos/' + gId + '/miembros/' + uid).remove().then(() => {
-                notify("Miembro expulsado");
-                iniciarGrupo(gId, document.getElementById('chat-title').innerText);
-            });
-        }
+        if(confirm("¿Expulsar?")) db.ref('Sincro_Grupos/' + gId + '/miembros/' + uid).remove().then(() => notify("Expulsado"));
     }
 
-    /* --- LÓGICA DE MENSAJES ORIGINAL (RESGUARDADA) --- */
     function escucharChat() {
         const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
         box.innerHTML = ""; gal.innerHTML = "";
         if(listener) db.ref(chatActual).off();
+        
+        // MODIFICACIÓN: Detectamos si estamos en un grupo
+        const esGrupo = chatActual.includes("Sincro_Chats_Grupales");
+
         listener = db.ref(chatActual).on('child_added', snap => {
             const data = snap.val(), isMine = data.uid === mUser.uid;
             const d = document.createElement('div'); d.className = "msg " + (isMine ? "me" : "them"); d.id = "m-" + snap.key;
             
-            // Modal de borrado original
             d.oncontextmenu = (e) => {
                 e.preventDefault();
                 const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
                 if (isMine || soyAdmin) {
-                    const modal = document.createElement('div');
-                    modal.className = 'modal-confirm';
+                    const modal = document.createElement('div'); modal.className = 'modal-confirm';
                     modal.innerHTML = `<div class="modal-card"><p>¿Eliminar mensaje?</p><button class="btn-del" id="confirm-del">Sí</button><button class="btn-can" onclick="this.parentElement.parentElement.remove()">No</button></div>`;
                     document.body.appendChild(modal);
                     modal.querySelector('#confirm-del').onclick = () => { db.ref(chatActual + "/" + snap.key).remove(); modal.remove(); };
@@ -518,14 +432,15 @@
 
             let html = `<b>${data.user}</b>`;
             if(data.type === 'foto' || data.type === 'video') {
-                const locked = !mData.vip && !isMine;
+                // MODIFICACIÓN: Si es grupo (esGrupo), el multimedia NO está bloqueado para nadie
+                const locked = !esGrupo && !mData.vip && !isMine;
+                
                 const mediaTag = data.type === 'video' ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
                 if(locked) {
                     html += `<div class="media-container blur"><div class="lock-overlay"><span>🔒 VIP</span></div>${mediaTag}</div>`;
                 } else {
                     html += `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`;
                 }
-                // Galería
                 const itemGal = document.createElement('div');
                 itemGal.style = "height:60px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer;";
                 itemGal.innerHTML = mediaTag;
@@ -564,7 +479,6 @@
     }
 
     function iniciarPrivado(targetUid, nombre) {
-        if(targetUid === mUser.uid) return;
         chatActual = "Sincro_Privados/" + [mUser.uid, targetUid].sort().join("_");
         document.getElementById('chat-title').innerText = nombre;
         document.getElementById('chat-status').innerText = "Privado";
@@ -574,22 +488,11 @@
         if(window.innerWidth < 1024) toggleMenu('left');
     }
 
-    // Funciones de Admin heredadas
-    function aceptarVip(uid) { db.ref('Sincro_Usuarios/' + uid).update({ vip: true, solicitudVip: 'aceptada' }); }
-    function vaciarChat() { if(confirm("¿Vaciar todo?")) db.ref(chatActual).remove(); }
+    function vaciarChat() { if(confirm("¿Vaciar?")) db.ref(chatActual).remove(); }
+    
     function ejecutarBaneo(uid, nombre) {
         const m = prompt("Motivo:");
         if(m) db.ref('Sincro_Usuarios/' + uid).update({ banned: true, banReason: m, banUntil: Date.now() + 31536000000 });
-    }
-    function abrirListaNegra() {
-        document.getElementById('modal-blacklist').style.display = 'flex';
-        const cont = document.getElementById('lista-baneados-content');
-        db.ref('Sincro_Usuarios').once('value', snap => {
-            cont.innerHTML = "";
-            snap.forEach(u => {
-                if(u.val().banned) cont.innerHTML += `<div style="padding:10px; border:1px solid #ddd; margin-bottom:5px;">${u.val().nombre} <button onclick="db.ref('Sincro_Usuarios/${u.key}').update({banned:false})">Perdonar</button></div>`;
-            });
-        });
     }
 </script>
 </body>
