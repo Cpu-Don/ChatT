@@ -47,6 +47,7 @@
         .msg b { display: block; color: var(--tg-blue); font-size: 11px; margin-bottom: 4px; cursor: pointer; }
         .msg b:hover { text-decoration: underline; }
 
+        /* --- SISTEMA DE BLOQUEO Y VIP --- */
         .media-container { margin-top: 5px; border-radius: 10px; overflow: hidden; background: #000; cursor: pointer; display: flex; justify-content: center; position: relative; }
         .media-container img, .media-container video { max-width: 100%; max-height: 300px; display: block; }
         .blur { filter: blur(35px); opacity: 0.4; pointer-events: none; }
@@ -74,19 +75,51 @@
         .status-dot { width: 10px; height: 10px; background: #4caf50; border-radius: 50%; border: 2px solid white; position: absolute; bottom: 0; right: 0; }
         .section-label { padding: 10px 15px; background: #f1f4f7; font-size: 11px; font-weight: bold; color: #888; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center;}
 
+        /* Contenedor del modal */
         .modal-confirm { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(5px); }
         .modal-card { background: rgba(255, 255, 255, 0.95); padding: 20px; border-radius: 15px; width: 280px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.3); }
         .modal-card p { color: #333; margin-bottom: 20px; font-weight: bold; }
         .btn-del { background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin: 5px; }
         .btn-can { background: #ccc; color: #333; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin: 5px; }
-        
-        .badge-count { background: #ff4757; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
+
+        /* Estilos adicionales para Grupos */
         .btn-kick { background: #ff4757; color: white; border: none; border-radius: 4px; font-size: 9px; padding: 3px 6px; margin-left: 5px; cursor: pointer; }
+        .badge-msg { background: #0088cc; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: auto; }
+
     </style>
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
+
 </head>
 <body>
 
 <div id="toast-container"></div>
+
+<div id="modal-reglas" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9000; justify-content:center; align-items:center;">
+    <div style="background:white; width:90%; max-width:400px; padding:25px; border-radius:15px; position:relative; max-height: 80vh; overflow-y: auto; text-align:left;">
+        <button onclick="document.getElementById('modal-reglas').style.display='none'" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:24px; cursor:pointer; color:#888;">&times;</button>
+        <h2 style="color:#0088cc; margin-top:0; font-size:18px;">📜 Reglas de la Comunidad - Sincro</h2>
+        <div style="font-size:13px; line-height:1.5; color:#555;">
+            <p>Bienvenido a Sincro. Al usar nuestro chat, aceptas seguir estas normas:</p>
+            <b style="color:#333;">1. Respeto Ante Todo</b><br>No se permite el acoso.<br><br>
+            <b style="color:#333;">2. Contenido Permitido</b><br>SÍ: Ideas, memes. NO: Contenido ilegal o explícito.<br><br>
+            <b style="color:#333;">3. Cero Spam</b><br><br>
+            <b style="color:#333;">4. Seguridad de Cuenta</b><br><br>
+            <b style="color:#333;">5. Moderación</b>
+        </div>
+        <button onclick="document.getElementById('modal-reglas').style.display='none'" class="btn-main" style="width:100%; margin-top:20px; background:#0088cc; color:white;">ENTENDIDO</button>
+    </div>
+</div>
+
+<div id="modal-blacklist" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9000; justify-content:center; align-items:center;">
+    <div style="background:white; width:90%; max-width:400px; height:70vh; border-radius:15px; display:flex; flex-direction:column; overflow:hidden;">
+        <div style="background:#333; color:white; padding:15px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+            <span>🚫 LISTA NEGRA</span>
+            <button onclick="document.getElementById('modal-blacklist').style.display='none'" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <div id="lista-baneados-content" style="flex:1; overflow-y:auto; padding:15px; background:#f9f9f9;"></div>
+    </div>
+</div>
 
 <div id="media-viewer">
     <button id="close-viewer" onclick="cerrarMedia()">×</button>
@@ -101,25 +134,28 @@
     <div id="scr-banned" class="screen" style="background: #1a1a1a; color: white;">
         <div style="background: white; color: #333; padding: 30px; border-radius: 20px; max-width: 350px; width: 90%;">
             <h1 style="color: #d9534f; margin: 0; font-size:24px;">CUENTA SUSPENDIDA</h1>
-            <p id="ban-reason-text" style="color: #666; font-size: 14px;"></p>
-            <p id="ban-time-text" style="font-weight:bold;"></p>
-            <button onclick="location.reload()" class="btn-main" style="background:#d9534f; color:white; width:100%;">REINTENTAR</button>
+            <div style="background: #fff5f5; padding: 15px; border-radius: 10px; text-align: left; border-left: 4px solid #d9534f; margin: 15px 0;">
+                <b style="font-size: 11px; color: #d9534f;">MOTIVO:</b><br><span id="ban-reason-text" style="font-size: 14px;"></span><br><br>
+                <b style="font-size: 11px; color: #d9534f;">EXPIRA:</b><br><span id="ban-time-text" style="font-size: 14px; font-weight:bold;"></span>
+            </div>
+            <button onclick="location.reload()" class="btn-main" style="background:#d9534f; color:white; width:100%;">REINTENTAR ACCESO</button>
         </div>
     </div>
 
     <div id="scr-login" class="screen bg-blue active">
         <h1 style="font-size: 45px; margin: 0;">Sincro MD</h1>
-        <input type="email" id="log-mail" class="in-style" placeholder="Correo">
+        <p style="opacity: 0.8; margin-bottom: 25px;">Plataforma de comunicación</p>
+        <input type="email" id="log-mail" class="in-style" placeholder="Correo electrónico">
         <input type="password" id="log-pass" class="in-style" placeholder="Contraseña">
         <button onclick="login()" class="btn-main">ENTRAR</button>
-        <p onclick="view('scr-reg')" style="cursor:pointer; margin-top:20px; text-decoration: underline;">Registrar cuenta</p>
+        <p onclick="view('scr-reg')" style="cursor:pointer; margin-top:20px; font-size: 14px; text-decoration: underline;">Registrar cuenta nueva</p>
     </div>
 
     <div id="scr-reg" class="screen bg-blue">
         <h1>Registro</h1>
-        <input type="text" id="reg-user" class="in-style" placeholder="Usuario">
-        <input type="email" id="reg-mail" class="in-style" placeholder="Correo">
-        <input type="password" id="reg-pass" class="in-style" placeholder="Clave">
+        <input type="text" id="reg-user" class="in-style" placeholder="Nombre de Usuario">
+        <input type="email" id="reg-mail" class="in-style" placeholder="Tu Correo">
+        <input type="password" id="reg-pass" class="in-style" placeholder="Clave (6+ caracteres)">
         <button onclick="registro()" class="btn-main">CREAR CUENTA</button>
         <p onclick="view('scr-login')" style="cursor:pointer; margin-top:20px;">Ya tengo cuenta</p>
     </div>
@@ -130,8 +166,16 @@
                 SINCRO <span onclick="toggleMenu('left')" style="cursor:pointer; font-size:20px;">☰</span>
             </div>
 
+            <div id="vip-status-container" style="padding:10px 15px; border-bottom:1px solid #eee; display:none;">
+                <button id="btn-pedir-vip-fijo" onclick="enviarSolicitudVip()" class="btn-solicitud" style="width:100%; margin:0; background:#0088cc; color:white; border:none; padding:10px; border-radius:10px; cursor:pointer; font-weight:bold;">Solicitar Acceso VIP</button>
+            </div>
+            
             <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; cursor:pointer; border-bottom:1px solid #ddd;">
-                <b>🌐 Chat Público</b>
+                <b>Chat Público 🌐</b>
+            </div>
+
+            <div onclick="document.getElementById('modal-reglas').style.display='flex'" style="padding:12px 15px; background:#f0f8ff; cursor:pointer; border-bottom:1px solid #ddd; color:#0088cc; font-size:13px;">
+                <b>📜 Ver Reglas</b>
             </div>
 
             <div class="section-label">💬 MENSAJES</div>
@@ -157,6 +201,7 @@
                <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;">☰</button>
                <div style="text-align:center;">
                    <b id="chat-title" style="display:block; font-size: 15px;">Cargando...</b>
+                   <small id="chat-desc" style="font-size:10px; color:#888; display:block; margin-top:-2px;"></small>
                    <small id="chat-status" style="font-size:10px; color:#888;"></small>
                </div>
                <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;">👤</button>
@@ -176,22 +221,24 @@
             </div>
             <div style="padding:20px; text-align:center;">
                 <div id="info-icon" style="width:80px; height:80px; background:#0088cc; color:white; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:bold;">S</div>
-                <h3 id="info-name" style="margin:5px 0;">Sincro MD</h3>
+                <h3 id="info-name" style="margin:5px 0; font-size: 18px;">Sincro MD</h3>
                 <div id="group-admin-tools" style="display:none; margin-top:10px;">
-                    <button onclick="editarNombreGrupo()" style="background:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:5px; font-size:10px; cursor:pointer;">✏️ Renombrar</button>
+                    <button onclick="editarNombreGrupo()" style="background:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:5px 12px; font-size:11px; cursor:pointer;">✏️ Renombrar Grupo</button>
                 </div>
+                <button id="btn-edit-group-public" onclick="editarNombreGrupoPublico()" style="display:none; background:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:5px 12px; font-size:11px; cursor:pointer; margin-top:8px;">Editar Info Pública</button>
             </div>
 
             <div id="group-members-section" style="display:none;">
-                <div style="padding:10px; background:#f8f9fa; font-weight:bold; font-size:11px;">MIEMBROS DEL GRUPO</div>
+                <div style="padding:10px; background:#f8f9fa; font-weight:bold; font-size:11px; color:#666;">MIEMBROS DEL GRUPO</div>
                 <div id="group-members-list" style="max-height:150px; overflow-y:auto;"></div>
             </div>
 
-            <div style="padding:10px; background:#f8f9fa; font-weight:bold; font-size:11px;">MULTIMEDIA</div>
+            <div style="padding:10px; background:#f8f9fa; font-weight:bold; font-size:12px; color:#666;">MULTIMEDIA</div>
             <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; padding:10px; overflow-y:auto; flex:1; align-content: start;"></div>
             
             <div id="admin-actions" style="padding:10px; border-top:1px solid #eee; display:none;">
-                <button onclick="vaciarChat()" style="width:100%; padding:8px; background:#fff; border:1px solid #d9534f; color:#d9534f; border-radius:5px; cursor:pointer; font-size:11px;">Vaciar Historial</button>
+                <button onclick="abrirListaNegra()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:5px; cursor:pointer; font-size:12px; margin-bottom:10px;">🚫 Ver Lista Negra</button>
+                <button onclick="vaciarChat()" style="width:100%; padding:10px; background:#fff; border:1px solid #d9534f; color:#d9534f; border-radius:5px; cursor:pointer; font-size:12px;">Vaciar Historial</button>
             </div>
         </aside>
     </div>
@@ -208,23 +255,21 @@
 
     let mUser = null, mData = { vip: false, nombre: "" }, chatActual = "Sincro_Chat_Publico", listener = null;
 
+    // --- FUNCIONES CORE (Intactas) ---
     function notify(t) {
         const c = document.getElementById('toast-container');
         const e = document.createElement('div'); e.className = 'toast'; e.innerText = t;
         c.appendChild(e); setTimeout(() => e.remove(), 4000);
     }
-
     function view(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
-
     function toggleMenu(side) {
         const el = document.getElementById('sidebar-' + side);
         if (window.innerWidth >= 1024) el.classList.toggle('collapsed-' + side);
         else el.classList.toggle('show-' + side);
     }
-
     function abrirMedia(url, tipo) {
         const modal = document.getElementById('media-viewer');
         const container = document.getElementById('viewer-main-container');
@@ -232,28 +277,26 @@
         document.getElementById('btn-download').href = url;
         modal.style.display = 'flex';
     }
-
     function cerrarMedia() {
         document.getElementById('media-viewer').style.display = 'none';
         document.getElementById('viewer-main-container').innerHTML = '';
     }
 
+    // --- AUTENTICACIÓN Y SEGURIDAD (Intactas) ---
     function registro() {
         const u = document.getElementById('reg-user').value.trim(), e = document.getElementById('reg-mail').value.trim(), p = document.getElementById('reg-pass').value;
         if(!u || !e || p.length < 6) return notify("⚠️ Datos incompletos");
         auth.createUserWithEmailAndPassword(e, p).then(res => {
             res.user.sendEmailVerification().then(() => notify("📧 Verifica tu correo."));
-            db.ref('Sincro_Usuarios/' + res.user.uid).set({ nombre: u, email: e, vip: (u.toLowerCase() === 'chat'), online: false });
+            db.ref('Sincro_Usuarios/' + res.user.uid).set({ nombre: u, vip: (u.toLowerCase() === 'chat'), online: false, solicitudVip: 'ninguna' });
             setTimeout(() => { auth.signOut(); view('scr-login'); }, 3000);
         }).catch(err => notify("❌ " + err.message));
     }
-
     function login() {
         const e = document.getElementById('log-mail').value.trim(), p = document.getElementById('log-pass').value;
         if(!e || !p) return notify("🔑 Completa los campos");
         auth.signInWithEmailAndPassword(e, p).catch(err => notify("❌ Error: " + err.message));
     }
-
     function logout() { 
         if(mUser) db.ref('Sincro_Usuarios/' + mUser.uid + '/online').set(false);
         auth.signOut().then(() => location.reload()); 
@@ -262,9 +305,7 @@
     auth.onAuthStateChanged(user => {
         if (user) {
             if (!user.emailVerified) {
-                if (!document.getElementById('scr-reg').classList.contains('active')) {
-                    auth.signOut(); view('scr-login'); 
-                }
+                if (!document.getElementById('scr-reg').classList.contains('active')) { auth.signOut(); view('scr-login'); }
                 return;
             }
             mUser = user;
@@ -273,31 +314,40 @@
                 if(mData) {
                     const ahora = Date.now();
                     if(mData.banned && mData.banUntil > ahora) {
-                        document.getElementById('ban-reason-text').innerText = "Motivo: " + (mData.banReason || "Infracción.");
-                        document.getElementById('ban-time-text').innerText = "Hasta: " + new Date(mData.banUntil).toLocaleString();
+                        document.getElementById('ban-reason-text').innerText = mData.banReason || "Infracción.";
+                        document.getElementById('ban-time-text').innerText = new Date(mData.banUntil).toLocaleString();
                         view('scr-banned'); auth.signOut();
-                    } else {
-                        iniciarApp();
-                    }
+                    } else { iniciarApp(); }
                 }
             });
             db.ref('Sincro_Usuarios/' + user.uid + '/online').set(true);
             db.ref('Sincro_Usuarios/' + user.uid + '/online').onDisconnect().set(false);
         } else {
-            if (!document.getElementById('scr-reg').classList.contains('active')) view('scr-login');
+            if (!document.getElementById('scr-reg').classList.contains('active') && !document.getElementById('scr-banned').classList.contains('active')) view('scr-login');
         }
     });
 
+    // --- LÓGICA DE LA APLICACIÓN ---
     function iniciarApp() {
         view('scr-chat');
         const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
         if(soyAdmin) {
             mData.vip = true;
+            document.getElementById('btn-edit-group-public').style.display = 'inline-block';
             document.getElementById('admin-actions').style.display = 'block';
         }
+        
         cargarUsuarios(soyAdmin);
         cargarInbox();
         cargarGrupos();
+
+        db.ref('Sincro_Config').on('value', snap => {
+            const config = snap.val() || {};
+            if(chatActual === "Sincro_Chat_Publico") {
+                document.getElementById('chat-title').innerText = config.nombreGrupo || "Sincro MD";
+                document.getElementById('chat-desc').innerText = config.descripcionGrupo || "";
+            }
+        });
         if(!listener) verChatPublico();
     }
 
@@ -308,10 +358,12 @@
             snap.forEach(child => {
                 const u = child.val(); const uid = child.key; if(uid === mUser.uid) return;
                 const online = u.online === true;
-                let adminBtn = soyAdmin && !u.banned ? `<button onclick="ejecutarBaneo('${uid}', '${u.nombre}')" class="btn-kick">🚫 BAN</button>` : "";
+                let adminBtn = soyAdmin && !u.banned ? `<button onclick="ejecutarBaneo('${uid}', '${u.nombre}')" style="background:#d9534f; color:white; border:none; border-radius:4px; font-size:9px; padding:3px 6px; margin-left:5px; cursor:pointer;">🚫 BAN</button>` : "";
+                if(soyAdmin && u.solicitudVip === 'pendiente') adminBtn += `<button class="btn-admin-accept" onclick="aceptarVip('${uid}')">✅ VIP</button>`;
+                
                 const html = `
                 <div onclick="iniciarPrivado('${uid}', '${u.nombre}')" style="display:flex; align-items:center; padding:10px; cursor:pointer; border-bottom:1px solid #f2f2f2;">
-                    <div style="width:30px; height:30px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-weight:bold; position:relative; font-size:12px;">
+                    <div style="width:35px; height:35px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-weight:bold; position:relative; font-size:13px;">
                         ${u.nombre[0].toUpperCase()}${online ? '<div class="status-dot"></div>' : ''}
                     </div>
                     <div style="flex:1;"><b>${u.nombre}</b> ${u.vip?'⭐':''} ${adminBtn}</div>
@@ -321,17 +373,17 @@
         });
     }
 
+    // --- NUEVO: GESTIÓN DE INBOX Y GRUPOS ---
     function cargarInbox() {
-        const inbox = document.getElementById('inbox-list');
         db.ref('Sincro_Privados').on('value', snap => {
-            inbox.innerHTML = "";
+            const inbox = document.getElementById('inbox-list'); inbox.innerHTML = "";
             snap.forEach(child => {
                 if(child.key.includes(mUser.uid)) {
                     const IDs = child.key.split("_");
                     const targetUid = IDs[0] === mUser.uid ? IDs[1] : IDs[0];
                     db.ref('Sincro_Usuarios/' + targetUid).once('value', uSnap => {
                         const u = uSnap.val(); if(!u) return;
-                        inbox.innerHTML += `<div onclick="iniciarPrivado('${targetUid}', '${u.nombre}')" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; display:flex; align-items:center;"><div style="width:25px; height:25px; border-radius:50%; background:#eee; margin-right:8px; display:flex; align-items:center; justify-content:center;">💬</div><b>${u.nombre}</b></div>`;
+                        inbox.innerHTML += `<div onclick="iniciarPrivado('${targetUid}', '${u.nombre}')" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; display:flex; align-items:center; background:#fff;"><div style="width:25px; height:25px; border-radius:50%; background:#eee; margin-right:8px; display:flex; align-items:center; justify-content:center;">💬</div><b>${u.nombre}</b></div>`;
                     });
                 }
             });
@@ -339,23 +391,21 @@
     }
 
     function abrirCrearGrupo() {
-        const n = prompt("Nombre del grupo:");
+        const n = prompt("Nombre del nuevo grupo:");
         if(n) {
             const gId = "G_" + Date.now();
-            db.ref('Sincro_Grupos/' + gId).set({ nombre: n, owner: mUser.uid, miembros: { [mUser.uid]: true } }).then(() => {
-                notify("Grupo creado"); iniciarGrupo(gId, n);
-            });
+            db.ref('Sincro_Grupos/' + gId).set({ nombre: n, owner: mUser.uid, miembros: { [mUser.uid]: true } })
+            .then(() => { notify("Grupo creado"); iniciarGrupo(gId, n); });
         }
     }
 
     function cargarGrupos() {
-        const list = document.getElementById('groups-list');
         db.ref('Sincro_Grupos').on('value', snap => {
-            list.innerHTML = "";
+            const list = document.getElementById('groups-list'); list.innerHTML = "";
             snap.forEach(child => {
                 const g = child.val();
                 if(g.miembros && g.miembros[mUser.uid]) {
-                    list.innerHTML += `<div onclick="iniciarGrupo('${child.key}', '${g.nombre}')" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; display:flex; align-items:center;"><div style="width:25px; height:25px; border-radius:50%; background:#0088cc; color:white; margin-right:8px; display:flex; align-items:center; justify-content:center;">G</div><b>${g.nombre}</b></div>`;
+                    list.innerHTML += `<div onclick="iniciarGrupo('${child.key}', '${g.nombre}')" style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; font-size:12px; display:flex; align-items:center; background:#fff;"><div style="width:25px; height:25px; border-radius:50%; background:#0088cc; color:white; margin-right:8px; display:flex; align-items:center; justify-content:center; font-weight:bold;">G</div><b>${g.nombre}</b></div>`;
                 }
             });
         });
@@ -364,9 +414,10 @@
     function iniciarGrupo(id, nombre) {
         chatActual = "Sincro_Chats_Grupales/" + id;
         document.getElementById('chat-title').innerText = nombre;
-        document.getElementById('chat-status').innerText = "Chat Grupal";
+        document.getElementById('chat-status').innerText = "Chat de Grupo";
         document.getElementById('info-name').innerText = nombre;
         document.getElementById('info-icon').innerText = nombre[0].toUpperCase();
+        
         db.ref('Sincro_Grupos/' + id).once('value', snap => {
             const g = snap.val(); const soyOwner = g.owner === mUser.uid;
             document.getElementById('group-admin-tools').style.display = soyOwner ? 'block' : 'none';
@@ -378,41 +429,39 @@
 
     function mostrarMiembrosGrupo(gId, miembros, soyOwner) {
         const cont = document.getElementById('group-members-section'), list = document.getElementById('group-members-list');
-        cont.style.display = 'block'; list.innerHTML = `<button onclick="invitarAlGrupo('${gId}')" style="width:100%; border:none; background:#e1e9f2; padding:5px; font-size:10px; cursor:pointer;">+ Añadir Miembro</button>`;
+        cont.style.display = 'block'; 
+        list.innerHTML = `<button onclick="invitarAlGrupo('${gId}')" style="width:100%; border:none; background:#e1e9f2; padding:8px; font-size:11px; cursor:pointer; font-weight:bold;">+ Añadir Miembro</button>`;
         Object.keys(miembros).forEach(uid => {
             db.ref('Sincro_Usuarios/' + uid).once('value', uSnap => {
                 const u = uSnap.val(); if(!u) return;
                 let kickBtn = soyOwner && uid !== mUser.uid ? `<button onclick="expulsarGrupo('${gId}', '${uid}')" class="btn-kick">KICK</button>` : "";
-                list.innerHTML += `<div style="padding:5px 10px; font-size:11px; display:flex; justify-content:space-between; align-items:center;"><span>${u.nombre}</span> ${kickBtn}</div>`;
+                list.innerHTML += `<div style="padding:8px 10px; font-size:11px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f9f9f9;"><span>${u.nombre}</span> ${kickBtn}</div>`;
             });
         });
     }
 
     function invitarAlGrupo(gId) {
-        const mail = prompt("Introduce el correo del usuario:");
+        const mail = prompt("Email del usuario a invitar:");
         if(!mail) return;
         db.ref('Sincro_Usuarios').once('value', snap => {
             let found = false;
             snap.forEach(u => {
-                if(u.val().email === mail) {
-                    db.ref('Sincro_Grupos/' + gId + '/miembros/' + u.key).set(true);
-                    found = true; notify("Añadido");
-                }
+                if(u.val().email === mail) { db.ref('Sincro_Grupos/' + gId + '/miembros/' + u.key).set(true); found = true; notify("Usuario añadido"); }
             });
-            if(!found) notify("No encontrado");
+            if(!found) notify("No se encontró ese correo");
         });
     }
 
     function expulsarGrupo(gId, uid) {
-        if(confirm("¿Expulsar?")) db.ref('Sincro_Grupos/' + gId + '/miembros/' + uid).remove().then(() => notify("Expulsado"));
+        if(confirm("¿Expulsar a este miembro?")) db.ref('Sincro_Grupos/' + gId + '/miembros/' + uid).remove().then(() => { notify("Expulsado"); iniciarGrupo(gId, document.getElementById('chat-title').innerText); });
     }
 
+    // --- CHAT Y MULTIMEDIA ---
     function escucharChat() {
         const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
         box.innerHTML = ""; gal.innerHTML = "";
         if(listener) db.ref(chatActual).off();
         
-        // MODIFICACIÓN: Detectamos si estamos en un grupo
         const esGrupo = chatActual.includes("Sincro_Chats_Grupales");
 
         listener = db.ref(chatActual).on('child_added', snap => {
@@ -430,12 +479,12 @@
                 }
             };
 
-            let html = `<b>${data.user}</b>`;
+            let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
             if(data.type === 'foto' || data.type === 'video') {
-                // MODIFICACIÓN: Si es grupo (esGrupo), el multimedia NO está bloqueado para nadie
+                // REGLA: En grupos no hay bloqueo VIP
                 const locked = !esGrupo && !mData.vip && !isMine;
-                
                 const mediaTag = data.type === 'video' ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
+                
                 if(locked) {
                     html += `<div class="media-container blur"><div class="lock-overlay"><span>🔒 VIP</span></div>${mediaTag}</div>`;
                 } else {
@@ -444,7 +493,7 @@
                 const itemGal = document.createElement('div');
                 itemGal.style = "height:60px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer;";
                 itemGal.innerHTML = mediaTag;
-                itemGal.onclick = () => { if(!locked) abrirMedia(data.url, data.type); else notify("Requiere VIP"); };
+                itemGal.onclick = () => { if(!locked) abrirMedia(data.url, data.type); else notify("🔒 Requiere VIP"); };
                 gal.prepend(itemGal);
             } else { html += `<span>${data.msg}</span>`; }
             d.innerHTML = html; box.appendChild(d); box.scrollTop = box.scrollHeight;
@@ -458,7 +507,6 @@
         db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre, msg: texto, type: 'texto', timestamp: Date.now() });
         input.value = "";
     }
-
     document.getElementById('msg-in').addEventListener('keydown', e => { if(e.key === 'Enter') enviarMsg(); });
 
     function abrirCloudinary() {
@@ -470,6 +518,7 @@
         });
     }
 
+    // --- NAVEGACIÓN ENTRE CHATS ---
     function verChatPublico() {
         chatActual = "Sincro_Chat_Publico";
         document.getElementById('chat-status').innerText = "Grupo Público";
@@ -479,6 +528,7 @@
     }
 
     function iniciarPrivado(targetUid, nombre) {
+        if(targetUid === mUser.uid) return;
         chatActual = "Sincro_Privados/" + [mUser.uid, targetUid].sort().join("_");
         document.getElementById('chat-title').innerText = nombre;
         document.getElementById('chat-status').innerText = "Privado";
@@ -488,11 +538,50 @@
         if(window.innerWidth < 1024) toggleMenu('left');
     }
 
-    function vaciarChat() { if(confirm("¿Vaciar?")) db.ref(chatActual).remove(); }
+    // --- ADMINISTRACIÓN ---
+    function editarNombreGrupoPublico() {
+        const n = prompt("Nombre del chat público:", document.getElementById('chat-title').innerText);
+        const d = prompt("Descripción:", document.getElementById('chat-desc').innerText);
+        if(n) db.ref('Sincro_Config').update({ nombreGrupo: n, descripcionGrupo: d || "" });
+    }
+
+    function editarNombreGrupo() {
+        const gId = chatActual.split('/').pop();
+        const n = prompt("Nuevo nombre del grupo:");
+        if(n) db.ref('Sincro_Grupos/' + gId).update({ nombre: n }).then(() => { document.getElementById('chat-title').innerText = n; notify("Nombre actualizado"); });
+    }
+
+    function vaciarChat() { if(confirm("¿Vaciar historial de este chat?")) db.ref(chatActual).remove(); }
     
     function ejecutarBaneo(uid, nombre) {
-        const m = prompt("Motivo:");
+        const m = prompt("Motivo del baneo:");
         if(m) db.ref('Sincro_Usuarios/' + uid).update({ banned: true, banReason: m, banUntil: Date.now() + 31536000000 });
+    }
+
+    function abrirListaNegra() {
+        const modal = document.getElementById('modal-blacklist'); modal.style.display = 'flex';
+        const contenedor = document.getElementById('lista-baneados-content'); contenedor.innerHTML = "Buscando...";
+        db.ref('Sincro_Usuarios').once('value', snap => {
+            contenedor.innerHTML = "";
+            snap.forEach(child => {
+                const u = child.val();
+                if(u.banned) {
+                    contenedor.innerHTML += `<div style="background:white; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #ddd;"><b>${u.nombre}</b><br><small>Hasta: ${new Date(u.banUntil).toLocaleString()}</small><br><button onclick="ejecutarDesbaneo('${child.key}')" style="background:#4caf50; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer; margin-top:5px;">Perdonar</button></div>`;
+                }
+            });
+        });
+    }
+
+    function ejecutarDesbaneo(uid) {
+        db.ref('Sincro_Usuarios/' + uid).update({ banned: false, banUntil: 0 }).then(() => { notify("Acceso restaurado"); abrirListaNegra(); });
+    }
+
+    function aceptarVip(uid) {
+        db.ref('Sincro_Usuarios/' + uid).update({ vip: true, solicitudVip: 'aceptada' }).then(() => notify("VIP activado"));
+    }
+
+    function enviarSolicitudVip() {
+        db.ref('Sincro_Usuarios/' + mUser.uid).update({ solicitudVip: 'pendiente' }).then(() => notify("Solicitud enviada"));
     }
 </script>
 </body>
