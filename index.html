@@ -808,7 +808,7 @@ function cargarGrupos() {
                 hayGruposParaMi = true;
             } 
             // Opción B: Fui invitado (Buscamos si existe el mensaje de sistema con mi nombre)
-                        } else {
+                                    } else {
                 // Opción B: Fui invitado (Buscamos si existe la invitación PERO revisamos baneo)
                 db.ref('Sincro_Grupos_Baneados/' + idGrupo + '/' + mUser.uid).once('value', banSnap => {
                     if(!banSnap.exists()) {
@@ -823,7 +823,6 @@ function cargarGrupos() {
                 });
             }
         });
-
 
                 hayGruposParaMi = true; 
             }
