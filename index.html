@@ -98,68 +98,7 @@
         /* Botones personalizados */
         .btn-del { background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin: 5px; }
         .btn-can { background: #ccc; color: #333; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin: 5px; }
-         }
-        /* Contenedor principal del modal */
-.sincro-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.8);
-    z-index: 9999;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(4px);
-}
 
-/* Caja blanca del modal */
-.modal-box {
-    background: white;
-    width: 90%;
-    max-width: 400px;
-    border-radius: 15px;
-    overflow: hidden;
-    animation: modalEntrada 0.3s ease-out;
-}
-
-@keyframes modalEntrada {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-/* Cabeceras de colores */
-.modal-head {
-    padding: 15px;
-    color: white;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.head-reportes { background: #d9534f; }
-.head-agregar { background: #0088cc; }
-
-/* Cuerpo y botones */
-.modal-body { padding: 20px; }
-.sincro-input {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-sizing: border-box;
-}
-
-.btn-sincro {
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    margin-top: 5px;
-    }
-    
     </style>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script>
@@ -210,17 +149,17 @@
         <div id="lista-baneados-content" style="flex:1; overflow-y:auto; padding:15px; background:#f9f9f9;">
             </div>
     </div>
-<div id="modal-reportes" class="sincro-modal">
-    <div class="modal-box" style="height: 80vh; display: flex; flex-direction: column;">
-        <div class="modal-head head-reportes">
-            <span>🚨 REPORTES RECIBIDOS</span>
-            <span onclick="cerrarModal('modal-reportes')" style="cursor:pointer">&times;</span>
+</div>
+<div id="modal-reportes" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:10001; justify-content:center; align-items:center;">
+    <div style="background:white; width:95%; max-width:500px; height:80vh; border-radius:15px; display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div style="background:#d9534f; color:white; padding:15px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+            <span>🚨 REPORTES DE LA COMUNIDAD</span>
+            <button onclick="document.getElementById('modal-reportes').style.display='none'" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
         </div>
-        <div id="lista-reportes-content" style="flex:1; overflow-y:auto; padding:15px; background:#f8f9fa;">
+        <div id="lista-reportes-content" style="flex:1; overflow-y:auto; padding:15px; background:#f0f2f5;">
             </div>
     </div>
 </div>
-
 
     
 <div id="media-viewer">
@@ -990,9 +929,6 @@ function abrirPanelReportes() {
     });
 }
 
-function cerrarModal(id) {
-    document.getElementById(id).style.display = 'none';
-}
 
 
 
