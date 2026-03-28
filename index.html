@@ -150,7 +150,18 @@
             </div>
     </div>
 </div>
+<div id="modal-reportes" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:10001; justify-content:center; align-items:center;">
+    <div style="background:white; width:95%; max-width:500px; height:80vh; border-radius:15px; display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div style="background:#d9534f; color:white; padding:15px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+            <span>🚨 REPORTES DE LA COMUNIDAD</span>
+            <button onclick="document.getElementById('modal-reportes').style.display='none'" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <div id="lista-reportes-content" style="flex:1; overflow-y:auto; padding:15px; background:#f0f2f5;">
+            </div>
+    </div>
+</div>
 
+    
 <div id="media-viewer">
     <button id="close-viewer" onclick="cerrarMedia()"></button>
     <div id="viewer-main-container" style="display:contents;"></div>
@@ -266,9 +277,13 @@
             <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; padding:10px; overflow-y:auto; flex:1; align-content: start;"></div>
             
             <div id="admin-actions" style="padding:10px; border-top:1px solid #eee; display:none;">
-                <button onclick="abrirListaNegra()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:5px; cursor:pointer; font-size:12px; margin-bottom:10px;"> Ver Lista Negra</button>
-                <button onclick="vaciarChat()" style="width:100%; padding:10px; background:#fff; border:1px solid #d9534f; color:#d9534f; border-radius:5px; cursor:pointer; font-size:12px;">Vaciar Historial</button>
-            </div>
+    <button onclick="abrirPanelReportes()" style="width:100%; padding:10px; background:#d9534f; color:white; border:none; border-radius:5px; cursor:pointer; font-size:12px; margin-bottom:10px; font-weight:bold;">🚨 REPORTES RECIBIDOS</button>
+    
+    <button onclick="abrirListaNegra()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:5px; cursor:pointer; font-size:12px; margin-bottom:10px;">👤 Ver Lista Negra</button>
+
+    <button onclick="vaciarChat()" style="width:100%; padding:10px; background:#fff; border:1px solid #d9534f; color:#d9534f; border-radius:5px; cursor:pointer; font-size:12px;">🗑️ Vaciar Chat</button>
+</div>
+
         </aside>
     </div>
 </div>
@@ -541,7 +556,10 @@
             };
 
             let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
-            
+
+// Botón de reporte añadido justo después del nombre
+html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.msg || 'Multimedia'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
+
             // --- INICIO AGREGADO: BOTÓN KICK EN GRUPOS ---
             const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
             if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
@@ -821,23 +839,75 @@
     // =====================================================================
 
     // Función para activar el botón de añadir personas
+// Función para activar el botón de añadir personas (Versión Mejorada por Nombre)
 function mostrarListaParaAgregar() {
-    // Verificamos si estás dentro de un chat de grupo
-    if(!chatActual.includes("Sincro_Grupos/")) {
+    if(!chatActual.startsWith("Sincro_Grupos/")) {
         return notify("⚠️ Entra a un grupo para añadir personas");
     }
 
-    // Pedimos los datos del nuevo miembro
-    let uidParaAñadir = prompt("ID del usuario (UID):");
-    let nombreParaAñadir = prompt("Nombre de la persona:");
+    let nombreBusqueda = prompt("Escribe el NOMBRE del usuario que quieres invitar:");
+    if (!nombreBusqueda) return;
 
-    if(uidParaAñadir && nombreParaAñadir) {
-        // Esta función ya la tienes en tu código para procesar la invitación
-        abrirModalInvitacion(uidParaAñadir, nombreParaAñadir);
-    } else {
-        notify("❌ Datos incompletos");
+    notify("Buscando usuario...");
+    db.ref('Sincro_Usuarios').once('value', snap => {
+        let encontrado = false;
+        snap.forEach(userSnap => {
+            let datos = userSnap.val();
+            // Comparamos el nombre en minúsculas para que no importe si escriben "Juan" o "juan"
+            if(datos.nombre && datos.nombre.toLowerCase() === nombreBusqueda.toLowerCase()) {
+                encontrado = true;
+                
+                // Publicamos el mensaje de sistema en el grupo actual
+                db.ref(chatActual).push({
+                    uid: 'sistema',
+                    user: 'SISTEMA',
+                    msg: `¡${datos.nombre} ha sido invitado al grupo!`,
+                    type: 'texto',
+                    timestamp: Date.now()
+                });
+                notify(`✅ ${datos.nombre} añadido al grupo`);
+            }
+        });
+        if(!encontrado) notify("❌ No se encontró ningún usuario con ese nombre");
+    });
+}
+// Función para que el usuario envíe el reporte
+function abrirReporte(uidMalo, nombreMalo, contenido) {
+    let motivo = prompt(`¿Por qué reportas a ${nombreMalo}?\nContenido: "${contenido}"`);
+    if (motivo) {
+        db.ref('Sincro_Reportes').push({
+            reportadoPor: mData.nombre || "Anónimo",
+            usuarioReportado: nombreMalo,
+            motivo: motivo,
+            evidencia: contenido,
+            fecha: Date.now()
+        }).then(() => notify("✅ Gracias. El reporte ha sido enviado al administrador."));
     }
 }
+
+// Función para que TÚ veas los reportes (Panel Admin)
+function abrirPanelReportes() {
+    document.getElementById('modal-reportes').style.display = 'flex';
+    const cont = document.getElementById('lista-reportes-content');
+    cont.innerHTML = "Cargando reportes...";
+
+    db.ref('Sincro_Reportes').on('value', snap => {
+        cont.innerHTML = "";
+        snap.forEach(child => {
+            const r = child.val();
+            cont.innerHTML += `
+                <div style="background:white; padding:15px; border-radius:10px; margin-bottom:10px; border-left:5px solid #d9534f; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+                    <b style="color:#d9534f;">🚩 REPORTE DE: ${r.reportadoPor}</b><br>
+                    <small>Contra: <b>${r.usuarioReportado}</b></small><hr>
+                    <p style="margin:5px 0; font-size:13px;"><b>Motivo:</b> ${r.motivo}</p>
+                    <p style="margin:5px 0; font-size:12px; color:#666;"><b>Mensaje:</b> ${r.evidencia}</p>
+                    <button onclick="db.ref('Sincro_Reportes/${child.key}').remove()" style="margin-top:10px; background:#eee; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:11px;">Eliminar reporte</button>
+                </div>`;
+        });
+        if(cont.innerHTML === "") cont.innerHTML = "<p style='text-align:center; color:#888;'>No hay reportes pendientes.</p>";
+    });
+}
+
 
 </script>
 </body>
