@@ -557,8 +557,7 @@
 
             let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
 
-// Botón de reporte añadido justo después del nombre
-html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.msg || 'Multimedia'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
+html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Multimedia'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
 
             // --- INICIO AGREGADO: BOTÓN KICK EN GRUPOS ---
             const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
@@ -894,42 +893,42 @@ function abrirReporte(uidMalo, nombreMalo, contenido) {
 function abrirPanelReportes() {
     document.getElementById('modal-reportes').style.display = 'flex';
     const cont = document.getElementById('lista-reportes-content');
-    cont.innerHTML = "Cargando reportes...";
+    cont.innerHTML = "<p style='text-align:center;'>Cargando reportes...</p>";
 
     db.ref('Sincro_Reportes').on('value', snap => {
         cont.innerHTML = "";
         snap.forEach(child => {
             const r = child.val();
             
-            // Lógica que ya detecta si es foto o video
+            // Lógica para detectar y mostrar Multimedia
             let vistaEvidencia = "";
-            if (r.esMultimedia) {
+            if (r.esMultimedia || (r.evidencia && r.evidencia.startsWith('http'))) {
                 if (r.evidencia.includes('.mp4') || r.evidencia.includes('.mov')) {
-                    vistaEvidencia = `<video src="${r.evidencia}" controls style="width:100%; border-radius:8px; margin-top:5px;"></video>`;
+                    vistaEvidencia = `<video src="${r.evidencia}" controls style="width:100%; border-radius:8px; margin-top:5px; max-height:200px; background:black;"></video>`;
                 } else {
-                    vistaEvidencia = `<img src="${r.evidencia}" style="width:100%; border-radius:8px; margin-top:5px;">`;
+                    vistaEvidencia = `<img src="${r.evidencia}" style="width:100%; border-radius:8px; margin-top:5px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">`;
                 }
             } else {
-                vistaEvidencia = `<p style="background:#f0f2f5; padding:10px; border-radius:5px; font-size:12px;">${r.evidencia}</p>`;
+                vistaEvidencia = `<p style="background:#f0f2f5; padding:10px; border-radius:5px; font-size:12px;">${r.evidencia || 'Sin mensaje'}</p>`;
             }
 
             cont.innerHTML += `
-                <div style="background:white; padding:15px; border-radius:12px; margin-bottom:15px; border-left:5px solid #d9534f; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                <div style="background:white; padding:15px; border-radius:12px; margin-bottom:15px; border-left:5px solid #d9534f; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
                     <b style="color:#d9534f;">🚩 REPORTE DE: ${r.reportadoPor}</b><br>
-                    <small>Contra: <b>${r.usuarioReportado}</b></small><hr>
+                    <small>Contra: <b>${r.usuarioReportado}</b></small><hr style="opacity:0.1;">
                     <p style="margin:5px 0; font-size:13px;"><b>Motivo:</b> ${r.motivo}</p>
-                    ${vistaEvidencia}
                     
-                    <div style="display:flex; gap:10px; margin-top:15px;">
-                        <button onclick="ejecutarBaneo('${r.uidReportado}', '${r.usuarioReportado}')" style="flex:2; background:#d9534f; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">🔨 BANEAR</button>
+                    ${vistaEvidencia} <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button onclick="ejecutarBaneo('${r.uidReportado}', '${r.usuarioReportado}')" style="flex:2; background:#d9534f; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">🔨 BANEAR</button>
                         
-                        <button onclick="db.ref('Sincro_Reportes/${child.key}').remove()" style="flex:1; background:#eee; border:none; padding:10px; border-radius:6px; cursor:pointer;">Descartar</button>
+                        <button onclick="db.ref('Sincro_Reportes/${child.key}').remove()" style="flex:1; background:#eee; color:#666; border:none; padding:10px; border-radius:6px; cursor:pointer; font-size:11px;">Eliminar</button>
                     </div>
                 </div>`;
         });
-        if(cont.innerHTML === "") cont.innerHTML = "<p style='text-align:center; color:#888;'>No hay reportes pendientes.</p>";
+        if(!snap.exists()) cont.innerHTML = "<p style='text-align:center; color:#888; margin-top:20px;'>No hay reportes pendientes. ✨</p>";
     });
 }
+
 
 
 
