@@ -557,7 +557,15 @@
                 }
             };
 
-            let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
+                        // --- CAMBIO EN LÍNEA 560 ---
+            let html = "";
+            if (data.uid === 'sistema') {
+                // Nombre sin enlace (no abre chat privado)
+                html += `<b style="color: #888; cursor: default;">${data.user}</b>`;
+            } else {
+                // Nombre con enlace (abre chat privado con personas)
+                html += `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')" style="cursor: pointer; color: #0088cc;">${data.user}</b>`;
+            }
 
 html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Multimedia'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
 
