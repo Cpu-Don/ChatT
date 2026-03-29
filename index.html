@@ -1038,24 +1038,38 @@ function procesarCambioNombre() {
 
 function mostrarMiembrosParaExpulsar() {
     const cont = document.getElementById('contenedor-miembros-admin');
-    cont.innerHTML = "Cargando...";
+    cont.innerHTML = "<p style='color:#888; font-size:12px; padding:10px;'>Buscando en la lista...</p>";
     document.getElementById('modal-lista-expulsar').style.display = 'flex';
 
-    db.ref('Sincro_InfoGrupos/' + idGrupoGestion + '/miembros').once('value', snap => {
+    // SEGÚN TU CAPTURA: Los miembros están en Sincro_Grupos / ID / miembros
+    db.ref('Sincro_Grupos/' + idGrupoGestion + '/miembros').once('value', snap => {
         cont.innerHTML = "";
-        snap.forEach(m => {
-            const uidM = m.key;
-            db.ref('Sincro_Usuarios/' + uidM).once('value', uSnap => {
-                const n = uSnap.val().nombre;
+        
+        if(!snap.exists()) {
+            cont.innerHTML = "<p style='color:#999; text-align:center; font-size:12px; padding:20px;'>No hay miembros registrados en este nodo.</p>";
+            return;
+        }
+
+        snap.forEach(miembroSnap => {
+            const mUid = miembroSnap.key;
+            
+            // Buscamos el nombre del usuario para mostrarlo bonito
+            db.ref('Sincro_Usuarios/' + mUid).once('value', uSnap => {
+                const nombreU = uSnap.val() ? uSnap.val().nombre : "Usuario Desconocido";
+                
                 cont.innerHTML += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;">
-                        <span style="font-size:13px;">${n}</span>
-                        <button onclick="expulsarUsuario('${uidM}', '${n}')" style="background:#ff4757; color:white; border:none; padding:4px 8px; border-radius:5px; font-size:10px;">EXPULSAR</button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-weight:bold; color:#333; font-size:13px;">${nombreU}</span>
+                        <button onclick="prepararKick('${mUid}', '${nombreU}')" 
+                                style="background:#fff1f1; color:#ff4757; border:1px solid #ffcccc; padding:6px 12px; border-radius:10px; font-size:11px; cursor:pointer; font-weight:bold;">
+                            EXPULSAR
+                        </button>
                     </div>`;
             });
         });
     });
 }
+
 
 function expulsarUsuario(uid, nombre) {
     if(confirm("¿Expulsar a " + nombre + "?")) {
