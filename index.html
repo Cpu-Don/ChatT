@@ -914,34 +914,44 @@ html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.ur
     // Función para activar el botón de añadir personas
 // Función para activar el botón de añadir personas (Versión Mejorada por Nombre)
 function mostrarListaParaAgregar() {
-    if(!chatActual.startsWith("Sincro_Grupos/")) {
+    if(!chatActual.startsWith("Sincro_Groups/")) {
         return notify("⚠️ Entra a un grupo para añadir personas");
     }
 
     let nombreBusqueda = prompt("Escribe el NOMBRE del usuario que quieres invitar:");
     if (!nombreBusqueda) return;
 
+    // Extraemos el ID del grupo para saber dónde guardarlo
+    const idDelGrupo = chatActual.replace("Sincro_Groups/", "");
+
     notify("Buscando usuario...");
     db.ref('Sincro_Usuarios').once('value', snap => {
         let encontrado = false;
         snap.forEach(userSnap => {
             let datos = userSnap.val();
-            // Comparamos el nombre en minúsculas para que no importe si escriben "Juan" o "juan"
+            let uidEncontrado = userSnap.key;
+
             if(datos.nombre && datos.nombre.toLowerCase() === nombreBusqueda.toLowerCase()) {
                 encontrado = true;
                 
-                // Publicamos el mensaje de sistema en el grupo actual
+                // 1. GUARDAMOS EL PERMISO (Para que aparezca en tu lista de expulsar ⚙️)
+                // Lo guardamos en ambos nodos para que no falle nada
+                db.ref('Sincro_Grupos/' + idDelGrupo + '/miembros/' + uidEncontrado).set(true);
+                db.ref('Sincro_InfoGrupos/' + idDelGrupo + '/miembros/' + uidEncontrado).set(true);
+
+                // 2. PUBLICAMOS EL MENSAJE EN EL CHAT (Tal cual como pediste)
                 db.ref(chatActual).push({
                     uid: 'sistema',
                     user: 'SISTEMA',
-                    msg: `¡${datos.nombre} ha sido invitado al grupo!`,
+                    msg: `${datos.nombre} ah ingresado al grupo`, // <-- El mensaje limpio
                     type: 'texto',
                     timestamp: Date.now()
                 });
-                notify(`✅ ${datos.nombre} añadido al grupo`);
+
+                notify(`✅ ${datos.nombre} añadido`);
             }
         });
-        if(!encontrado) notify("❌ No se encontró ningún usuario con ese nombre");
+        if(!encontrado) notify("❌ No se encontró a ese usuario");
     });
 }
 // Función para que el usuario envíe el reporte
