@@ -774,24 +774,28 @@
 
     function cargarGrupos() {
     const listGrupos = document.getElementById('grupos-list');
+    // Usamos la ruta correcta: Sincro_InfoGrupos
     db.ref('Sincro_InfoGrupos').on('value', snap => {
         listGrupos.innerHTML = "";
         let hayGrupos = false;
+        
         snap.forEach(child => {
             const g = child.val();
             const idGrupo = child.key;
             hayGrupos = true;
-            const esMio = g.owner === mUser.uid; // Verificamos si soy el creador
 
-            // --- ESTO ES LO NUEVO ---
-            // Creamos el HTML para el engranaje solo si es mío
+            // REVISIÓN CLAVE: Comparamos el owner del grupo con tu ID actual
+            const esMio = g.owner === mUser.uid;
+
+            // Si soy el dueño, preparamos la etiqueta y el engranaje
             let gearHtml = '';
+            let ownerBadge = '';
+
             if (esMio) {
+                ownerBadge = `<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px; margin-left:10px;">Dueño</span>`;
+                // El engranaje para la lista
                 gearHtml = `<span onclick="abrirMenuCreadorDesdeLista('${idGrupo}', '${g.nombre}'); event.stopPropagation();" style="margin-left: 10px; cursor: pointer; font-size: 16px;">⚙️</span>`;
             }
-
-            // Creamos el HTML para la etiqueta "Dueño"
-            const ownerBadge = esMio ? `<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px; margin-left:10px;">Dueño</span>` : '';
 
             listGrupos.innerHTML += `
                 <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px; border-bottom:1px solid #eee; cursor:pointer;">
@@ -801,13 +805,18 @@
                     </div>
                     <div style="display:flex; align-items:center;">
                         ${ownerBadge}
-                        ${gearHtml} </div>
+                        ${gearHtml}
+                    </div>
                 </div>
             `;
         });
-        if (!hayGrupos) listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay grupos creados</p>";
+
+        if (!hayGrupos) {
+            listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay grupos creados</p>";
+        }
     });
 }
+
 
 
     function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
