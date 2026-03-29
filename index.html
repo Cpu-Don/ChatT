@@ -582,10 +582,8 @@ if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUse
     }
 
     // Si logramos encontrar a quién echar, mostramos el botón con su nombre
-    if(uidAEchar !== 'sistema') {
-        html += ` <button onclick="expulsarDeGrupo('${uidAEchar}', '${nombreAEchar}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK a ${nombreAEchar}</button>`;
-    }
-}
+    html += `<button onclick="expulsarDeGrupo('${uidAEchar}', '${nombreAEchar}')" style="background:#ff4757; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; margin-left:10px;">Expulsar</button>`;
+
 
             // --- FIN AGREGADO ---
 
