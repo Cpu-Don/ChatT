@@ -772,36 +772,38 @@
         });
     }
 
-    function cargarGrupos() {
+function cargarGrupos() {
     const listGrupos = document.getElementById('grupos-list');
-    // Usamos la ruta correcta: Sincro_InfoGrupos
+    if (!listGrupos) return;
+
     db.ref('Sincro_InfoGrupos').on('value', snap => {
         listGrupos.innerHTML = "";
         let hayGrupos = false;
-        
+
         snap.forEach(child => {
             const g = child.val();
             const idGrupo = child.key;
             hayGrupos = true;
 
-            // REVISIÓN CLAVE: Comparamos el owner del grupo con tu ID actual
-            const esMio = g.owner === mUser.uid;
+            // Verificación por consola para que tú mismo veas si el ID coincide
+            console.log("Grupo:", g.nombre, "Owner en DB:", g.owner, "Tu ID:", mUser.uid);
 
-            // Si soy el dueño, preparamos la etiqueta y el engranaje
+            const esMio = (g.owner === mUser.uid);
+
             let gearHtml = '';
             let ownerBadge = '';
 
             if (esMio) {
                 ownerBadge = `<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px; margin-left:10px;">Dueño</span>`;
-                // El engranaje para la lista
-                gearHtml = `<span onclick="abrirMenuCreadorDesdeLista('${idGrupo}', '${g.nombre}'); event.stopPropagation();" style="margin-left: 10px; cursor: pointer; font-size: 16px;">⚙️</span>`;
+                // Engranaje con un estilo más visible
+                gearHtml = `<span onclick="abrirMenuCreadorDesdeLista('${idGrupo}', '${g.nombre}'); event.stopPropagation();" style="margin-left: 10px; cursor: pointer; font-size: 18px; padding: 5px;">⚙️</span>`;
             }
 
             listGrupos.innerHTML += `
-                <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px; border-bottom:1px solid #eee; cursor:pointer;">
+                <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px; border-bottom:1px solid #eee; cursor:pointer;">
                     <div style="display:flex; align-items:center;">
-                        <div style="width:25px; height:25px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:10px;">G</div>
-                        <b style="font-size:12px; color:#333;">${g.nombre}</b>
+                        <div style="width:28px; height:28px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:10px;">G</div>
+                        <b style="font-size:13px; color:#333;">${g.nombre}</b>
                     </div>
                     <div style="display:flex; align-items:center;">
                         ${ownerBadge}
@@ -812,10 +814,11 @@
         });
 
         if (!hayGrupos) {
-            listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay grupos creados</p>";
+            listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:15px;'>No tienes grupos creados</p>";
         }
     });
 }
+
 
 
 
