@@ -283,8 +283,6 @@
 
     <button onclick="vaciarChat()" style="width:100%; padding:10px; background:#fff; border:1px solid #d9534f; color:#d9534f; border-radius:5px; cursor:pointer; font-size:12px;">🗑️ Vaciar Chat</button>
 </div>
-           <button id="btn-delete-group" onclick="eliminarGrupoCompleto()" style="display:none; width:100%; padding:10px; background:#000; color:#fff; border:none; border-radius:5px; cursor:pointer; font-size:12px; margin-top:10px; border: 1px solid red;">🗑️ ELIMINAR GRUPO</button>
- 
 
         </aside>
     </div>
@@ -557,37 +555,16 @@
                 }
             };
 
-            // --- MODIFICACIÓN DESDE LA LÍNEA 560 ---
-        // --- LIMPIEZA TOTAL DE SINTAXIS ---
-        let html = (data.uid === 'sistema') ? "" : `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')" style="cursor: pointer; color: #0088cc;">${data.user}</b>`;
+            let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
 
-        // Botón de reporte
-        if (data.uid !== 'sistema') {
-            html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Multimedia'}')" style="background:transparent; border:none; color:#888; cursor:pointer; margin-left:5px;">!</button>`;
-        }
+html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Multimedia'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
 
-        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-        
-        // Lógica de Expulsión
-        if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
-            
-            let nombreAEchar = data.user;
-            let uidAEchar = data.uid;
-
-            if (data.uid === 'sistema' && data.msg.includes('ha sido invitado')) {
-                const partes = data.msg.split("'");
-                if (partes[1]) {
-                    nombreAEchar = partes[1];
-                    uidAEchar = Object.keys(usuariosMap).find(key => usuariosMap[key] === nombreAEchar) || 'sistema';
-                }
+            // --- INICIO AGREGADO: BOTÓN KICK EN GRUPOS ---
+            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+            if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
+                html += ` <button onclick="expulsarDeGrupo('${data.uid}', '${data.user}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK</button>`;
             }
-
-            if (uidAEchar !== 'sistema') {
-                html += `<button onclick="expulsarDeGrupo('${uidAEchar}', '${nombreAEchar}')" style="background:#ff4757; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; margin-left:10px;">Expulsar</button>`;
-            }
-        }
-        // --- FIN DEL BLOQUE CORREGIDO ---
-
+            // --- FIN AGREGADO ---
 
             if(data.type === 'foto' || data.type === 'video') {
                 
@@ -790,121 +767,75 @@
         });
     }
 
-function cargarGrupos() {
-    const listGrupos = document.getElementById('grupos-list');
-    // Escuchamos los metadatos de los grupos
-    db.ref('Sincro_InfoGrupos').on('value', snap => {
-        listGrupos.innerHTML = "";
-        let hayGruposParaMi = false;
-
-        snap.forEach(child => {
-            const g = child.val();
-            const idGrupo = child.key;
-            const esMio = g.owner === mUser.uid;
-
-            // Opción A: Es mi grupo
-            if (esMio) {
-                renderizarItemGrupo(listGrupos, idGrupo, g, true);
-                hayGruposParaMi = true;
-            } 
-            // Opción B: Fui invitado (Buscamos si existe el mensaje de sistema con mi nombre)
-                                    } else {
-                // Opción B: Fui invitado (Buscamos si existe la invitación PERO revisamos baneo)
-                db.ref('Sincro_Grupos_Baneados/' + idGrupo + '/' + mUser.uid).once('value', banSnap => {
-                    if(!banSnap.exists()) {
-                        // SOLO si NO está baneado, buscamos la invitación
-                        db.ref('Sincro_Grupos/' + idGrupo).orderByChild("msg").equalTo(`¡${mData.nombre} ha sido invitado al grupo!`).once('value', s => {
-                            if(s.exists()){
-                                renderizarItemGrupo(listGrupos, idGrupo, g, false);
-                                hayGruposParaMi = true;
-                            }
-                        });
-                    }
-                });
-            }
+    function cargarGrupos() {
+        const listGrupos = document.getElementById('grupos-list');
+        db.ref('Sincro_InfoGrupos').on('value', snap => {
+            listGrupos.innerHTML = "";
+            let hayGrupos = false;
+            snap.forEach(child => {
+                const g = child.val();
+                const idGrupo = child.key;
+                hayGrupos = true;
+                const esMio = g.owner === mUser.uid;
+                listGrupos.innerHTML += `
+                <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" style="padding:10px 15px; cursor:pointer; border-bottom:1px solid #f2f2f2; display:flex; align-items:center; background:#f4f9f9;">
+                    <div style="width:25px; height:25px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:10px; font-weight:bold;">G</div>
+                    <b style="font-size:12px; color:#333; flex:1;">${g.nombre}</b>
+                    ${esMio ? '<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px;">Dueño</span>' : ''}
+                </div>`;
+            });
+            if(!hayGrupos) listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay grupos disponibles</p>";
         });
+    }
 
-                hayGruposParaMi = true; 
-            }
-        });
+    function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
+        chatActual = "Sincro_Grupos/" + idGrupo;
+        window.grupoOwnerActual = ownerUid; // Guardamos quién es el dueño
         
-        // Si después de un segundo no se detectan grupos, mostramos el mensaje vacío
-        setTimeout(() => {
-            if (listGrupos.innerHTML === "") {
-                listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No tienes grupos aún</p>";
-            }
-        }, 1000);
-    });
-}
-
-// Función auxiliar para no repetir código de diseño
-function renderizarItemGrupo(contenedor, id, data, esMio) {
-    contenedor.innerHTML += `
-    <div onclick="abrirGrupo('${id}', '${data.nombre}', '${data.owner}')" style="padding:10px 15px; cursor:pointer; border-bottom:1px solid #f2f2f2; display:flex; align-items:center; background:#f4f9f9;">
-        <div style="width:25px; height:25px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:10px; font-weight:bold;">G</div>
-        <b style="font-size:12px; color:#333; flex:1;">${data.nombre}</b>
-        ${esMio ? '<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px;">Mío</span>' : ''}
-    </div>`;
-}
-
-
-    // Función para entrar a un grupo y verificar si somos el dueño
-function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
-    chatActual = "Sincro_Grupos/" + idGrupo;
-    window.grupoIdActual = idGrupo; // Guardamos el ID para poder borrarlo luego
-    window.grupoOwnerActual = ownerUid;
-    
-    // Solo el dueño ve el botón de eliminar y las acciones de admin
-    const esDuenio = (ownerUid === mUser.uid);
-    
-    if(document.getElementById('btn-delete-group')) {
-        document.getElementById('btn-delete-group').style.display = esDuenio ? 'block' : 'none';
+        document.getElementById('chat-title').innerText = nombreGrupo;
+        document.getElementById('chat-desc').innerText = "Regla de Libertad Activada (Sin candados)";
+        document.getElementById('info-name').innerText = nombreGrupo;
+        document.getElementById('info-icon').innerText = "G";
+        document.getElementById('chat-status').innerText = "Grupo Creado";
+        escucharChat();
+        if(window.innerWidth < 1024) toggleMenu('left');
     }
-    if(document.getElementById('admin-actions')) {
-        document.getElementById('admin-actions').style.display = esDuenio ? 'block' : 'none';
-    }
-
-    document.getElementById('chat-title').innerText = nombreGrupo;
-    document.getElementById('chat-desc').innerText = "Grupo Privado";
-    escucharChat();
-    
-    if(window.innerWidth < 1024) toggleMenu('left');
-}
-
-// Función para borrar el grupo de la base de datos
-function eliminarGrupoCompleto() {
-    if(!window.grupoIdActual) return;
-    
-    if(confirm("🚨 ¿ESTÁS SEGURO? Se borrará el grupo y todos los mensajes para siempre.")) {
-        // 1. Borrar los mensajes del chat
-        db.ref('Sincro_Grupos/' + window.grupoIdActual).remove();
-        // 2. Borrar la existencia del grupo
-        db.ref('Sincro_InfoGrupos/' + window.grupoIdActual).remove().then(() => {
-            notify("✅ Grupo eliminado correctamente");
-            verChatPublico(); // Te saca al chat general automáticamente
-        });
-    }
-}
-
 
     function expulsarDeGrupo(uidAExpulsar, nombreUser) {
-    if(confirm(`¿Expulsar permanentemente a ${nombreUser} de este grupo?`)) {
-        const idGrupo = chatActual.split('/')[1];
+        // Modal de cristal para confirmar kick
+        const modal = document.createElement('div');
+        modal.className = 'modal-confirm';
+        modal.style.zIndex = '9999';
+        modal.innerHTML = `
+            <div class="modal-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);">
+                <p>¿Expulsar a <b style="color:#d9534f;">${nombreUser}</b> de este grupo?</p>
+                <button class="btn-del" id="confirm-kick">Sí, Expulsar</button>
+                <button class="btn-can" id="cancel-kick">Cancelar</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#confirm-kick').onclick = () => {
+            // Un KICK simple: Borramos todos los mensajes de este usuario en este grupo para "limpiarlo"
+            // (En Firebase RTDB básico, prohibir escritura requiere reglas de seguridad complejas, 
+            // la solución Frontend es borrar sus msgs y notificar).
+            db.ref(chatActual).orderByChild("uid").equalTo(uidAExpulsar).once('value', snap => {
+                snap.forEach(child => { child.ref.remove(); });
+            });
+            db.ref(chatActual).push({ 
+                uid: 'sistema', user: 'SISTEMA', 
+                msg: `El administrador del grupo ha expulsado a ${nombreUser}.`, 
+                type: 'texto', timestamp: Date.now() 
+            });
+            modal.remove();
+            notify(` ${nombreUser} expulsado`);
+        };
         
-        // 1. Lo metemos en una "Lista Negra" dentro del grupo en Firebase
-        db.ref('Sincro_Grupos_Baneados/' + idGrupo + '/' + uidAExpulsar).set(true);
-
-        // 2. Ponemos el aviso de expulsión
-        db.ref(chatActual).push({ 
-            uid: 'sistema', user: 'SISTEMA', 
-            msg: `🚫 ${nombreUser} ha sido expulsado permanentemente.`, 
-            type: 'texto', timestamp: Date.now() 
-        });
-
-        notify(`${nombreUser} eliminado y bloqueado`);
+        modal.querySelector('#cancel-kick').onclick = () => modal.remove();
     }
-}
-
+    // =====================================================================
+    // --- FIN BLOQUE NUEVO ---
+    // =====================================================================
 
     // Función para activar el botón de añadir personas
 // Función para activar el botón de añadir personas (Versión Mejorada por Nombre)
