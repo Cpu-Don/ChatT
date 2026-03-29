@@ -914,15 +914,16 @@ html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.ur
     // Función para activar el botón de añadir personas
 // Función para activar el botón de añadir personas (Versión Mejorada por Nombre)
 function mostrarListaParaAgregar() {
-    if(!chatActual.startsWith("Sincro_Groups/")) {
+    // CORREGIDO: "Grupos" en lugar de "Groups"
+    if(!chatActual.startsWith("Sincro_Grupos/")) {
         return notify("⚠️ Entra a un grupo para añadir personas");
     }
 
     let nombreBusqueda = prompt("Escribe el NOMBRE del usuario que quieres invitar:");
     if (!nombreBusqueda) return;
 
-    // Extraemos el ID del grupo para saber dónde guardarlo
-    const idDelGrupo = chatActual.replace("Sincro_Groups/", "");
+    // Extraemos el ID del grupo correctamente
+    const idDelGrupo = chatActual.replace("Sincro_Grupos/", "");
 
     notify("Buscando usuario...");
     db.ref('Sincro_Usuarios').once('value', snap => {
@@ -934,16 +935,15 @@ function mostrarListaParaAgregar() {
             if(datos.nombre && datos.nombre.toLowerCase() === nombreBusqueda.toLowerCase()) {
                 encontrado = true;
                 
-                // 1. GUARDAMOS EL PERMISO (Para que aparezca en tu lista de expulsar ⚙️)
-                // Lo guardamos en ambos nodos para que no falle nada
+                // 1. GUARDAMOS EL PERMISO (Ahora sí en la ruta correcta)
                 db.ref('Sincro_Grupos/' + idDelGrupo + '/miembros/' + uidEncontrado).set(true);
                 db.ref('Sincro_InfoGrupos/' + idDelGrupo + '/miembros/' + uidEncontrado).set(true);
 
-                // 2. PUBLICAMOS EL MENSAJE EN EL CHAT (Tal cual como pediste)
+                // 2. MENSAJE LIMPIO EN EL CHAT
                 db.ref(chatActual).push({
                     uid: 'sistema',
                     user: 'SISTEMA',
-                    msg: `${datos.nombre} ah ingresado al grupo`, // <-- El mensaje limpio
+                    msg: `${datos.nombre} ha ingresado al grupo`,
                     type: 'texto',
                     timestamp: Date.now()
                 });
@@ -954,6 +954,7 @@ function mostrarListaParaAgregar() {
         if(!encontrado) notify("❌ No se encontró a ese usuario");
     });
 }
+
 // Función para que el usuario envíe el reporte
 function abrirReporte(uidMalo, nombreMalo, contenido) {
     let esMultimedia = contenido.startsWith('http');
