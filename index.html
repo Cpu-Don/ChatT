@@ -242,8 +242,7 @@
         </aside>
 
         <main id="chat-section">
-            <header class="header" id="chat-header" style="position: relative;">
-
+            <header class="header">
                <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;"></button>
                <div style="text-align:center;">
                    <b id="chat-title" style="display:block; font-size: 15px;">Cargando...</b>
@@ -511,94 +510,90 @@
         }
     }
 
-   function escucharChat() {
-    const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
-    if(!box || !gal) return;
-    box.innerHTML = ""; gal.innerHTML = "";
-    if(listener) db.ref(chatActual).off();
+    function escucharChat() {
+        const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
+        if(!box || !gal) return;
+        box.innerHTML = ""; gal.innerHTML = "";
+        if(listener) db.ref(chatActual).off();
 
-    listener = db.ref(chatActual).on('child_added', snap => {
-        const data = snap.val(), isMine = data.uid === mUser.uid;
-        if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; }
-
-        const d = document.createElement('div'); 
-        d.className = "msg " + (isMine ? "me" : "them"); 
-        d.id = "m-" + snap.key;
-        
-        d.oncontextmenu = (e) => {
-            e.preventDefault();
-            const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-            if (isMine || soyAdmin) {
-                const modal = document.createElement('div');
-                modal.className = 'modal-confirm';
-                modal.innerHTML = '<div class="modal-card"><p>¿Eliminar este mensaje?</p><button class="btn-del" id="confirm-del">Eliminar</button><button class="btn-can" id="cancel-del">Cancelar</button></div>';
-                document.body.appendChild(modal);
-                modal.querySelector('#confirm-del').onclick = () => {
-                    db.ref(chatActual + "/" + snap.key).remove();
-                    modal.remove();
-                };
-                modal.querySelector('#cancel-del').onclick = () => modal.remove();
-            }
-        };
-
-        const userB = document.createElement('b');
-        userB.textContent = data.user;
-        userB.onclick = () => iniciarPrivado(data.uid, data.user);
-        d.appendChild(userB);
-
-        const btnRep = document.createElement('button');
-        btnRep.textContent = "🚩 Reportar";
-        btnRep.style = "background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;";
-        btnRep.onclick = () => abrirReporte(data.uid, data.user, data.url || data.msg || 'Multimedia');
-        d.appendChild(btnRep);
-
-        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-        if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
-            const btnKick = document.createElement('button');
-            btnKick.textContent = "KICK";
-            btnKick.style = "background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;";
-            btnKick.onclick = () => expulsarDeGrupo(data.uid, data.user);
-            d.appendChild(btnKick);
-        }
-
-        if(data.type === 'foto' || data.type === 'video') {
-            const enGrupoLibre = chatActual.startsWith("Sincro_Grupos/");
-            const locked = !mData.vip && !isMine && !enGrupoLibre;
-            const mediaTag = data.type === 'video' ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
+        listener = db.ref(chatActual).on('child_added', snap => {
+            const data = snap.val(), isMine = data.uid === mUser.uid;
             
-            const mediaDiv = document.createElement('div');
-            if(locked) {
-                const txtBtn = mData.solicitudVip === 'pendiente' ? 'Solicitud pendiente...' : 'Solicitar Acceso';
-                mediaDiv.className = "media-container blur";
-                mediaDiv.innerHTML = `<div class="lock-overlay"><span>🔒 PRIVADO</span><button class="btn-solicitud">${txtBtn}</button></div>${mediaTag}`;
-            } else {
-                mediaDiv.className = "media-container";
-                mediaDiv.innerHTML = mediaTag;
-                mediaDiv.onclick = () => abrirMedia(data.url, data.type);
+            // --- INICIO AGREGADO: REVISAR EXPULSADOS (KICK) EN GRUPOS ---
+            if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; } // Ignorar msgs de expulsados si se requiere
+            // --- FIN AGREGADO ---
+
+            const d = document.createElement('div'); d.className = "msg " + (isMine ? "me" : "them"); d.id = "m-" + snap.key;
+            
+            d.oncontextmenu = (e) => {
+                e.preventDefault();
+                const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+                
+                if (isMine || soyAdmin) {
+                    // Crear el modal bonito
+                    const modal = document.createElement('div');
+                    modal.className = 'modal-confirm';
+                    modal.innerHTML = `
+                        <div class="modal-card">
+                            <p>¿Eliminar este mensaje?</p>
+                            <button class="btn-del" id="confirm-del">Eliminar</button>
+                            <button class="btn-can" id="cancel-del">Cancelar</button>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+
+                    // Botón de Eliminar
+                    modal.querySelector('#confirm-del').onclick = () => {
+                        db.ref(chatActual + "/" + snap.key).remove();
+                        modal.remove();
+                    };
+                    
+                    // Botón de Cancelar
+                    modal.querySelector('#cancel-del').onclick = () => {
+                        modal.remove();
+                    };
+                }
+            };
+
+            let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
+
+html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Multimedia'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
+
+            // --- INICIO AGREGADO: BOTÓN KICK EN GRUPOS ---
+            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+            if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
+                html += ` <button onclick="expulsarDeGrupo('${data.uid}', '${data.user}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK</button>`;
             }
-            d.appendChild(mediaDiv);
+            // --- FIN AGREGADO ---
 
-            const itemGal = document.createElement('div');
-            itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative; margin-bottom:5px;";
-            itemGal.innerHTML = data.type === 'video' ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
-            if(!locked) itemGal.onclick = () => abrirMedia(data.url, data.type);
-            gal.prepend(itemGal);
-        } else {
-            const textSpan = document.createElement('span');
-            textSpan.style.display = "block";
-            textSpan.textContent = data.msg; 
-            d.appendChild(textSpan);
-        }
+            if(data.type === 'foto' || data.type === 'video') {
+                
+                // --- INICIO AGREGADO: REGLA DE LIBERTAD (SIN CANDADOS EN GRUPOS) ---
+                const enGrupoLibre = chatActual.startsWith("Sincro_Grupos/");
+                const locked = !mData.vip && !isMine && !enGrupoLibre; // Única línea modificada aquí
+                // --- FIN AGREGADO ---
 
-        box.appendChild(d); 
-        box.scrollTop = box.scrollHeight;
-    });
-
-    db.ref(chatActual).on('child_removed', snap => { 
-        const el = document.getElementById("m-" + snap.key); 
-        if(el) el.remove(); 
-    });
-}
+                const mediaTag = data.type === 'video' ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
+                if(locked) {
+                    const txtBtn = mData.solicitudVip === 'pendiente' ? 'Solicitud pendiente...' : 'Solicitar Acceso';
+                    const onclickS = mData.solicitudVip === 'pendiente' ? '' : 'onclick="enviarSolicitudVip()"';
+                    html += `<div class="media-container blur"><div class="lock-overlay"><span> PRIVADO</span><button class="btn-solicitud ${mData.solicitudVip==='pendiente'?'pendiente':''}" ${onclickS}>${txtBtn}</button></div>${mediaTag}</div>`;
+                } else { html += `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`; }
+                const itemGal = document.createElement('div');
+                itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;";
+                if(locked) {
+                    itemGal.innerHTML = `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; z-index:5;"></div><div class="blur" style="height:100%">${mediaTag}</div>`;
+                    itemGal.onclick = () => notify("Solicita acceso VIP");
+                } else {
+                    itemGal.innerHTML = data.type === 'video' ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+                    itemGal.onclick = () => abrirMedia(data.url, data.type);
+                }
+                gal.prepend(itemGal);
+            } else { html += `<span>${data.msg}</span>`; }
+            d.innerHTML = html; box.appendChild(d); box.scrollTop = box.scrollHeight;
+        });
+        db.ref(chatActual).on('child_removed', snap => { const el = document.getElementById("m-" + snap.key); if(el) el.remove(); });
+    }
 
     function enviarMsg() {
         const input = document.getElementById('msg-in'); 
@@ -772,196 +767,75 @@
         });
     }
 
-function cargarGrupos() {
-    const listGrupos = document.getElementById('grupos-list');
-    if (!listGrupos) return;
-
-    db.ref('Sincro_InfoGrupos').on('value', snap => {
-        listGrupos.innerHTML = "";
-        let hayGrupos = false;
-
-        snap.forEach(child => {
-            const g = child.val();
-            const idGrupo = child.key;
-            hayGrupos = true;
-
-            // Verificación de Dueño
-            const esMio = (g.owner === mUser.uid);
-
-            // 1. Preparamos el engranaje y la etiqueta SOLO si soy dueño
-            let gearHtml = "";
-            let ownerBadge = "";
-            if (esMio) {
-                ownerBadge = `<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px; margin-left:10px;">Dueño</span>`;
-                // El event.stopPropagation() es vital para que al tocar el engranaje NO se intente abrir el chat
-                gearHtml = `<span onclick="event.stopPropagation(); abrirMenuCreadorDesdeLista('${idGrupo}', '${g.nombre}');" style="margin-left: 15px; cursor: pointer; font-size: 18px; padding: 5px; background: rgba(0,0,0,0.05); border-radius: 50%;">⚙️</span>`;
-            }
-
-            // 2. Construimos la fila del grupo con mucho cuidado en las comillas
-            // Usamos comillas invertidas `` para evitar errores con nombres que tengan espacios
-            listGrupos.innerHTML += `
-                <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" 
-                     style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px; border-bottom:1px solid #eee; cursor:pointer; background: white;">
-                    
-                    <div style="display:flex; align-items:center; flex:1;">
-                        <div style="width:30px; height:30px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:12px;">G</div>
-                        <div style="display:flex; flex-direction:column;">
-                            <b style="font-size:13px; color:#333;">${g.nombre}</b>
-                            ${ownerBadge}
-                        </div>
-                    </div>
-
-                    <div style="display:flex; align-items:center;">
-                        ${gearHtml}
-                    </div>
-                </div>
-            `;
-        });
-
-        if (!hayGrupos) {
-            listGrupos.innerHTML = "<p style='padding:20px; color:#888; text-align:center; font-size:12px;'>No hay grupos disponibles</p>";
-        }
-    });
-}
-function expulsarDeGrupo(uidAExpulsar, nombreUser) {
-    // Usamos el ID del grupo actual (asegúrate de que esta variable sea la que usas en tu chat)
-    const idGrupoActual = chatActual.replace("Sincro_Grupos/", ""); 
-
-    // Crear el modal de cristal
-    const modal = document.createElement('div');
-    modal.className = 'modal-confirm';
-    modal.style.zIndex = '9999';
-    modal.innerHTML = `
-        <div class="modal-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #ddd;">
-            <p>¿Expulsar a <b style="color: #fd9534;">${nombreUser}</b> de este grupo?</p>
-            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
-                <button class="btn-del" id="confirm-kick" style="background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer;">Sí, Expulsar</button>
-                <button class="btn-can" id="cancel-kick" style="background: #ccc; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer;">Cancelar</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // Acción al confirmar
-    modal.querySelector('#confirm-kick').onclick = () => {
-        // 1. ELIMINAR DE LA LISTA DE MIEMBROS (Lo que faltaba)
-        // Buscamos en Sincro_InfoGrupos > ID > miembros > UID
-        db.ref("Sincro_InfoGrupos/" + idGrupoActual + "/miembros/" + uidAExpulsar).remove()
-        .then(() => {
-            // 2. BORRAR MENSAJES (Lo que ya tenías)
-            db.ref(chatActual).orderByChild("uid").equalTo(uidAExpulsar).once('value', snap => {
-                snap.forEach(child => { child.ref.remove(); });
+    function cargarGrupos() {
+        const listGrupos = document.getElementById('grupos-list');
+        db.ref('Sincro_InfoGrupos').on('value', snap => {
+            listGrupos.innerHTML = "";
+            let hayGrupos = false;
+            snap.forEach(child => {
+                const g = child.val();
+                const idGrupo = child.key;
+                hayGrupos = true;
+                const esMio = g.owner === mUser.uid;
+                listGrupos.innerHTML += `
+                <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" style="padding:10px 15px; cursor:pointer; border-bottom:1px solid #f2f2f2; display:flex; align-items:center; background:#f4f9f9;">
+                    <div style="width:25px; height:25px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:10px; font-weight:bold;">G</div>
+                    <b style="font-size:12px; color:#333; flex:1;">${g.nombre}</b>
+                    ${esMio ? '<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px;">Dueño</span>' : ''}
+                </div>`;
             });
-
-            // 3. MENSAJE DE SISTEMA
-            db.ref(chatActual).push({
-                uid: 'sistema',
-                user: 'SISTEMA',
-                msg: `El administrador ha expulsado a ${nombreUser}.`,
-                type: 'texto',
-                timestamp: Date.now()
-            });
-
-            modal.remove();
-            notify(`🚫 ${nombreUser} expulsado`);
-        })
-        .catch(err => {
-            alert("Error al expulsar: " + err.message);
-        });
-    };
-
-    // Acción al cancelar
-    modal.querySelector('#cancel-kick').onclick = () => modal.remove();
-}
-
-
-function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
-    chatActual = "Sincro_Grupos/" + idGrupo;
-    window.grupoOwnerActual = ownerUid;
-
-    // Aseguramos que mUser tenga datos antes de intentar guardar
-    if (mUser && mUser.uid) {
-        // Esta línea es la que CREARÁ la carpeta que falta en tu captura
-        db.ref('Sincro_InfoGrupos/' + idGrupo + '/miembros/' + mUser.uid).update({
-            user: mUser.user || mUser.nombre || "Usuario",
-            uid: mUser.uid
+            if(!hayGrupos) listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay grupos disponibles</p>";
         });
     }
 
-    document.getElementById('chat-title').innerText = nombreGrupo;
-    document.getElementById('info-name').innerText = nombreGrupo;
-    
-    if (typeof escucharChat === 'function') escucharChat();
-    if (window.innerWidth < 1024 && typeof toggleMenu === 'function') toggleMenu('left');
-}
-
-
-
-    function verListaMiembrosParaExpulsar(idG) {
-    const ruta = db.ref("Sincro_InfoGrupos/" + idG + "/miembros");
-
-    ruta.on('value', snap => {
-        let modalExistente = document.querySelector('.modal-lista-miembros');
-        let listHtml = '<h3 style="color:#000;text-align:center;margin-top:0;">Miembros en Tiempo Real</h3><hr>';
-        listHtml += '<div style="max-height:300px; overflow-y:auto;">';
+    function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
+        chatActual = "Sincro_Grupos/" + idGrupo;
+        window.grupoOwnerActual = ownerUid; // Guardamos quién es el dueño
         
-        if(!snap.exists()){
-            listHtml += '<p style="color:gray;text-align:center;padding:10px;">Nadie conectado...</p>';
-        } else {
-            snap.forEach(m => {
-                const u = m.val(); // El objeto con {user: "Nombre", uid: "..."}
-                
-                // Si 'u' es el objeto, sacamos 'user'. Si por algo no existe, usamos la llave.
-                const nombreMostrar = (u && u.user) ? u.user : "Usuario";
-                const uidAEliminar = m.key; // El ID largo para el KICK
+        document.getElementById('chat-title').innerText = nombreGrupo;
+        document.getElementById('chat-desc').innerText = "Regla de Libertad Activada (Sin candados)";
+        document.getElementById('info-name').innerText = nombreGrupo;
+        document.getElementById('info-icon').innerText = "G";
+        document.getElementById('chat-status').innerText = "Grupo Creado";
+        escucharChat();
+        if(window.innerWidth < 1024) toggleMenu('left');
+    }
 
-                if(uidAEliminar !== mUser.uid) { 
-                    listHtml += `
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                            <span style="color:#333; font-weight:bold; word-break: break-all; margin-right: 10px;">${nombreMostrar}</span>
-                            <button onclick="expulsarDeGrupo('${uidAEliminar}', '${nombreMostrar}')" style="background:#ff4757; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer;">KICK</button>
-                        </div>`;
-                } else {
-                    listHtml += `
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                            <span style="color:#666;">${nombreMostrar} (Tú)</span>
-                            <b style="color:green; font-size:10px;">Dueño</b>
-                        </div>`;
-                }
+    function expulsarDeGrupo(uidAExpulsar, nombreUser) {
+        // Modal de cristal para confirmar kick
+        const modal = document.createElement('div');
+        modal.className = 'modal-confirm';
+        modal.style.zIndex = '9999';
+        modal.innerHTML = `
+            <div class="modal-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);">
+                <p>¿Expulsar a <b style="color:#d9534f;">${nombreUser}</b> de este grupo?</p>
+                <button class="btn-del" id="confirm-kick">Sí, Expulsar</button>
+                <button class="btn-can" id="cancel-kick">Cancelar</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#confirm-kick').onclick = () => {
+            // Un KICK simple: Borramos todos los mensajes de este usuario en este grupo para "limpiarlo"
+            // (En Firebase RTDB básico, prohibir escritura requiere reglas de seguridad complejas, 
+            // la solución Frontend es borrar sus msgs y notificar).
+            db.ref(chatActual).orderByChild("uid").equalTo(uidAExpulsar).once('value', snap => {
+                snap.forEach(child => { child.ref.remove(); });
             });
-        }
-
-        // CORRECCIÓN BOTÓN CERRAR: 
-        // Eliminamos el parámetro idG del onclick de cerrar para que sea más simple
-        listHtml += '</div><br><button onclick="cerrarModalMiembros()" style="width:100%; padding:10px; background:#ccc; border:none; border-radius:5px; cursor:pointer; color: black; font-weight: bold;">Cerrar</button>';
-
-        if (modalExistente) {
-            modalExistente.querySelector('.modal-card').innerHTML = listHtml;
-        } else {
-            const modal = document.createElement('div');
-            modal.className = 'modal-confirm modal-lista-miembros';
-            modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;";
-            modal.innerHTML = `<div class="modal-card" style="width:85%; max-width:350px; background:white; padding:20px; border-radius:15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">${listHtml}</div>`;
-            document.body.appendChild(modal);
-        }
-    });
-}
-
-        // ... (resto del código del modal igual)
-        listHtml += '</div><br><button onclick="cerrarModalMiembros(\''+idG+'\')" style="width:100%; padding:10px; background:#ccc; border:none; border-radius:5px; cursor:pointer;">Cerrar</button>';
-
-        if (modalExistente) {
-            modalExistente.querySelector('.modal-card').innerHTML = listHtml;
-        } else {
-            const modal = document.createElement('div');
-            modal.className = 'modal-confirm modal-lista-miembros';
-            modal.innerHTML = `<div class="modal-card" style="width:85%; max-width:350px; background:white; padding:20px; border-radius:15px; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:10000; box-shadow:0 0 20px rgba(0,0,0,0.5);">${listHtml}</div>`;
-            document.body.appendChild(modal);
-        }
-    });
-}
-
+            db.ref(chatActual).push({ 
+                uid: 'sistema', user: 'SISTEMA', 
+                msg: `El administrador del grupo ha expulsado a ${nombreUser}.`, 
+                type: 'texto', timestamp: Date.now() 
+            });
+            modal.remove();
+            notify(` ${nombreUser} expulsado`);
+        };
+        
+        modal.querySelector('#cancel-kick').onclick = () => modal.remove();
+    }
+    // =====================================================================
+    // --- FIN BLOQUE NUEVO ---
+    // =====================================================================
 
     // Función para activar el botón de añadir personas
 // Función para activar el botón de añadir personas (Versión Mejorada por Nombre)
@@ -1055,118 +929,6 @@ function abrirPanelReportes() {
     });
 }
 
-function actualizarCabeceraGrupo() {
-    // 1. Borrar engranaje si ya existe
-    const gearViejo = document.getElementById('btn-ajustes-duenio');
-    if (gearViejo) gearViejo.remove();
-
-    // 2. SOLO SI SOY EL CREADOR (window.grupoOwnerActual ya lo tienes definido)
-    if (window.grupoOwnerActual === mUser.uid) {
-        const btnSet = document.createElement('div');
-        btnSet.id = 'btn-ajustes-duenio';
-        btnSet.innerHTML = '⚙️';
-        
-        // Estilo para que quede a la derecha en la barra azul
-        btnSet.style = "position: absolute; right: 15px; top: 12px; cursor: pointer; font-size: 22px; z-index: 100;";
-        
-        btnSet.onclick = () => abrirMenuCreador();
-
-        const cabecera = document.getElementById('chat-header');
-        if (cabecera) cabecera.appendChild(btnSet);
-    }
-}
-
-// --- NUEVAS FUNCIONES PARA EL ENGRANAJE EN LA LISTA ---
-
-// --- NUEVAS FUNCIONES PARA EL ENGRANAJE EN LA LISTA ---
-
-function abrirMenuCreadorDesdeLista(idG, nombreG) {
-    const modal = document.createElement('div');
-    modal.className = 'modal-confirm';
-    modal.innerHTML = `
-        <div class="modal-card">
-            <h3>Ajustes de ${nombreG}</h3>
-            <button onclick="verListaMiembrosParaExpulsar('${idG}'); this.closest('.modal-confirm').remove();" style="width:100%; margin-bottom:10px; padding:10px; background:#3498db; color:white; border:none; border-radius:5px; cursor:pointer;">👥 Ver Miembros / Expulsar</button>
-            <button onclick="eliminarGrupoDesdeLista('${idG}'); this.closest('.modal-confirm').remove();" style="width:100%; padding:10px; background:#ff4757; color:white; border:none; border-radius:5px; cursor:pointer;">🗑️ Eliminar Grupo</button>
-            <br><br>
-            <button onclick="this.closest('.modal-confirm').remove()" style="background:none; border:none; color:gray; cursor:pointer;">Cerrar</button>
-        </div>
-    `;
-    document.body.appendChild(modal);
-}
-
-function eliminarGrupoDesdeLista(idG) {
-    if(confirm("⚠️ ¿ESTÁS SEGURO? Se borrará el grupo y todos los mensajes para SIEMPRE.")) {
-        db.ref('Sincro_Grupos/' + idG).remove();
-        db.ref('Sincro_InfoGrupos/' + idG).remove().then(() => {
-            notify("Grupo eliminado");
-        });
-    }
-}
-
-function verListaMiembrosParaExpulsar(idG) {
-    const ruta = db.ref("Sincro_InfoGrupos/" + idG + "/miembros");
-
-    ruta.on('value', snap => {
-        let modalExistente = document.querySelector('.modal-lista-miembros');
-        let listHtml = '<h3 style="color:#000;text-align:center;margin-top:0;font-family:sans-serif;">Miembros del Grupo</h3><hr style="border:0; border-top:1px solid #eee;">';
-        listHtml += '<div class="lista-scroll" style="max-height:300px; overflow-y:auto; font-family:sans-serif;">';
-        
-        if(!snap.exists()){
-            listHtml += '<p style="color:gray;text-align:center;padding:10px;">No hay miembros conectados.</p>';
-        } else {
-            snap.forEach(m => {
-                const u = m.val(); 
-                const nombreMostrar = (u && u.user) ? u.user : "Usuario";
-                const uidAEliminar = u.uid || m.key; 
-
-                if(uidAEliminar !== mUser.uid) { 
-                    listHtml += `
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                            <span style="color:#333; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">${nombreMostrar}</span>
-                            <button onclick="expulsarDeGrupo('${uidAEliminar}', '${nombreMostrar}', '${idG}')" style="background:#ff4757; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:12px;">EXPULSAR</button>
-                        </div>`;
-                } else {
-                    listHtml += `
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                            <span style="color:#666; font-weight:normal;">${nombreMostrar} (Tú)</span>
-                            <b style="color:#2ecc71; font-size:10px; border:1px solid #2ecc71; padding:2px 5px; border-radius:4px;">ADMIN</b>
-                        </div>`;
-                }
-            });
-        }
-        
-        listHtml += '</div><br><button id="btn-cerrar-miembros" style="width:100%; padding:12px; background:#f1f2f6; color:#2f3542; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">Cerrar Lista</button>';
-
-        if (modalExistente) {
-            const card = modalExistente.querySelector('.modal-card');
-            if(card) card.innerHTML = listHtml;
-        } else {
-            const modal = document.createElement('div');
-            modal.className = 'modal-confirm modal-lista-miembros';
-            modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:10000; backdrop-filter: blur(4px);";
-            modal.innerHTML = `<div class="modal-card" style="width:90%; max-width:350px; background:white; padding:20px; border-radius:20px; box-shadow:0 15px 35px rgba(0,0,0,0.3);">${listHtml}</div>`;
-            document.body.appendChild(modal);
-        }
-
-        const btnCerrar = document.getElementById('btn-cerrar-miembros');
-        if(btnCerrar) {
-            btnCerrar.onclick = () => {
-                ruta.off(); 
-                const m = document.querySelector('.modal-lista-miembros');
-                if(m) m.remove();
-            };
-        }
-    });
-}
-
-function cerrarModalMiembros() {
-    const modal = document.querySelector('.modal-lista-miembros');
-    if (modal) {
-        db.ref("Sincro_InfoGroups").off(); 
-        modal.remove();
-    }
-}
 
 
 
