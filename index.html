@@ -1106,60 +1106,66 @@ function eliminarGrupoDesdeLista(idG) {
         });
     }
 }
-
 function verListaMiembrosParaExpulsar(idG) {
     const ruta = db.ref("Sincro_InfoGrupos/" + idG + "/miembros");
 
     ruta.on('value', snap => {
         let modalExistente = document.querySelector('.modal-lista-miembros');
-        let listHtml = '<h3 style="color:#000;text-align:center;margin-top:0;font-family:sans-serif;">Miembros del Grupo</h3><hr>';
-        listHtml += '<div style="max-height:300px; overflow-y:auto; font-family:sans-serif;">';
+        let listHtml = '<h3 style="color:#000;text-align:center;margin-top:0;font-family:sans-serif;">Miembros del Grupo</h3><hr style="border:0; border-top:1px solid #eee;">';
+        listHtml += '<div class="lista-scroll" style="max-height:300px; overflow-y:auto; font-family:sans-serif;">';
         
         if(!snap.exists()){
             listHtml += '<p style="color:gray;text-align:center;padding:10px;">No hay miembros conectados.</p>';
         } else {
             snap.forEach(m => {
                 const u = m.val(); 
-                // Buscamos específicamente el campo 'user' que guardas al abrir el grupo
+                // Priorizamos el nombre guardado, si no, usamos "Usuario"
                 const nombreMostrar = (u && u.user) ? u.user : "Usuario";
                 const uidAEliminar = u.uid || m.key; 
 
                 if(uidAEliminar !== mUser.uid) { 
                     listHtml += `
                         <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                            <span style="color:#333; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:160px;">${nombreMostrar}</span>
-                            <button onclick="expulsarDeGrupo('${uidAEliminar}', '${nombreMostrar}')" style="background:#ff4757; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">KICK</button>
+                            <span style="color:#333; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">${nombreMostrar}</span>
+                            <button onclick="expulsarDeGrupo('${uidAEliminar}', '${nombreMostrar}', '${idG}')" style="background:#ff4757; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:12px;">EXPULSAR</button>
                         </div>`;
                 } else {
                     listHtml += `
                         <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                            <span style="color:#666;">${nombreMostrar} (Tú)</span>
-                            <b style="color:#2ecc71; font-size:10px;">ADMIN</b>
+                            <span style="color:#666; font-weight:normal;">${nombreMostrar} (Tú)</span>
+                            <b style="color:#2ecc71; font-size:10px; border:1px solid #2ecc71; padding:2px 5px; border-radius:4px;">ADMIN</b>
                         </div>`;
                 }
             });
         }
         
-        // BOTÓN CERRAR CORREGIDO
-        listHtml += '</div><br><button id="btn-cerrar-miembros" style="width:100%; padding:12px; background:#f1f2f6; color:#2f3542; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">Cerrar</button>';
+        listHtml += '</div><br><button id="btn-cerrar-miembros" style="width:100%; padding:12px; background:#f1f2f6; color:#2f3542; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">Cerrar Lista</button>';
 
         if (modalExistente) {
-            modalExistente.querySelector('.modal-card').innerHTML = listHtml;
+            // Si el modal ya está abierto, solo actualizamos el contenido interno (el card)
+            const card = modalExistente.querySelector('.modal-card');
+            if(card) card.innerHTML = listHtml;
         } else {
+            // Si no existe, lo creamos desde cero
             const modal = document.createElement('div');
             modal.className = 'modal-confirm modal-lista-miembros';
-            modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:10000;";
-            modal.innerHTML = `<div class="modal-card" style="width:90%; max-width:350px; background:white; padding:20px; border-radius:20px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">${listHtml}</div>`;
+            modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:10000; backdrop-filter: blur(4px);";
+            modal.innerHTML = `<div class="modal-card" style="width:90%; max-width:350px; background:white; padding:20px; border-radius:20px; box-shadow:0 15px 35px rgba(0,0,0,0.3); animation: fadeIn 0.3s ease;">${listHtml}</div>`;
             document.body.appendChild(modal);
         }
 
-        // Programamos el cierre directamente aquí para que siempre funcione
-        document.getElementById('btn-cerrar-miembros').onclick = () => {
-            ruta.off(); // Deja de escuchar Firebase
-            document.querySelector('.modal-lista-miembros').remove();
-        };
+        // Listener para el botón cerrar (usamos ID para asegurar el click)
+        const btnCerrar = document.getElementById('btn-cerrar-miembros');
+        if(btnCerrar) {
+            btnCerrar.onclick = () => {
+                ruta.off(); // IMPORTANTE: Detenemos el listener de Firebase
+                const m = document.querySelector('.modal-lista-miembros');
+                if(m) m.remove();
+            };
+        }
     });
 }
+
 
     function cerrarModalMiembros() {
     const modal = document.querySelector('.modal-lista-miembros');
