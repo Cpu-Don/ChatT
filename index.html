@@ -1078,6 +1078,8 @@ function actualizarCabeceraGrupo() {
 
 // --- NUEVAS FUNCIONES PARA EL ENGRANAJE EN LA LISTA ---
 
+// --- NUEVAS FUNCIONES PARA EL ENGRANAJE EN LA LISTA ---
+
 function abrirMenuCreadorDesdeLista(idG, nombreG) {
     const modal = document.createElement('div');
     modal.className = 'modal-confirm';
@@ -1093,19 +1095,15 @@ function abrirMenuCreadorDesdeLista(idG, nombreG) {
     document.body.appendChild(modal);
 }
 
-// --- ESTA ES LA RUTA CORREGIDA PARA QUE SÍ SE BORRE ---
 function eliminarGrupoDesdeLista(idG) {
     if(confirm("⚠️ ¿ESTÁS SEGURO? Se borrará el grupo y todos los mensajes para SIEMPRE.")) {
-        // 1. Borrar los mensajes del chat
         db.ref('Sincro_Grupos/' + idG).remove();
-        
-        // 2. Borrar la información del grupo (La ruta que usas en la línea 763)
         db.ref('Sincro_InfoGrupos/' + idG).remove().then(() => {
             notify("Grupo eliminado");
-            // location.reload(); // Ya no hace falta recargar, Firebase actualiza la lista solo
         });
     }
 }
+
 function verListaMiembrosParaExpulsar(idG) {
     const ruta = db.ref("Sincro_InfoGrupos/" + idG + "/miembros");
 
@@ -1119,7 +1117,6 @@ function verListaMiembrosParaExpulsar(idG) {
         } else {
             snap.forEach(m => {
                 const u = m.val(); 
-                // Priorizamos el nombre guardado, si no, usamos "Usuario"
                 const nombreMostrar = (u && u.user) ? u.user : "Usuario";
                 const uidAEliminar = u.uid || m.key; 
 
@@ -1142,23 +1139,20 @@ function verListaMiembrosParaExpulsar(idG) {
         listHtml += '</div><br><button id="btn-cerrar-miembros" style="width:100%; padding:12px; background:#f1f2f6; color:#2f3542; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">Cerrar Lista</button>';
 
         if (modalExistente) {
-            // Si el modal ya está abierto, solo actualizamos el contenido interno (el card)
             const card = modalExistente.querySelector('.modal-card');
             if(card) card.innerHTML = listHtml;
         } else {
-            // Si no existe, lo creamos desde cero
             const modal = document.createElement('div');
             modal.className = 'modal-confirm modal-lista-miembros';
             modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:10000; backdrop-filter: blur(4px);";
-            modal.innerHTML = `<div class="modal-card" style="width:90%; max-width:350px; background:white; padding:20px; border-radius:20px; box-shadow:0 15px 35px rgba(0,0,0,0.3); animation: fadeIn 0.3s ease;">${listHtml}</div>`;
+            modal.innerHTML = `<div class="modal-card" style="width:90%; max-width:350px; background:white; padding:20px; border-radius:20px; box-shadow:0 15px 35px rgba(0,0,0,0.3);">${listHtml}</div>`;
             document.body.appendChild(modal);
         }
 
-        // Listener para el botón cerrar (usamos ID para asegurar el click)
         const btnCerrar = document.getElementById('btn-cerrar-miembros');
         if(btnCerrar) {
             btnCerrar.onclick = () => {
-                ruta.off(); // IMPORTANTE: Detenemos el listener de Firebase
+                ruta.off(); 
                 const m = document.querySelector('.modal-lista-miembros');
                 if(m) m.remove();
             };
@@ -1166,16 +1160,13 @@ function verListaMiembrosParaExpulsar(idG) {
     });
 }
 
-
-    function cerrarModalMiembros() { // <-- Aquí, usa minúscula
+function cerrarModalMiembros() {
     const modal = document.querySelector('.modal-lista-miembros');
     if (modal) {
-        // Buscamos todas las referencias activas de grupos y las apagamos
-        db.ref("Sincro_InfoGrupos").off(); 
+        db.ref("Sincro_InfoGroups").off(); 
         modal.remove();
     }
 }
-
 
 
 
