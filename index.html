@@ -910,14 +910,17 @@ function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
             listHtml += '<p style="color:gray;text-align:center;padding:10px;">Nadie conectado...</p>';
         } else {
             snap.forEach(m => {
-                const u = m.val(); // Aquí 'u' es el objeto {user: "...", uid: "..."}
-                const nombreMostrar = u.user || "Usuario";
-                const uidAEliminar = u.uid;
+                const u = m.val(); 
+                
+                // CORRECCIÓN AQUÍ:
+                // u es el objeto, u.user es el nombre, u.uid es el id largo
+                const nombreMostrar = u.user || "Usuario"; 
+                const uidAEliminar = u.uid || m.key; 
 
                 if(uidAEliminar !== mUser.uid) { 
                     listHtml += `
                         <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                            <span style="color:#333; font-weight:bold;">${nombreMostrar}</span>
+                            <span style="color:#333; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:150px;">${nombreMostrar}</span>
                             <button onclick="expulsarDeGrupo('${uidAEliminar}', '${nombreMostrar}')" style="background:#ff4757; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer;">KICK</button>
                         </div>`;
                 } else {
@@ -929,6 +932,7 @@ function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
                 }
             });
         }
+        // ... (resto del código del modal igual)
         listHtml += '</div><br><button onclick="cerrarModalMiembros(\''+idG+'\')" style="width:100%; padding:10px; background:#ccc; border:none; border-radius:5px; cursor:pointer;">Cerrar</button>';
 
         if (modalExistente) {
@@ -941,6 +945,7 @@ function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
         }
     });
 }
+
 
     // Función para activar el botón de añadir personas
 // Función para activar el botón de añadir personas (Versión Mejorada por Nombre)
