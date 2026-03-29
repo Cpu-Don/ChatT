@@ -139,6 +139,7 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
+
         
     </style>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
@@ -363,6 +364,17 @@
         <p><b>¿Estás seguro de eliminar este grupo?</b><br><small>Se borrará para todos.</small></p>
         <button class="btn-admin" style="background:#d9534f; color:white;" onclick="ejecutarBorradoTotal()">SÍ, ELIMINAR</button>
         <button class="btn-admin" style="background:#eee;" onclick="document.getElementById('modal-confirmar-borrar').style.display='none'">CANCELAR</button>
+    </div>
+</div>
+
+    <div id="modal-confirmar-kick" class="modal-admin-sincro" style="display:none;">
+    <div class="card-admin" style="border-top: 4px solid #ff4757;">
+        <h4 id="kick-nombre-usuario" style="margin-bottom:10px;">¿Expulsar usuario?</h4>
+        <p style="font-size:13px; color:#666;">Esta persona ya no podrá ver ni entrar a este grupo.</p>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button id="btn-si-kick" class="btn-admin" style="background:#ff4757; color:white; flex:1;">SÍ, EXPULSAR</button>
+            <button onclick="document.getElementById('modal-confirmar-kick').style.display='none'" class="btn-admin" style="background:#eee; color:#333; flex:1;">NO</button>
+        </div>
     </div>
 </div>
 
