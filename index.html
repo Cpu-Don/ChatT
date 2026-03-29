@@ -558,33 +558,36 @@
             };
 
             // --- MODIFICACIÓN DESDE LA LÍNEA 560 ---
-let html = (data.uid === 'sistema') 
-    ? "" 
-    : `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')" style="cursor: pointer; color: #0088cc;">${data.user}</b>`;
+        // --- LIMPIEZA TOTAL DE SINTAXIS ---
+        let html = (data.uid === 'sistema') ? "" : `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')" style="cursor: pointer; color: #0088cc;">${data.user}</b>`;
 
-// Solo mostramos reporte si no es el sistema
-if (data.uid !== 'sistema') {
-    html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Multimedia'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
-}
+        // Botón de reporte
+        if (data.uid !== 'sistema') {
+            html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Multimedia'}')" style="background:transparent; border:none; color:#888; cursor:pointer; margin-left:5px;">!</button>`;
+        }
 
-const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
-    
-    // LÓGICA INTELIGENTE: Si es sistema, buscamos el nombre dentro del mensaje
-    let nombreAEchar = data.user;
-    let uidAEchar = data.uid;
+        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+        
+        // Lógica de Expulsión
+        if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
+            
+            let nombreAEchar = data.user;
+            let uidAEchar = data.uid;
 
-    if(data.uid === 'sistema' && data.msg.includes('ha sido invitado')) {
-        // Extraemos el nombre que está entre el "¡" y el " ha sido"
-        nombreAEchar = data.msg.split('¡')[1].split(' ha sido')[0];
-        // Buscamos su UID real en tu mapa de usuarios para que el baneo funcione
-        uidAEchar = Object.keys(usuariosMap).find(key => usuariosMap[key] === nombreAEchar) || 'sistema';
-    }
+            if (data.uid === 'sistema' && data.msg.includes('ha sido invitado')) {
+                const partes = data.msg.split("'");
+                if (partes[1]) {
+                    nombreAEchar = partes[1];
+                    uidAEchar = Object.keys(usuariosMap).find(key => usuariosMap[key] === nombreAEchar) || 'sistema';
+                }
+            }
 
-    // Si logramos encontrar a quién echar, mostramos el botón con su nombre
-    html += `<button onclick="expulsarDeGrupo('${uidAEchar}', '${nombreAEchar}')" style="background:#ff4757; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; margin-left:10px;">Expulsar</button>`;
+            if (uidAEchar !== 'sistema') {
+                html += `<button onclick="expulsarDeGrupo('${uidAEchar}', '${nombreAEchar}')" style="background:#ff4757; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; margin-left:10px;">Expulsar</button>`;
+            }
+        }
+        // --- FIN DEL BLOQUE CORREGIDO ---
 
-    // --- FIN AGREGADO ---
 
             if(data.type === 'foto' || data.type === 'video') {
                 
