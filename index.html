@@ -510,90 +510,110 @@
         }
     }
 
-    function escucharChat() {
-        const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
-        if(!box || !gal) return;
-        box.innerHTML = ""; gal.innerHTML = "";
-        if(listener) db.ref(chatActual).off();
+function escucharChat() {
+    const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
+    if(!box || !gal) return;
+    box.innerHTML = ""; gal.innerHTML = "";
+    if(listener) db.ref(chatActual).off();
 
-        listener = db.ref(chatActual).on('child_added', snap => {
-            const data = snap.val(), isMine = data.uid === mUser.uid;
-            
-            // --- INICIO AGREGADO: REVISAR EXPULSADOS (KICK) EN GRUPOS ---
-            if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; } // Ignorar msgs de expulsados si se requiere
-            // --- FIN AGREGADO ---
+    listener = db.ref(chatActual).on('child_added', snap => {
+        const data = snap.val(), isMine = data.uid === mUser.uid;
+        
+        if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; }
 
-            const d = document.createElement('div'); d.className = "msg " + (isMine ? "me" : "them"); d.id = "m-" + snap.key;
-            
-            d.oncontextmenu = (e) => {
-                e.preventDefault();
-                const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-                
-                if (isMine || soyAdmin) {
-                    // Crear el modal bonito
-                    const modal = document.createElement('div');
-                    modal.className = 'modal-confirm';
-                    modal.innerHTML = `
-                        <div class="modal-card">
-                            <p>¿Eliminar este mensaje?</p>
-                            <button class="btn-del" id="confirm-del">Eliminar</button>
-                            <button class="btn-can" id="cancel-del">Cancelar</button>
-                        </div>
-                    `;
-                    document.body.appendChild(modal);
-
-                    // Botón de Eliminar
-                    modal.querySelector('#confirm-del').onclick = () => {
-                        db.ref(chatActual + "/" + snap.key).remove();
-                        modal.remove();
-                    };
-                    
-                    // Botón de Cancelar
-                    modal.querySelector('#cancel-del').onclick = () => {
-                        modal.remove();
-                    };
-                }
-            };
-
-            let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
-
-html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Multimedia'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
-
-            // --- INICIO AGREGADO: BOTÓN KICK EN GRUPOS ---
-            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-            if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
-                html += ` <button onclick="expulsarDeGrupo('${data.uid}', '${data.user}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK</button>`;
+        const d = document.createElement('div'); 
+        d.className = "msg " + (isMine ? "me" : "them"); 
+        d.id = "m-" + snap.key;
+        
+        // --- AQUÍ ESTÁ TU MENÚ DE BORRADO (Líneas 527-556 de tu imagen) ---
+        d.oncontextmenu = (e) => {
+            e.preventDefault();
+            const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+            if (isMine || soyAdmin) {
+                const modal = document.createElement('div');
+                modal.className = 'modal-confirm';
+                modal.innerHTML = `
+                    <div class="modal-card">
+                        <p>¿Eliminar este mensaje?</p>
+                        <button class="btn-del" id="confirm-del">Eliminar</button>
+                        <button class="btn-can" id="cancel-del">Cancelar</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                modal.querySelector('#confirm-del').onclick = () => {
+                    db.ref(chatActual + "/" + snap.key).remove();
+                    modal.remove();
+                };
+                modal.querySelector('#cancel-del').onclick = () => modal.remove();
             }
-            // --- FIN AGREGADO ---
+        };
 
-            if(data.type === 'foto' || data.type === 'video') {
-                
-                // --- INICIO AGREGADO: REGLA DE LIBERTAD (SIN CANDADOS EN GRUPOS) ---
-                const enGrupoLibre = chatActual.startsWith("Sincro_Grupos/");
-                const locked = !mData.vip && !isMine && !enGrupoLibre; // Única línea modificada aquí
-                // --- FIN AGREGADO ---
+        // --- 1. Nombre del usuario ---
+        const userB = document.createElement('b');
+        userB.textContent = data.user;
+        userB.onclick = () => iniciarPrivado(data.uid, data.user);
+        d.appendChild(userB);
 
-                const mediaTag = data.type === 'video' ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
-                if(locked) {
-                    const txtBtn = mData.solicitudVip === 'pendiente' ? 'Solicitud pendiente...' : 'Solicitar Acceso';
-                    const onclickS = mData.solicitudVip === 'pendiente' ? '' : 'onclick="enviarSolicitudVip()"';
-                    html += `<div class="media-container blur"><div class="lock-overlay"><span> PRIVADO</span><button class="btn-solicitud ${mData.solicitudVip==='pendiente'?'pendiente':''}" ${onclickS}>${txtBtn}</button></div>${mediaTag}</div>`;
-                } else { html += `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`; }
-                const itemGal = document.createElement('div');
-                itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;";
-                if(locked) {
-                    itemGal.innerHTML = `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; z-index:5;"></div><div class="blur" style="height:100%">${mediaTag}</div>`;
-                    itemGal.onclick = () => notify("Solicita acceso VIP");
-                } else {
-                    itemGal.innerHTML = data.type === 'video' ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
-                    itemGal.onclick = () => abrirMedia(data.url, data.type);
-                }
-                gal.prepend(itemGal);
-            } else { html += `<span>${data.msg}</span>`; }
-            d.innerHTML = html; box.appendChild(d); box.scrollTop = box.scrollHeight;
-        });
-        db.ref(chatActual).on('child_removed', snap => { const el = document.getElementById("m-" + snap.key); if(el) el.remove(); });
-    }
+        // --- 2. Botón de Reporte ---
+        const btnRep = document.createElement('button');
+        btnRep.textContent = "🚩 Reportar";
+        btnRep.style = "background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;";
+        btnRep.onclick = () => abrirReporte(data.uid, data.user, data.url || data.msg || 'Multimedia');
+        d.appendChild(btnRep);
+
+        // --- 3. Botón KICK (Líneas 563-568 de tu imagen) ---
+        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+        if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
+            const btnKick = document.createElement('button');
+            btnKick.textContent = "KICK";
+            btnKick.style = "background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;";
+            btnKick.onclick = () => expulsarDeGrupo(data.uid, data.user);
+            d.appendChild(btnKick);
+        }
+
+        // --- 4. Multimedia o Texto (Seguro) ---
+        if(data.type === 'foto' || data.type === 'video') {
+            const enGrupoLibre = chatActual.startsWith("Sincro_Grupos/");
+            const locked = !mData.vip && !isMine && !enGrupoLibre;
+            const mediaTag = data.type === 'video' ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
+            
+            const mediaDiv = document.createElement('div');
+            if(locked) {
+                const txtBtn = mData.solicitudVip === 'pendiente' ? 'Solicitud pendiente...' : 'Solicitar Acceso';
+                mediaDiv.className = "media-container blur";
+                mediaDiv.innerHTML = `<div class="lock-overlay"><span>🔒 PRIVADO</span><button class="btn-solicitud">${txtBtn}</button></div>${mediaTag}`;
+            } else {
+                mediaDiv.className = "media-container";
+                mediaDiv.innerHTML = mediaTag;
+                mediaDiv.onclick = () => abrirMedia(data.url, data.type);
+            }
+            d.appendChild(mediaDiv);
+
+            // Actualizar Galería Lateral
+            const itemGal = document.createElement('div');
+            itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;";
+            itemGal.innerHTML = data.type === 'video' ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+            if(!locked) itemGal.onclick = () => abrirMedia(data.url, data.type);
+            gal.prepend(itemGal);
+
+        } else {
+            const textSpan = document.createElement('span');
+            textSpan.style.display = "block";
+            textSpan.textContent = data.msg; // <--- ¡LA SEGURIDAD ESTÁ AQUÍ!
+            d.appendChild(textSpan);
+        }
+
+        box.appendChild(d); 
+        box.scrollTop = box.scrollHeight;
+    });
+    
+    // El listener de 'child_removed' (Línea 595 de tu imagen)
+    db.ref(chatActual).on('child_removed', snap => { 
+        const el = document.getElementById("m-" + snap.key); 
+        if(el) el.remove(); 
+    });
+}
+
 
     function enviarMsg() {
         const input = document.getElementById('msg-in'); 
@@ -617,7 +637,110 @@ html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.ur
         }
         // --- FIN AGREGADO ---
 
-        input.value = ""; // <--- ¡AÑADE ESTA LÍNEA AQUÍ!
+        input.value = ""; // <--- ¡function escucharChat() {
+    const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
+    if(!box || !gal) return;
+    box.innerHTML = ""; gal.innerHTML = "";
+    if(listener) db.ref(chatActual).off();
+
+    listener = db.ref(chatActual).on('child_added', snap => {
+        const data = snap.val(), isMine = data.uid === mUser.uid;
+        
+        if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; }
+
+        const d = document.createElement('div'); 
+        d.className = "msg " + (isMine ? "me" : "them"); 
+        d.id = "m-" + snap.key;
+        
+        // --- AQUÍ ESTÁ TU MENÚ DE BORRADO (Líneas 527-556 de tu imagen) ---
+        d.oncontextmenu = (e) => {
+            e.preventDefault();
+            const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+            if (isMine || soyAdmin) {
+                const modal = document.createElement('div');
+                modal.className = 'modal-confirm';
+                modal.innerHTML = `
+                    <div class="modal-card">
+                        <p>¿Eliminar este mensaje?</p>
+                        <button class="btn-del" id="confirm-del">Eliminar</button>
+                        <button class="btn-can" id="cancel-del">Cancelar</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                modal.querySelector('#confirm-del').onclick = () => {
+                    db.ref(chatActual + "/" + snap.key).remove();
+                    modal.remove();
+                };
+                modal.querySelector('#cancel-del').onclick = () => modal.remove();
+            }
+        };
+
+        // --- 1. Nombre del usuario ---
+        const userB = document.createElement('b');
+        userB.textContent = data.user;
+        userB.onclick = () => iniciarPrivado(data.uid, data.user);
+        d.appendChild(userB);
+
+        // --- 2. Botón de Reporte ---
+        const btnRep = document.createElement('button');
+        btnRep.textContent = "🚩 Reportar";
+        btnRep.style = "background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;";
+        btnRep.onclick = () => abrirReporte(data.uid, data.user, data.url || data.msg || 'Multimedia');
+        d.appendChild(btnRep);
+
+        // --- 3. Botón KICK (Líneas 563-568 de tu imagen) ---
+        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+        if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal) && data.uid !== mUser.uid) {
+            const btnKick = document.createElement('button');
+            btnKick.textContent = "KICK";
+            btnKick.style = "background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;";
+            btnKick.onclick = () => expulsarDeGrupo(data.uid, data.user);
+            d.appendChild(btnKick);
+        }
+
+        // --- 4. Multimedia o Texto (Seguro) ---
+        if(data.type === 'foto' || data.type === 'video') {
+            const enGrupoLibre = chatActual.startsWith("Sincro_Grupos/");
+            const locked = !mData.vip && !isMine && !enGrupoLibre;
+            const mediaTag = data.type === 'video' ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
+            
+            const mediaDiv = document.createElement('div');
+            if(locked) {
+                const txtBtn = mData.solicitudVip === 'pendiente' ? 'Solicitud pendiente...' : 'Solicitar Acceso';
+                mediaDiv.className = "media-container blur";
+                mediaDiv.innerHTML = `<div class="lock-overlay"><span>🔒 PRIVADO</span><button class="btn-solicitud">${txtBtn}</button></div>${mediaTag}`;
+            } else {
+                mediaDiv.className = "media-container";
+                mediaDiv.innerHTML = mediaTag;
+                mediaDiv.onclick = () => abrirMedia(data.url, data.type);
+            }
+            d.appendChild(mediaDiv);
+
+            // Actualizar Galería Lateral
+            const itemGal = document.createElement('div');
+            itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;";
+            itemGal.innerHTML = data.type === 'video' ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+            if(!locked) itemGal.onclick = () => abrirMedia(data.url, data.type);
+            gal.prepend(itemGal);
+
+        } else {
+            const textSpan = document.createElement('span');
+            textSpan.style.display = "block";
+            textSpan.textContent = data.msg; // <--- ¡LA SEGURIDAD ESTÁ AQUÍ!
+            d.appendChild(textSpan);
+        }
+
+        box.appendChild(d); 
+        box.scrollTop = box.scrollHeight;
+    });
+    
+    // El listener de 'child_removed' (Línea 595 de tu imagen)
+    db.ref(chatActual).on('child_removed', snap => { 
+        const el = document.getElementById("m-" + snap.key); 
+        if(el) el.remove(); 
+    });
+}
+AÑADE ESTA LÍNEA AQUÍ!
     }
 
     // Enviar mensaje con la tecla Enter
