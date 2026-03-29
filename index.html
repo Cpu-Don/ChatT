@@ -826,40 +826,25 @@ function cargarGrupos() {
 
 
 function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
-    console.log("Intentando abrir grupo:", nombreGrupo);
-    
-    // Asignar variables globales
     chatActual = "Sincro_Grupos/" + idGrupo;
     window.grupoOwnerActual = ownerUid;
 
-    // Registrar miembro (con manejo de errores para que no se trabe)
-    try {
-        db.ref('Sincro_InfoGrupos/' + idGrupo + '/miembros/' + mUser.uid).set({
-            user: mUser.user,
-            uid: mUser.uid,
-            time: Date.now()
+    // Aseguramos que mUser tenga datos antes de intentar guardar
+    if (mUser && mUser.uid) {
+        // Esta línea es la que CREARÁ la carpeta que falta en tu captura
+        db.ref('Sincro_InfoGrupos/' + idGrupo + '/miembros/' + mUser.uid).update({
+            user: mUser.user || mUser.nombre || "Usuario",
+            uid: mUser.uid
         });
-    } catch(e) {
-        console.log("Error al registrar miembro:", e);
     }
 
-    // Actualizar Interfaz
-    const chatTitle = document.getElementById('chat-title');
-    const infoName = document.getElementById('info-name');
+    document.getElementById('chat-title').innerText = nombreGrupo;
+    document.getElementById('info-name').innerText = nombreGrupo;
     
-    if(chatTitle) chatTitle.innerText = nombreGrupo;
-    if(infoName) infoName.innerText = nombreGrupo;
-
-    // Cargar mensajes
-    if (typeof escucharChat === 'function') {
-        escucharChat();
-    }
-
-    // Cerrar menú en móvil
-    if (window.innerWidth < 1024 && typeof toggleMenu === 'function') {
-        toggleMenu('left');
-    }
+    if (typeof escucharChat === 'function') escucharChat();
+    if (window.innerWidth < 1024 && typeof toggleMenu === 'function') toggleMenu('left');
 }
+
 
 
     function expulsarDeGrupo(uidAExpulsar, nombreUser) {
