@@ -847,25 +847,43 @@ html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.ur
     }
 
     function cargarGrupos() {
-        const listGrupos = document.getElementById('grupos-list');
-        db.ref('Sincro_InfoGrupos').on('value', snap => {
-            listGrupos.innerHTML = "";
-            let hayGrupos = false;
-            snap.forEach(child => {
-                const g = child.val();
-                const idGrupo = child.key;
-                hayGrupos = true;
-                const esMio = g.owner === mUser.uid;
-                listGrupos.innerHTML += `
-                <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" style="padding:10px 15px; cursor:pointer; border-bottom:1px solid #f2f2f2; display:flex; align-items:center; background:#f4f9f9;">
-                    <div style="width:25px; height:25px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:10px; font-weight:bold;">G</div>
-                    <b style="font-size:12px; color:#333; flex:1;">${g.nombre}</b>
-                    ${esMio ? '<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px;">Dueño</span>' : ''}
-                </div>`;
-            });
-            if(!hayGrupos) listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay grupos disponibles</p>";
+    const listGrupos = document.getElementById('grupos-list');
+    db.ref('Sincro_InfoGrupos').on('value', snap => {
+        listGrupos.innerHTML = "";
+        let hayGrupos = false;
+        snap.forEach(child => {
+            const g = child.val();
+            const idGrupo = child.key;
+            hayGrupos = true;
+            const esMio = g.owner === mUser.uid;
+
+            // --- AQUÍ ESTÁ EL TRUCO DEL ENGRANAJE ---
+            // Solo si es mío, creamos el icono que abre el panel de opciones
+            const iconoAjustes = esMio ? 
+                `<span onclick="event.stopPropagation(); abrirConfigGrupo('${idGrupo}', '${g.nombre}')" 
+                       style="cursor:pointer; margin-left:8px; font-size:15px; filter: grayscale(1); opacity:0.6;">⚙️</span>` 
+                : '';
+
+            listGrupos.innerHTML += `
+            <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" 
+                 style="padding:10px 15px; cursor:pointer; border-bottom:1px solid #f2f2f2; display:flex; align-items:center; background:#f4f9f9;">
+                
+                <div style="width:25px; height:25px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:10px; font-weight:bold; flex-shrink:0;">
+                    G
+                </div>
+
+                <div style="flex:1; display:flex; align-items:center; overflow:hidden;">
+                    <b style="font-size:12px; color:#333; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${g.nombre}</b>
+                    ${iconoAjustes}
+                </div>
+
+                ${esMio ? '<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px; margin-left:5px; flex-shrink:0;">Dueño</span>' : ''}
+            </div>`;
         });
-    }
+        if(!hayGrupos) listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay grupos disponibles</p>";
+    });
+}
+
 
     function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
         chatActual = "Sincro_Grupos/" + idGrupo;
