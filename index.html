@@ -242,7 +242,8 @@
         </aside>
 
         <main id="chat-section">
-            <header class="header">
+            <header class="header" id="chat-header" style="position: relative;">
+
                <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;"></button>
                <div style="text-align:center;">
                    <b id="chat-title" style="display:block; font-size: 15px;">Cargando...</b>
@@ -802,6 +803,8 @@
         document.getElementById('info-icon').innerText = "G";
         document.getElementById('chat-status').innerText = "Grupo Creado";
         escucharChat();
+        actualizarCabeceraGrupo();
+    
         if(window.innerWidth < 1024) toggleMenu('left');
     }
 
@@ -933,6 +936,52 @@ function abrirPanelReportes() {
     });
 }
 
+function actualizarCabeceraGrupo() {
+    // 1. Borrar engranaje si ya existe
+    const gearViejo = document.getElementById('btn-ajustes-duenio');
+    if (gearViejo) gearViejo.remove();
+
+    // 2. SOLO SI SOY EL CREADOR (window.grupoOwnerActual ya lo tienes definido)
+    if (window.grupoOwnerActual === mUser.uid) {
+        const btnSet = document.createElement('div');
+        btnSet.id = 'btn-ajustes-duenio';
+        btnSet.innerHTML = '⚙️';
+        
+        // Estilo para que quede a la derecha en la barra azul
+        btnSet.style = "position: absolute; right: 15px; top: 12px; cursor: pointer; font-size: 22px; z-index: 100;";
+        
+        btnSet.onclick = () => abrirMenuCreador();
+
+        const cabecera = document.getElementById('chat-header');
+        if (cabecera) cabecera.appendChild(btnSet);
+    }
+}
+
+function abrirMenuCreador() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-confirm';
+    modal.innerHTML = `
+        <div class="modal-card">
+            <h3 style="color:#000">Ajustes de Creador</h3>
+            <button onclick="verListaParaEchar()" style="width:100%; margin-bottom:10px; padding:12px; background:#3498db; color:white; border:none; border-radius:8px;">👥 Miembros / Expulsar</button>
+            <button onclick="eliminarGrupoTotalmente()" style="width:100%; padding:12px; background:#ff4757; color:white; border:none; border-radius:8px;">🗑️ Eliminar Grupo y Chat</button>
+            <br><br>
+            <button onclick="this.closest('.modal-confirm').remove()" style="background:none; border:none; color:gray; cursor:pointer;">Cerrar</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function eliminarGrupoTotalmente() {
+    if(confirm("⚠️ ¿ESTÁS SEGURO? Se borrará TODO el grupo y mensajes para SIEMPRE.")) {
+        const idG = chatActual.split('/')[1];
+        db.ref('Sincro_Grupos/' + idG).remove();
+        db.ref('Sincro_Grupos_Data/' + idG).remove().then(() => {
+            alert("Grupo eliminado.");
+            location.reload(); 
+        });
+    }
+}
 
 
 
