@@ -1031,33 +1031,42 @@ function eliminarGrupoDesdeLista(idG) {
     }
 }
 
-// --- ESTA ES LA FUNCIÓN PARA QUE EL BOTÓN DE MIEMBROS SÍ FUNCIONE ---
 function verListaMiembrosParaExpulsar(idG) {
+    // 1. Intentamos leer los miembros del grupo
     db.ref("Sincro_InfoGrupos/" + idG + "/miembros").once('value', snap => {
-        let listHtml = '<h3>Miembros del Grupo</h3><div style="max-height:300px; overflow-y:auto;">';
+        let listHtml = '<h3 style="color:#000;text-align:center;">Lista de Miembros</h3><hr><div style="max-height:300px; overflow-y:auto;">';
         
-        snap.forEach(m => {
-            const u = m.val();
-            // No nos mostramos a nosotros mismos el botón de expulsar
-            if(u.uid !== mUser.uid) { 
-                listHtml += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
-                        <span>${u.user}</span>
-                        <button onclick="echarDeGrupo('${idG}', '${u.uid}', '${u.user}')" style="background:#ff4757; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">KICK</button>
-                    </div>`;
-            }
-        });
+        if(!snap.exists()){
+            // Si sale vacía, es porque nadie ha "entrado" al grupo con el código nuevo
+            listHtml += '<p style="color:red; text-align:center; padding:10px;">No hay miembros registrados.<br><small>Pide a los demás que entren al chat para que aparezcan aquí.</small></p>';
+        } else {
+            snap.forEach(m => {
+                const u = m.val();
+                // Si el ID es distinto al mío, pongo el botón de KICK
+                if(u.uid !== mUser.uid) { 
+                    listHtml += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
+                            <b style="color:#333;">${u.user || 'Usuario'}</b>
+                            <button onclick="echarDeGrupo('${idG}', '${u.uid}', '${u.user}')" style="background:#ff4757; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer;">EXPULSAR</button>
+                        </div>`;
+                } else {
+                    listHtml += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
+                            <span style="color:#666;">${u.user} (Tú)</span>
+                            <i style="color:green; font-size:10px;">Owner</i>
+                        </div>`;
+                }
+            });
+        }
         
-        listHtml += '</div><br><button onclick="this.parentElement.parentElement.remove()" style="padding:10px 15px; cursor:pointer;">Volver</button>';
+        listHtml += '</div><br><button onclick="this.closest(\'.modal-confirm\').remove()" style="width:100%; padding:10px; background:#eee; border:none; border-radius:5px; cursor:pointer; color:#333;">Cerrar</button>';
         
-        // Abrimos un modal con la lista
         const modal = document.createElement('div');
         modal.className = 'modal-confirm';
-        modal.innerHTML = `<div class="modal-card" style="width:90%; max-width:400px;">${listHtml}</div>`;
+        modal.innerHTML = `<div class="modal-card" style="width:85%; max-width:350px; background:white; padding:20px; border-radius:15px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">${listHtml}</div>`;
         document.body.appendChild(modal);
     });
 }
-
 
 
 
