@@ -811,18 +811,33 @@
 
 
     function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
-        chatActual = "Sincro_Grupos/" + idGrupo;
-        window.grupoOwnerActual = ownerUid; // Guardamos quién es el dueño
-        
-        document.getElementById('chat-title').innerText = nombreGrupo;
-        document.getElementById('chat-desc').innerText = "Regla de Libertad Activada (Sin candados)";
-        document.getElementById('info-name').innerText = nombreGrupo;
-        document.getElementById('info-icon').innerText = "G";
-        document.getElementById('chat-status').innerText = "Grupo Creado";
-        escucharChat();
+    chatActual = "Sincro_Grupos/" + idGrupo;
+    window.grupoOwnerActual = ownerUid; // Guardamos quién es el dueño
+
+    // --- REGISTRO DE MIEMBROS ---
+    // Esto asegura que el usuario aparezca en la lista para poder ser expulsado
+    db.ref('Sincro_InfoGrupos/' + idGrupo + '/miembros/' + mUser.uid).set({
+        user: mUser.user,
+        uid: mUser.uid,
+        time: Date.now()
+    });
+
+    // Actualizamos la interfaz
+    document.getElementById('chat-title').innerText = nombreGrupo;
+    document.getElementById('chat-desc').innerText = "Grupo Privado";
+    document.getElementById('info-name').innerText = nombreGrupo;
+    document.getElementById('info-icon').innerText = "G";
+    document.getElementById('chat-status').innerText = "Grupo Conectado";
+
+    escucharChat();
     
-        if(window.innerWidth < 1024) toggleMenu('left');
-    }
+    // Si aún usas el engranaje en la cabecera, deja esta línea. 
+    // Si ya solo usas el de la lista de grupos, puedes quitarla.
+    if (typeof actualizarCabeceraGrupo === 'function') actualizarCabeceraGrupo(); 
+
+    if(window.innerWidth < 1024) toggleMenu('left');
+}
+
 
     function expulsarDeGrupo(uidAExpulsar, nombreUser) {
         // Modal de cristal para confirmar kick
