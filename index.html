@@ -99,6 +99,47 @@
         .btn-del { background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin: 5px; }
         .btn-can { background: #ccc; color: #333; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin: 5px; }
 
+/* Estilo para los nuevos modales de administración */
+.modal-admin-sincro {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px); /* Efecto cristal */
+    display: none; /* Se activa con JS */
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+
+.card-admin {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 25px;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 320px;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+}
+
+.btn-admin {
+    width: 100%;
+    padding: 12px;
+    margin: 6px 0;
+    border-radius: 12px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+        
     </style>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script>
@@ -288,6 +329,44 @@
     </div>
 </div>
 
+    <div id="modal-opciones-dueño" class="modal-admin-sincro">
+    <div class="card-admin">
+        <h3 id="nom-grupo-config" style="color:#0088cc; margin-bottom:20px;">Ajustes de Grupo</h3>
+        <button class="btn-admin" style="background:#e3f2fd; color:#0077cc;" onclick="abrirModalNombre()">✏️ Cambiar Nombre</button>
+        <button class="btn-admin" style="background:#f0f2f5; color:#333;" onclick="mostrarMiembrosParaExpulsar()">👥 Miembros / Expulsar</button>
+        <button class="btn-admin" style="background:#fff1f1; color:#d9534f; margin-top:15px;" onclick="abrirConfirmarEliminar()">🗑️ Eliminar Grupo</button>
+        <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+        <button onclick="cerrarModalesAdmin()" style="background:none; border:none; color:#999; cursor:pointer;">Cerrar</button>
+    </div>
+</div>
+
+<div id="modal-renombrar-grupo" class="modal-admin-sincro">
+    <div class="card-admin">
+        <h4>Nuevo nombre del grupo</h4>
+        <input type="text" id="input-nuevo-nombre" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin:15px 0; text-align:center;">
+        <button class="btn-admin" style="background:#0088cc; color:white;" onclick="procesarCambioNombre()">GUARDAR</button>
+        <button onclick="document.getElementById('modal-renombrar-grupo').style.display='none'" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">Cancelar</button>
+    </div>
+</div>
+
+<div id="modal-lista-expulsar" class="modal-admin-sincro">
+    <div class="card-admin" style="max-height:80vh; overflow-y:auto;">
+        <h4>Lista de Miembros</h4>
+        <div id="contenedor-miembros-admin" style="text-align:left; margin:15px 0;"></div>
+        <button class="btn-admin" style="background:#eee;" onclick="document.getElementById('modal-lista-expulsar').style.display='none'">VOLVER</button>
+    </div>
+</div>
+
+<div id="modal-confirmar-borrar" class="modal-admin-sincro">
+    <div class="card-admin">
+        <div style="font-size:40px;">⚠️</div>
+        <p><b>¿Estás seguro de eliminar este grupo?</b><br><small>Se borrará para todos.</small></p>
+        <button class="btn-admin" style="background:#d9534f; color:white;" onclick="ejecutarBorradoTotal()">SÍ, ELIMINAR</button>
+        <button class="btn-admin" style="background:#eee;" onclick="document.getElementById('modal-confirmar-borrar').style.display='none'">CANCELAR</button>
+    </div>
+</div>
+
+    
 <script>
     const firebaseConfig = { 
         databaseURL: "https://micanalmaestro-default-rtdb.firebaseio.com/",
@@ -801,41 +880,6 @@ html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.ur
         if(window.innerWidth < 1024) toggleMenu('left');
     }
 
-    function expulsarDeGrupo(uidAExpulsar, nombreUser) {
-        // Modal de cristal para confirmar kick
-        const modal = document.createElement('div');
-        modal.className = 'modal-confirm';
-        modal.style.zIndex = '9999';
-        modal.innerHTML = `
-            <div class="modal-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);">
-                <p>¿Expulsar a <b style="color:#d9534f;">${nombreUser}</b> de este grupo?</p>
-                <button class="btn-del" id="confirm-kick">Sí, Expulsar</button>
-                <button class="btn-can" id="cancel-kick">Cancelar</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
-
-        modal.querySelector('#confirm-kick').onclick = () => {
-            // Un KICK simple: Borramos todos los mensajes de este usuario en este grupo para "limpiarlo"
-            // (En Firebase RTDB básico, prohibir escritura requiere reglas de seguridad complejas, 
-            // la solución Frontend es borrar sus msgs y notificar).
-            db.ref(chatActual).orderByChild("uid").equalTo(uidAExpulsar).once('value', snap => {
-                snap.forEach(child => { child.ref.remove(); });
-            });
-            db.ref(chatActual).push({ 
-                uid: 'sistema', user: 'SISTEMA', 
-                msg: `El administrador del grupo ha expulsado a ${nombreUser}.`, 
-                type: 'texto', timestamp: Date.now() 
-            });
-            modal.remove();
-            notify(` ${nombreUser} expulsado`);
-        };
-        
-        modal.querySelector('#cancel-kick').onclick = () => modal.remove();
-    }
-    // =====================================================================
-    // --- FIN BLOQUE NUEVO ---
-    // =====================================================================
 
     // Función para activar el botón de añadir personas
 // Función para activar el botón de añadir personas (Versión Mejorada por Nombre)
@@ -929,6 +973,78 @@ function abrirPanelReportes() {
     });
 }
 
+// --- PEGA ESTO DONDE ESTÁN TUS OTRAS VARIABLES (ARRIBA) ---
+let idGrupoGestion = null;
+
+// --- PEGA ESTO AL FINAL DE TU SCRIPT ---
+
+function abrirConfigGrupo(id, nombre) {
+    idGrupoGestion = id;
+    document.getElementById('nom-grupo-config').innerText = nombre;
+    document.getElementById('modal-opciones-dueño').style.display = 'flex';
+}
+
+function cerrarModalesAdmin() {
+    document.querySelectorAll('.modal-admin-sincro').forEach(m => m.style.display = 'none');
+}
+
+function abrirModalNombre() {
+    const actual = document.getElementById('nom-grupo-config').innerText;
+    document.getElementById('input-nuevo-nombre').value = actual;
+    document.getElementById('modal-renombrar-grupo').style.display = 'flex';
+}
+
+function procesarCambioNombre() {
+    const nuevo = document.getElementById('input-nuevo-nombre').value.trim();
+    if(!nuevo) return;
+    db.ref('Sincro_InfoGrupos/' + idGrupoGestion).update({ nombre: nuevo }).then(() => {
+        db.ref('Sincro_Grupos/' + idGrupoGestion).push({
+            uid: 'sistema', user: 'SISTEMA', msg: `Nombre cambiado a: ${nuevo}`, type: 'texto', timestamp: Date.now()
+        });
+        cerrarModalesAdmin();
+        notify("Nombre actualizado");
+    });
+}
+
+function mostrarMiembrosParaExpulsar() {
+    const cont = document.getElementById('contenedor-miembros-admin');
+    cont.innerHTML = "Cargando...";
+    document.getElementById('modal-lista-expulsar').style.display = 'flex';
+
+    db.ref('Sincro_InfoGrupos/' + idGrupoGestion + '/miembros').once('value', snap => {
+        cont.innerHTML = "";
+        snap.forEach(m => {
+            const uidM = m.key;
+            db.ref('Sincro_Usuarios/' + uidM).once('value', uSnap => {
+                const n = uSnap.val().nombre;
+                cont.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;">
+                        <span style="font-size:13px;">${n}</span>
+                        <button onclick="expulsarUsuario('${uidM}', '${n}')" style="background:#ff4757; color:white; border:none; padding:4px 8px; border-radius:5px; font-size:10px;">EXPULSAR</button>
+                    </div>`;
+            });
+        });
+    });
+}
+
+function expulsarUsuario(uid, nombre) {
+    if(confirm("¿Expulsar a " + nombre + "?")) {
+        db.ref('Sincro_InfoGrupos/' + idGrupoGestion + '/miembros/' + uid).remove();
+        notify(nombre + " expulsado");
+        mostrarMiembrosParaExpulsar();
+    }
+}
+
+function abrirConfirmarEliminar() {
+    document.getElementById('modal-confirmar-borrar').style.display = 'flex';
+}
+
+function ejecutarBorradoTotal() {
+    db.ref('Sincro_InfoGrupos/' + idGrupoGestion).remove();
+    db.ref('Sincro_Grupos/' + idGrupoGestion).remove();
+    cerrarModalesAdmin();
+    notify("Grupo eliminado");
+}
 
 
 
