@@ -823,6 +823,57 @@ function cargarGrupos() {
         }
     });
 }
+function expulsarDeGrupo(uidAExpulsar, nombreUser) {
+    // Usamos el ID del grupo actual (asegúrate de que esta variable sea la que usas en tu chat)
+    const idGrupoActual = chatActual.replace("Sincro_Grupos/", ""); 
+
+    // Crear el modal de cristal
+    const modal = document.createElement('div');
+    modal.className = 'modal-confirm';
+    modal.style.zIndex = '9999';
+    modal.innerHTML = `
+        <div class="modal-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #ddd;">
+            <p>¿Expulsar a <b style="color: #fd9534;">${nombreUser}</b> de este grupo?</p>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+                <button class="btn-del" id="confirm-kick" style="background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer;">Sí, Expulsar</button>
+                <button class="btn-can" id="cancel-kick" style="background: #ccc; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer;">Cancelar</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Acción al confirmar
+    modal.querySelector('#confirm-kick').onclick = () => {
+        // 1. ELIMINAR DE LA LISTA DE MIEMBROS (Lo que faltaba)
+        // Buscamos en Sincro_InfoGrupos > ID > miembros > UID
+        db.ref("Sincro_InfoGrupos/" + idGrupoActual + "/miembros/" + uidAExpulsar).remove()
+        .then(() => {
+            // 2. BORRAR MENSAJES (Lo que ya tenías)
+            db.ref(chatActual).orderByChild("uid").equalTo(uidAExpulsar).once('value', snap => {
+                snap.forEach(child => { child.ref.remove(); });
+            });
+
+            // 3. MENSAJE DE SISTEMA
+            db.ref(chatActual).push({
+                uid: 'sistema',
+                user: 'SISTEMA',
+                msg: `El administrador ha expulsado a ${nombreUser}.`,
+                type: 'texto',
+                timestamp: Date.now()
+            });
+
+            modal.remove();
+            notify(`🚫 ${nombreUser} expulsado`);
+        })
+        .catch(err => {
+            alert("Error al expulsar: " + err.message);
+        });
+    };
+
+    // Acción al cancelar
+    modal.querySelector('#cancel-kick').onclick = () => modal.remove();
+}
 
 
 function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
@@ -847,41 +898,49 @@ function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
 
 
 
-    function expulsarDeGrupo(uidAExpulsar, nombreUser) {
-        // Modal de cristal para confirmar kick
-        const modal = document.createElement('div');
-        modal.className = 'modal-confirm';
-        modal.style.zIndex = '9999';
-        modal.innerHTML = `
-            <div class="modal-card" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);">
-                <p>¿Expulsar a <b style="color:#d9534f;">${nombreUser}</b> de este grupo?</p>
-                <button class="btn-del" id="confirm-kick">Sí, Expulsar</button>
-                <button class="btn-can" id="cancel-kick">Cancelar</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
+    function verListaMiembrosParaExpulsar(idG) {
+    const ruta = db.ref("Sincro_InfoGrupos/" + idG + "/miembros");
 
-        modal.querySelector('#confirm-kick').onclick = () => {
-            // Un KICK simple: Borramos todos los mensajes de este usuario en este grupo para "limpiarlo"
-            // (En Firebase RTDB básico, prohibir escritura requiere reglas de seguridad complejas, 
-            // la solución Frontend es borrar sus msgs y notificar).
-            db.ref(chatActual).orderByChild("uid").equalTo(uidAExpulsar).once('value', snap => {
-                snap.forEach(child => { child.ref.remove(); });
-            });
-            db.ref(chatActual).push({ 
-                uid: 'sistema', user: 'SISTEMA', 
-                msg: `El administrador del grupo ha expulsado a ${nombreUser}.`, 
-                type: 'texto', timestamp: Date.now() 
-            });
-            modal.remove();
-            notify(` ${nombreUser} expulsado`);
-        };
+    ruta.on('value', snap => {
+        let modalExistente = document.querySelector('.modal-lista-miembros');
+        let listHtml = '<h3 style="color:#000;text-align:center;margin-top:0;">Miembros en Tiempo Real</h3><hr>';
+        listHtml += '<div style="max-height:300px; overflow-y:auto;">';
         
-        modal.querySelector('#cancel-kick').onclick = () => modal.remove();
-    }
-    // =====================================================================
-    // --- FIN BLOQUE NUEVO ---
-    // =====================================================================
+        if(!snap.exists()){
+            listHtml += '<p style="color:gray;text-align:center;padding:10px;">Nadie conectado...</p>';
+        } else {
+            snap.forEach(m => {
+                const u = m.val(); // Aquí 'u' es el objeto {user: "...", uid: "..."}
+                const nombreMostrar = u.user || "Usuario";
+                const uidAEliminar = u.uid;
+
+                if(uidAEliminar !== mUser.uid) { 
+                    listHtml += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
+                            <span style="color:#333; font-weight:bold;">${nombreMostrar}</span>
+                            <button onclick="expulsarDeGrupo('${uidAEliminar}', '${nombreMostrar}')" style="background:#ff4757; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer;">KICK</button>
+                        </div>`;
+                } else {
+                    listHtml += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
+                            <span style="color:#666;">${nombreMostrar} (Tú)</span>
+                            <b style="color:green; font-size:10px;">Dueño</b>
+                        </div>`;
+                }
+            });
+        }
+        listHtml += '</div><br><button onclick="cerrarModalMiembros(\''+idG+'\')" style="width:100%; padding:10px; background:#ccc; border:none; border-radius:5px; cursor:pointer;">Cerrar</button>';
+
+        if (modalExistente) {
+            modalExistente.querySelector('.modal-card').innerHTML = listHtml;
+        } else {
+            const modal = document.createElement('div');
+            modal.className = 'modal-confirm modal-lista-miembros';
+            modal.innerHTML = `<div class="modal-card" style="width:85%; max-width:350px; background:white; padding:20px; border-radius:15px; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:10000; box-shadow:0 0 20px rgba(0,0,0,0.5);">${listHtml}</div>`;
+            document.body.appendChild(modal);
+        }
+    });
+}
 
     // Función para activar el botón de añadir personas
 // Función para activar el botón de añadir personas (Versión Mejorada por Nombre)
@@ -1030,9 +1089,7 @@ function eliminarGrupoDesdeLista(idG) {
 function verListaMiembrosParaExpulsar(idG) {
     const ruta = db.ref("Sincro_InfoGrupos/" + idG + "/miembros");
 
-    // Usamos .on para que si alguien entra en incógnito, aparezca al instante
     ruta.on('value', snap => {
-        // Buscamos si ya hay un modal abierto para no crear uno encima de otro
         let modalExistente = document.querySelector('.modal-lista-miembros');
         
         let listHtml = '<h3 style="color:#000;text-align:center;margin-top:0;">Miembros en Tiempo Real</h3><hr>';
@@ -1042,17 +1099,22 @@ function verListaMiembrosParaExpulsar(idG) {
             listHtml += '<p style="color:gray;text-align:center;padding:10px;">Esperando a que los miembros entren...</p>';
         } else {
             snap.forEach(m => {
-                const u = m.val();
-                if(u.uid !== mUser.uid) { 
+                // EXPLICACIÓN:
+                // m.key es el nombre (ej: "Prueba")
+                // m.val() es el ID (ej: "tozGYFsX...")
+                const nombreUsuario = m.key; 
+                const uidUsuario = m.val();
+
+                if(uidUsuario !== mUser.uid) { 
                     listHtml += `
                         <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                            <span style="color:#333; font-weight:bold;">${u.user}</span>
-                            <button onclick="echarDeGrupo('${idG}', '${u.uid}', '${u.user}')" style="background:#ff4757; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer;">KICK</button>
+                            <span style="color:#333; font-weight:bold;">${nombreUsuario}</span>
+                            <button onclick="echarDeGrupo('${idG}', '${nombreUsuario}')" style="background:#ff4757; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer;">KICK</button>
                         </div>`;
                 } else {
                     listHtml += `
                         <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                            <span style="color:#666;">${u.user} (Tú)</span>
+                            <span style="color:#666;">${nombreUsuario} (Tú)</span>
                             <b style="color:green; font-size:10px;">Dueño</b>
                         </div>`;
                 }
@@ -1061,23 +1123,14 @@ function verListaMiembrosParaExpulsar(idG) {
         listHtml += '</div><br><button onclick="cerrarModalMiembros(\''+idG+'\')" style="width:100%; padding:10px; background:#ccc; border:none; border-radius:5px; cursor:pointer;">Cerrar</button>';
 
         if (modalExistente) {
-            // Si ya está abierto, solo actualizamos el contenido de la tarjeta
             modalExistente.querySelector('.modal-card').innerHTML = listHtml;
         } else {
-            // Si no existe, creamos el modal por primera vez
             const modal = document.createElement('div');
             modal.className = 'modal-confirm modal-lista-miembros';
-            modal.innerHTML = `<div class="modal-card" style="width:85%; max-width:350px; background:white; padding:20px; border-radius:15px;">${listHtml}</div>`;
+            modal.innerHTML = `<div class="modal-card" style="width:85%; max-width:350px; background:white; padding:20px; border-radius:15px; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:10000; box-shadow:0 0 20px rgba(0,0,0,0.5);">${listHtml}</div>`;
             document.body.appendChild(modal);
         }
     });
-}
-
-// Función para cerrar y dejar de escuchar la base de datos (importante)
-function cerrarModalMiembros(idG) {
-    db.ref("Sincro_InfoGrupos/" + idG + "/miembros").off(); // Deja de escuchar
-    const modal = document.querySelector('.modal-lista-miembros');
-    if (modal) modal.remove();
 }
 
 
