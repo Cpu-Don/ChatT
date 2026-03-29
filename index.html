@@ -1112,46 +1112,62 @@ function verListaMiembrosParaExpulsar(idG) {
 
     ruta.on('value', snap => {
         let modalExistente = document.querySelector('.modal-lista-miembros');
-        
-        let listHtml = '<h3 style="color:#000;text-align:center;margin-top:0;">Miembros en Tiempo Real</h3><hr>';
-        listHtml += '<div style="max-height:300px; overflow-y:auto;">';
+        let listHtml = '<h3 style="color:#000;text-align:center;margin-top:0;font-family:sans-serif;">Miembros del Grupo</h3><hr>';
+        listHtml += '<div style="max-height:300px; overflow-y:auto; font-family:sans-serif;">';
         
         if(!snap.exists()){
-            listHtml += '<p style="color:gray;text-align:center;padding:10px;">Esperando a que los miembros entren...</p>';
+            listHtml += '<p style="color:gray;text-align:center;padding:10px;">No hay miembros conectados.</p>';
         } else {
             snap.forEach(m => {
-                // EXPLICACIÓN:
-                // m.key es el nombre (ej: "Prueba")
-                // m.val() es el ID (ej: "tozGYFsX...")
-                const nombreUsuario = m.key; 
-                const uidUsuario = m.val();
+                const u = m.val(); 
+                // Buscamos específicamente el campo 'user' que guardas al abrir el grupo
+                const nombreMostrar = (u && u.user) ? u.user : "Usuario";
+                const uidAEliminar = u.uid || m.key; 
 
-                if(uidUsuario !== mUser.uid) { 
+                if(uidAEliminar !== mUser.uid) { 
                     listHtml += `
                         <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                            <span style="color:#333; font-weight:bold;">${nombreUsuario}</span>
-                            <button onclick="echarDeGrupo('${idG}', '${nombreUsuario}')" style="background:#ff4757; color:white; border:none; padding:6px 12px; border-radius:5px; cursor:pointer;">KICK</button>
+                            <span style="color:#333; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:160px;">${nombreMostrar}</span>
+                            <button onclick="expulsarDeGrupo('${uidAEliminar}', '${nombreMostrar}')" style="background:#ff4757; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">KICK</button>
                         </div>`;
                 } else {
                     listHtml += `
                         <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #eee;">
-                            <span style="color:#666;">${nombreUsuario} (Tú)</span>
-                            <b style="color:green; font-size:10px;">Dueño</b>
+                            <span style="color:#666;">${nombreMostrar} (Tú)</span>
+                            <b style="color:#2ecc71; font-size:10px;">ADMIN</b>
                         </div>`;
                 }
             });
         }
-        listHtml += '</div><br><button onclick="cerrarModalMiembros(\''+idG+'\')" style="width:100%; padding:10px; background:#ccc; border:none; border-radius:5px; cursor:pointer;">Cerrar</button>';
+        
+        // BOTÓN CERRAR CORREGIDO
+        listHtml += '</div><br><button id="btn-cerrar-miembros" style="width:100%; padding:12px; background:#f1f2f6; color:#2f3542; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">Cerrar</button>';
 
         if (modalExistente) {
             modalExistente.querySelector('.modal-card').innerHTML = listHtml;
         } else {
             const modal = document.createElement('div');
             modal.className = 'modal-confirm modal-lista-miembros';
-            modal.innerHTML = `<div class="modal-card" style="width:85%; max-width:350px; background:white; padding:20px; border-radius:15px; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:10000; box-shadow:0 0 20px rgba(0,0,0,0.5);">${listHtml}</div>`;
+            modal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:10000;";
+            modal.innerHTML = `<div class="modal-card" style="width:90%; max-width:350px; background:white; padding:20px; border-radius:20px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">${listHtml}</div>`;
             document.body.appendChild(modal);
         }
+
+        // Programamos el cierre directamente aquí para que siempre funcione
+        document.getElementById('btn-cerrar-miembros').onclick = () => {
+            ruta.off(); // Deja de escuchar Firebase
+            document.querySelector('.modal-lista-miembros').remove();
+        };
     });
+}
+
+    function cerrarModalMiembros() {
+    const modal = document.querySelector('.modal-lista-miembros');
+    if (modal) {
+        // Buscamos todas las referencias activas de grupos y las apagamos
+        db.ref("Sincro_InfoGrupos").off(); 
+        modal.remove();
+    }
 }
 
 
