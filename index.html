@@ -773,25 +773,42 @@
     }
 
     function cargarGrupos() {
-        const listGrupos = document.getElementById('grupos-list');
-        db.ref('Sincro_InfoGrupos').on('value', snap => {
-            listGrupos.innerHTML = "";
-            let hayGrupos = false;
-            snap.forEach(child => {
-                const g = child.val();
-                const idGrupo = child.key;
-                hayGrupos = true;
-                const esMio = g.owner === mUser.uid;
-                listGrupos.innerHTML += `
-                <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" style="padding:10px 15px; cursor:pointer; border-bottom:1px solid #f2f2f2; display:flex; align-items:center; background:#f4f9f9;">
-                    <div style="width:25px; height:25px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:10px; font-weight:bold;">G</div>
-                    <b style="font-size:12px; color:#333; flex:1;">${g.nombre}</b>
-                    ${esMio ? '<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px;">Dueño</span>' : ''}
-                </div>`;
-            });
-            if(!hayGrupos) listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay grupos disponibles</p>";
+    const listGrupos = document.getElementById('grupos-list');
+    db.ref('Sincro_InfoGrupos').on('value', snap => {
+        listGrupos.innerHTML = "";
+        let hayGrupos = false;
+        snap.forEach(child => {
+            const g = child.val();
+            const idGrupo = child.key;
+            hayGrupos = true;
+            const esMio = g.owner === mUser.uid; // Verificamos si soy el creador
+
+            // --- ESTO ES LO NUEVO ---
+            // Creamos el HTML para el engranaje solo si es mío
+            let gearHtml = '';
+            if (esMio) {
+                gearHtml = `<span onclick="abrirMenuCreadorDesdeLista('${idGrupo}', '${g.nombre}'); event.stopPropagation();" style="margin-left: 10px; cursor: pointer; font-size: 16px;">⚙️</span>`;
+            }
+
+            // Creamos el HTML para la etiqueta "Dueño"
+            const ownerBadge = esMio ? `<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px; margin-left:10px;">Dueño</span>` : '';
+
+            listGrupos.innerHTML += `
+                <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px; border-bottom:1px solid #eee; cursor:pointer;">
+                    <div style="display:flex; align-items:center;">
+                        <div style="width:25px; height:25px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:10px;">G</div>
+                        <b style="font-size:12px; color:#333;">${g.nombre}</b>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        ${ownerBadge}
+                        ${gearHtml} </div>
+                </div>
+            `;
         });
-    }
+        if (!hayGrupos) listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay grupos creados</p>";
+    });
+}
+
 
     function abrirGrupo(idGrupo, nombreGrupo, ownerUid) {
         chatActual = "Sincro_Grupos/" + idGrupo;
@@ -803,7 +820,6 @@
         document.getElementById('info-icon').innerText = "G";
         document.getElementById('chat-status').innerText = "Grupo Creado";
         escucharChat();
-        actualizarCabeceraGrupo();
     
         if(window.innerWidth < 1024) toggleMenu('left');
     }
@@ -957,14 +973,16 @@ function actualizarCabeceraGrupo() {
     }
 }
 
-function abrirMenuCreador() {
+// --- NUEVAS FUNCIONES PARA EL ENGRANAJE EN LA LISTA ---
+
+function abrirMenuCreadorDesdeLista(idG, nombreG) {
     const modal = document.createElement('div');
     modal.className = 'modal-confirm';
     modal.innerHTML = `
         <div class="modal-card">
-            <h3 style="color:#000">Ajustes de Creador</h3>
-            <button onclick="verListaParaEchar()" style="width:100%; margin-bottom:10px; padding:12px; background:#3498db; color:white; border:none; border-radius:8px;">👥 Miembros / Expulsar</button>
-            <button onclick="eliminarGrupoTotalmente()" style="width:100%; padding:12px; background:#ff4757; color:white; border:none; border-radius:8px;">🗑️ Eliminar Grupo y Chat</button>
+            <h3>Ajustes de ${nombreG}</h3>
+            <button onclick="verListaMiembrosParaExpulsar('${idG}'); this.closest('.modal-confirm').remove();" style="width:100%; margin-bottom:10px; padding:10px; background:#3498db; color:white; border:none; border-radius:5px; cursor:pointer;">👥 Ver Miembros / Expulsar</button>
+            <button onclick="eliminarGrupoDesdeLista('${idG}'); this.closest('.modal-confirm').remove();" style="width:100%; padding:10px; background:#ff4757; color:white; border:none; border-radius:5px; cursor:pointer;">🗑️ Eliminar Grupo</button>
             <br><br>
             <button onclick="this.closest('.modal-confirm').remove()" style="background:none; border:none; color:gray; cursor:pointer;">Cerrar</button>
         </div>
@@ -972,16 +990,47 @@ function abrirMenuCreador() {
     document.body.appendChild(modal);
 }
 
-function eliminarGrupoTotalmente() {
-    if(confirm("⚠️ ¿ESTÁS SEGURO? Se borrará TODO el grupo y mensajes para SIEMPRE.")) {
-        const idG = chatActual.split('/')[1];
+// --- ESTA ES LA RUTA CORREGIDA PARA QUE SÍ SE BORRE ---
+function eliminarGrupoDesdeLista(idG) {
+    if(confirm("⚠️ ¿ESTÁS SEGURO? Se borrará el grupo y todos los mensajes para SIEMPRE.")) {
+        // 1. Borrar los mensajes del chat
         db.ref('Sincro_Grupos/' + idG).remove();
-        db.ref('Sincro_Grupos_Data/' + idG).remove().then(() => {
-            alert("Grupo eliminado.");
-            location.reload(); 
+        
+        // 2. Borrar la información del grupo (La ruta que usas en la línea 763)
+        db.ref('Sincro_InfoGrupos/' + idG).remove().then(() => {
+            notify("Grupo eliminado");
+            // location.reload(); // Ya no hace falta recargar, Firebase actualiza la lista solo
         });
     }
 }
+
+// --- ESTA ES LA FUNCIÓN PARA QUE EL BOTÓN DE MIEMBROS SÍ FUNCIONE ---
+function verListaMiembrosParaExpulsar(idG) {
+    db.ref("Sincro_InfoGrupos/" + idG + "/miembros").once('value', snap => {
+        let listHtml = '<h3>Miembros del Grupo</h3><div style="max-height:300px; overflow-y:auto;">';
+        
+        snap.forEach(m => {
+            const u = m.val();
+            // No nos mostramos a nosotros mismos el botón de expulsar
+            if(u.uid !== mUser.uid) { 
+                listHtml += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                        <span>${u.user}</span>
+                        <button onclick="echarDeGrupo('${idG}', '${u.uid}', '${u.user}')" style="background:#ff4757; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">KICK</button>
+                    </div>`;
+            }
+        });
+        
+        listHtml += '</div><br><button onclick="this.parentElement.parentElement.remove()" style="padding:10px 15px; cursor:pointer;">Volver</button>';
+        
+        // Abrimos un modal con la lista
+        const modal = document.createElement('div');
+        modal.className = 'modal-confirm';
+        modal.innerHTML = `<div class="modal-card" style="width:90%; max-width:400px;">${listHtml}</div>`;
+        document.body.appendChild(modal);
+    });
+}
+
 
 
 
