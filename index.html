@@ -785,28 +785,33 @@ function cargarGrupos() {
             const idGrupo = child.key;
             hayGrupos = true;
 
-            // Verificación por consola para que tú mismo veas si el ID coincide
-            console.log("Grupo:", g.nombre, "Owner en DB:", g.owner, "Tu ID:", mUser.uid);
-
+            // Verificación de Dueño
             const esMio = (g.owner === mUser.uid);
 
-            let gearHtml = '';
-            let ownerBadge = '';
-
+            // 1. Preparamos el engranaje y la etiqueta SOLO si soy dueño
+            let gearHtml = "";
+            let ownerBadge = "";
             if (esMio) {
                 ownerBadge = `<span style="font-size:9px; background:#4caf50; color:white; padding:2px 5px; border-radius:3px; margin-left:10px;">Dueño</span>`;
-                // Engranaje con un estilo más visible
-                gearHtml = `<span onclick="abrirMenuCreadorDesdeLista('${idGrupo}', '${g.nombre}'); event.stopPropagation();" style="margin-left: 10px; cursor: pointer; font-size: 18px; padding: 5px;">⚙️</span>`;
+                // El event.stopPropagation() es vital para que al tocar el engranaje NO se intente abrir el chat
+                gearHtml = `<span onclick="event.stopPropagation(); abrirMenuCreadorDesdeLista('${idGrupo}', '${g.nombre}');" style="margin-left: 15px; cursor: pointer; font-size: 18px; padding: 5px; background: rgba(0,0,0,0.05); border-radius: 50%;">⚙️</span>`;
             }
 
+            // 2. Construimos la fila del grupo con mucho cuidado en las comillas
+            // Usamos comillas invertidas `` para evitar errores con nombres que tengan espacios
             listGrupos.innerHTML += `
-                <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px; border-bottom:1px solid #eee; cursor:pointer;">
-                    <div style="display:flex; align-items:center;">
-                        <div style="width:28px; height:28px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:10px;">G</div>
-                        <b style="font-size:13px; color:#333;">${g.nombre}</b>
+                <div onclick="abrirGrupo('${idGrupo}', '${g.nombre}', '${g.owner}')" 
+                     style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px; border-bottom:1px solid #eee; cursor:pointer; background: white;">
+                    
+                    <div style="display:flex; align-items:center; flex:1;">
+                        <div style="width:30px; height:30px; border-radius:50%; background:#ff9800; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold; margin-right:12px;">G</div>
+                        <div style="display:flex; flex-direction:column;">
+                            <b style="font-size:13px; color:#333;">${g.nombre}</b>
+                            ${ownerBadge}
+                        </div>
                     </div>
+
                     <div style="display:flex; align-items:center;">
-                        ${ownerBadge}
                         ${gearHtml}
                     </div>
                 </div>
@@ -814,10 +819,11 @@ function cargarGrupos() {
         });
 
         if (!hayGrupos) {
-            listGrupos.innerHTML = "<p style='font-size:11px; color:#aaa; padding:15px;'>No tienes grupos creados</p>";
+            listGrupos.innerHTML = "<p style='padding:20px; color:#888; text-align:center; font-size:12px;'>No hay grupos disponibles</p>";
         }
     });
 }
+
 
 
 
