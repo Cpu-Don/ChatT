@@ -921,7 +921,6 @@ function mostrarListaParaAgregar() {
     let nombreBusqueda = prompt("Escribe el NOMBRE del usuario que quieres invitar:");
     if (!nombreBusqueda) return;
 
-    // Extraemos el ID del grupo (ej: g_177...)
     const idDelGrupo = chatActual.split('/')[1]; 
 
     notify("Buscando usuario...");
@@ -933,16 +932,15 @@ function mostrarListaParaAgregar() {
             let datos = userSnap.val();
             let uidEncontrado = userSnap.key;
 
-            // Verificamos que el nombre exista y coincida
             if(datos && datos.nombre && datos.nombre.toLowerCase() === nombreBusqueda.toLowerCase()) {
                 encontrado = true;
                 
-                // 1. Registramos al miembro internamente (Para el engranaje ⚙️)
-                db.ref('Sincro_Grupos/' + idDelGrupo + '/miembros/' + uidEncontrado).set(true);
+                // 1. GUARDAMOS EL MIEMBRO EN INFOGRUPOS (Aquí no estorba al chat)
                 db.ref('Sincro_InfoGrupos/' + idDelGrupo + '/miembros/' + uidEncontrado).set(true);
 
-                // 2. Enviamos UN SOLO mensaje al chat
-                db.ref('Sincro_Grupos/' + idDelGrupo).push({
+                // 2. ENVIAMOS EL MENSAJE AL CHAT
+                // Usamos db.ref(chatActual) para que use la ruta que ya tienes funcionando
+                db.ref(chatActual).push({
                     uid: 'sistema',
                     user: 'SISTEMA',
                     msg: `${datos.nombre} ha ingresado al grupo`,
@@ -957,6 +955,7 @@ function mostrarListaParaAgregar() {
         if(!encontrado) notify("❌ No se encontró a ese usuario");
     });
 }
+
 
 // Función para que el usuario envíe el reporte
 function abrirReporte(uidMalo, nombreMalo, contenido) {
