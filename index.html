@@ -1073,7 +1073,7 @@ function mostrarMiembrosParaExpulsar() {
                 cont.innerHTML += `
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #f0f0f0;">
                         <span style="font-weight:bold; color:#333; font-size:13px;">${nombreU}</span>
-                        <button onclick="prepararKick('${mUid}', '${nombreU}')" 
+                        <button onclick="expulsarDeGrupo('${mUid}', '${nombreU}')" 
                                 style="background:#fff1f1; color:#ff4757; border:1px solid #ffcccc; padding:6px 12px; border-radius:12px; font-size:11px; cursor:pointer; font-weight:bold;">
                             EXPULSAR
                         </button>
@@ -1084,13 +1084,37 @@ function mostrarMiembrosParaExpulsar() {
 }
 
 
-function expulsarUsuario(uid, nombre) {
-    if(confirm("¿Expulsar a " + nombre + "?")) {
-        db.ref('Sincro_InfoGrupos/' + idGrupoGestion + '/miembros/' + uid).remove();
-        notify(nombre + " expulsado");
-        mostrarMiembrosParaExpulsar();
+function expulsarDeGrupo(uid, nombre) {
+    // Esta línea detecta el grupo tanto si estás en el chat como en los ajustes
+    const idGrupoActual = chatActual.startsWith("Sincro_Grupos/") 
+        ? chatActual.split('/')[1] 
+        : idGrupoGestion;
+
+    if (!idGrupoActual) return notify("Error: No se identificó el grupo");
+
+    if (confirm("¿Expulsar a " + nombre + " de este grupo?")) {
+        // Borra el permiso del usuario
+        db.ref('Sincro_InfoGrupos/' + idGrupoActual + '/miembros/' + uid).remove()
+        .then(() => {
+            // Notifica a todos en el chat (Mejora que no tenía la otra)
+            db.ref('Sincro_Grupos/' + idGrupoActual).push({
+                uid: 'sistema',
+                user: 'SISTEMA',
+                msg: `${nombre} ha sido expulsado`,
+                type: 'texto',
+                timestamp: Date.now()
+            });
+            
+            notify(nombre + " expulsado correctamente");
+            
+            // Refresca la lista de miembros si el panel está abierto
+            if(document.getElementById('modal-lista-expulsar').style.display === 'flex') {
+                mostrarMiembrosParaExpulsar();
+            }
+        });
     }
 }
+
 
 function abrirConfirmarEliminar() {
     document.getElementById('modal-confirmar-borrar').style.display = 'flex';
