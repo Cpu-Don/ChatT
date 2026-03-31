@@ -1284,6 +1284,32 @@ function procesarInvitacionPorNombre() {
     });
 }
 
+    function enviarReporteDefinitivo() {
+    const motivo = document.getElementById('input-motivo-reporte').value.trim();
+    if (!motivo) return notify("⚠️ Debes escribir un motivo");
+
+    // Detectamos si es una imagen/video para marcarlo en la base de datos
+    const esMultimedia = usuarioAReportar.evidencia && usuarioAReportar.evidencia.startsWith('http');
+    
+    // Identificamos el grupo donde ocurrió el reporte
+    const idG = chatActual && chatActual.includes('/') ? chatActual.split('/')[1] : "General";
+
+    db.ref('Sincro_Reportes').push({
+        reportadoPor: mData.nombre || "Usuario Sincro",
+        usuarioReportado: usuarioAReportar.nombre,
+        uidReportado: usuarioAReportar.uid,
+        motivo: motivo,
+        evidencia: usuarioAReportar.evidencia || "Sin texto/multimedia",
+        esMultimedia: esMultimedia,
+        fecha: Date.now(),
+        grupoId: idG
+    }).then(() => {
+        notify("✅ Reporte enviado a revisión");
+        document.getElementById('modal-motivo-reporte').style.display = 'none'; // Cerramos el modal
+        usuarioAReportar = null; // Limpiamos la variable
+    }).catch(e => notify("Error: " + e.message));
+}
+
 
 </script>
 </body>
