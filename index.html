@@ -367,13 +367,16 @@
     </div>
 </div>
 
-    <div id="modal-confirmar-kick" class="modal-admin-sincro" style="display:none;">
-    <div class="card-admin" style="border-top: 4px solid #ff4757;">
-        <h4 id="kick-nombre-usuario" style="margin-bottom:10px;">¿Expulsar usuario?</h4>
-        <p style="font-size:13px; color:#666;">Esta persona ya no podrá ver ni entrar a este grupo.</p>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button id="btn-si-kick" class="btn-admin" style="background:#ff4757; color:white; flex:1;">SÍ, EXPULSAR</button>
-            <button onclick="document.getElementById('modal-confirmar-kick').style.display='none'" class="btn-admin" style="background:#eee; color:#333; flex:1;">NO</button>
+
+    <div id="modal-confirm-sincro" class="modal-admin-sincro" style="display:none;">
+    <div class="card-admin" style="border-top: 4px solid #d9534f;">
+        <div style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
+        <h3 id="confirm-titulo" style="color:#333; margin-bottom:5px;">¿Confirmar acción?</h3>
+        <p id="confirm-mensaje" style="font-size:14px; color:#666; margin-bottom:20px;">Este usuario perderá el acceso.</p>
+        
+        <div style="display:flex; gap:10px; justify-content: center;">
+            <button id="btn-confirm-aceptar" class="btn-admin" style="background:#d9534f; color:white; flex:1; max-width: 140px;">SÍ, EXPULSAR</button>
+            <button id="btn-confirm-cancelar" class="btn-admin" style="background:#eee; color:#333; flex:1; max-width: 140px;">CANCELAR</button>
         </div>
     </div>
 </div>
