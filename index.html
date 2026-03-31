@@ -292,7 +292,7 @@
     <div id="scr-chat" class="screen" style="flex-direction: row; padding: 0;">
         <aside id="sidebar-left">
             <div style="padding:15px; background:#0088cc; color:white; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
-                SINCRO <span onclick="toggleMenu('left')" style="cursor:pointer; font-size:20px;"></span>
+                SINCRO <span onclick="toggleMenu('left')" style="cursor:pointer; font-size:20px;">☰</span>
             </div>
 
             <div id="vip-status-container" style="padding:10px 15px; border-bottom:1px solid #eee; display:none;">
@@ -302,7 +302,7 @@
             </div>
             
             <div onclick="verChatPublico()" style="padding:15px; background:#e1e9f2; cursor:pointer; border-bottom:1px solid #ddd;">
-                <b>Chat Público </b>
+                <b>Chat Público </b>
             </div>
 
             <div onclick="document.getElementById('modal-reglas').style.display='flex'" style="padding:12px 15px; background:#f0f8ff; cursor:pointer; border-bottom:1px solid #ddd; color:#0088cc; font-size:13px;">
@@ -334,11 +334,11 @@
                    <small id="chat-desc" style="font-size:10px; color:#888; display:block; margin-top:-2px;"></small>
                    <small id="chat-status" style="font-size:10px; color:#888;"></small>
                </div>
-               <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;"></button>
+               <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;">⚙️</button>
             </header>
             <div id="chat-box"></div>
             <footer>
-               <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:26px; cursor:pointer;"></button>
+               <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:26px; cursor:pointer;">📂</button>
                <input id="msg-in" placeholder="Escribe un mensaje..." autocomplete="off">
                <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:42px; height:42px; border-radius:50%; cursor:pointer; font-size: 18px;"></button>
             </footer>
