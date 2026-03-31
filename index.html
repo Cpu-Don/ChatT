@@ -610,7 +610,7 @@
     box.innerHTML = ""; gal.innerHTML = "";
     if(listener) db.ref(chatActual).off();
 
-// --- VIGILANTE DE EXPULSIÓN ACTUALIZADO ---
+// --- VIGILANTE DE EXPULSIÓN (Cierra chat y borra de la lista) ---
 if (chatActual.startsWith("Sincro_Grupos/")) {
     const idG = chatActual.split('/')[1];
     
@@ -619,31 +619,24 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
         const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
 
         if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
-            // 1. Apagamos las conexiones de este chat
             db.ref(chatActual).off();
             db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
             
-            // 2. AVISO VISUAL
             notify("🚫 Has sido expulsado de este grupo.");
             
-            // 3. ESTO ELIMINA EL GRUPO DE SU LISTA VISUAL
-            // Buscamos el elemento en tu menú lateral o lista de grupos y lo quitamos
-            const elementoGrupo = document.getElementById('item-grupo-' + idG);
-            if (elementoGrupo) {
-                elementoGrupo.style.transition = "0.5s";
-                elementoGrupo.style.opacity = "0";
-                setTimeout(() => { elementoGrupo.remove(); }, 500);
+            // ESTO BORRA EL GRUPO DE SU VISTA DE MENÚ
+            // Forzamos a que su lista de grupos se vuelva a cargar (ahora saldrá sin este grupo)
+            if(typeof mostrarMisGrupos === 'function') {
+                mostrarMisGrupos(); 
             }
 
-            // 4. LA SACAMOS AL CHAT PÚBLICO
             setTimeout(() => { 
                 verChatPublico(); 
-                // Forzamos un reinicio de la interfaz para que el grupo ya no exista para ella
-                if(typeof mostrarMisGrupos === 'function') mostrarMisGrupos();
-            }, 1200);
+            }, 1000);
         }
     });
 }
+
 
 // -----------------------------
         
