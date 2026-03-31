@@ -610,7 +610,7 @@
     box.innerHTML = ""; gal.innerHTML = "";
     if(listener) db.ref(chatActual).off();
 
-// --- VIGILANTE DE EXPULSIÓN (Cierra chat y borra de la lista) ---
+// --- VIGILANTE DE EXPULSIÓN MEJORADO ---
 if (chatActual.startsWith("Sincro_Grupos/")) {
     const idG = chatActual.split('/')[1];
     
@@ -619,23 +619,27 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
         const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
 
         if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
-            db.ref(chatActual).off();
+            // 1. APAGAR INMEDIATAMENTE el listener del chat para que no procese el mensaje de expulsión
+            db.ref(chatActual).off(); 
+            
+            // 2. Apagar este mismo vigilante
             db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
             
             notify("🚫 Has sido expulsado de este grupo.");
-            
-            // ESTO BORRA EL GRUPO DE SU VISTA DE MENÚ
-            // Forzamos a que su lista de grupos se vuelva a cargar (ahora saldrá sin este grupo)
-            if(typeof mostrarMisGrupos === 'function') {
-                mostrarMisGrupos(); 
+
+            // 3. Limpiar cualquier rastro del grupo en la interfaz
+            if(typeof cargarGrupos === 'function') {
+                cargarGrupos(); // Esto refresca la lista y borra el grupo del menú
             }
 
+            // 4. Salir pitando al chat público
             setTimeout(() => { 
                 verChatPublico(); 
-            }, 1000);
+            }, 500); // Reducido a 500ms para que sea más rápido
         }
     });
 }
+
 
 
 // -----------------------------
@@ -719,38 +723,34 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
     });
 }
 
-    function enviarMsg() {
-        const input = document.getElementById('msg-in'); 
-        const texto = input.value.trim();
-        if(texto === "") return;
+function enviarMsg() {
+    const input = document.getElementById('msg-in'); 
+    const texto = input.value.trim();
+    if(texto === "") return;
 
-        db.ref(chatActual).push({ 
-            uid: mUser.uid, 
-            user: mData.nombre || "Usuario", 
-            msg: texto, 
-            type: 'texto', 
-            timestamp: Date.now() 
-        });
+    db.ref(chatActual).push({ 
+        uid: mUser.uid, 
+        user: mData.nombre || "Usuario", 
+        msg: texto, 
+        type: 'texto', 
+        timestamp: Date.now() 
+    });
 
-        // --- INICIO AGREGADO: GUARDAR EN INBOX AL ENVIAR MENSAJE PRIVADO ---
-        if(chatActual.startsWith("Sincro_Privados/")) {
-            const uids = chatActual.replace("Sincro_Privados/", "").split("_");
-            const targetUid = uids[0] === mUser.uid ? uids[1] : uids[0];
+    // --- LÓGICA DE INBOX CON FILTRO ANTI-SISTEMA ---
+    if(chatActual.startsWith("Sincro_Privados/")) {
+        const uids = chatActual.replace("Sincro_Privados/", "").split("_");
+        const targetUid = uids[0] === mUser.uid ? uids[1] : uids[0];
+        
+        // BLOQUEO: Solo guarda en el Inbox si el destinatario NO es el sistema
+        if(targetUid !== 'sistema' && targetUid !== 'SISTEMA') {
             db.ref('Sincro_Inbox/' + mUser.uid + '/' + targetUid).set(Date.now());
             db.ref('Sincro_Inbox/' + targetUid + '/' + mUser.uid).set(Date.now());
         }
-        // --- FIN AGREGADO ---
-
-        input.value = ""; // <--- ¡AÑADE ESTA LÍNEA AQUÍ!
     }
 
-    // Enviar mensaje con la tecla Enter
-    document.getElementById('msg-in').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            enviarMsg();
-        }
-    });
+    input.value = ""; 
+}
+
 
     function abrirCloudinary() {
         cloudinary.openUploadWidget({ cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET, sources: ['local', 'url', 'camera'], multiple: false }, (err, res) => {
@@ -855,23 +855,33 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
     // =====================================================================
 
     function cargarInbox() {
-        const listInbox = document.getElementById('inbox-list');
-        db.ref('Sincro_Inbox/' + mUser.uid).on('value', snap => {
-            listInbox.innerHTML = "";
-            let hayInbox = false;
-            snap.forEach(child => {
-                const targetUid = child.key;
-                const targetNombre = usuariosMap[targetUid] || "Usuario";
-                hayInbox = true;
-                listInbox.innerHTML += `
-                <div onclick="iniciarPrivado('${targetUid}', '${targetNombre}')" style="padding:10px 15px; cursor:pointer; border-bottom:1px solid #f2f2f2; display:flex; align-items:center; background:#fafafa;">
-                    <div style="width:25px; height:25px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:10px; font-weight:bold;">${targetNombre.charAt(0).toUpperCase()}</div>
-                    <b style="font-size:12px; color:#333;">${targetNombre}</b>
-                </div>`;
-            });
-            if(!hayInbox) listInbox.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay chats activos</p>";
+    const listInbox = document.getElementById('inbox-list');
+    db.ref('Sincro_Inbox/' + mUser.uid).on('value', snap => {
+        listInbox.innerHTML = "";
+        let hayInbox = false;
+        
+        snap.forEach(child => {
+            const targetUid = child.key;
+
+            // --- FILTRO DE SEGURIDAD: Si es el sistema, lo ignoramos ---
+            if (targetUid === 'sistema' || targetUid === 'SISTEMA') return; 
+
+            const targetNombre = usuariosMap[targetUid] || "Usuario";
+            hayInbox = true;
+            
+            listInbox.innerHTML += `
+            <div onclick="iniciarPrivado('${targetUid}', '${targetNombre}')" style="padding:10px 15px; cursor:pointer; border-bottom:1px solid #f2f2f2; display:flex; align-items:center; background:#fafafa;">
+                <div style="width:25px; height:25px; border-radius:50%; background:#0088cc; color:white; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:10px; font-weight:bold;">${targetNombre.charAt(0).toUpperCase()}</div>
+                <b style="font-size:12px; color:#333;">${targetNombre}</b>
+            </div>`;
         });
-    }
+
+        if(!hayInbox) {
+            listInbox.innerHTML = "<p style='font-size:11px; color:#aaa; padding:10px 15px;'>No hay chats activos</p>";
+        }
+    });
+}
+
 
     function guardarNuevoGrupo() {
         const input = document.getElementById('nombre-nuevo-grupo');
