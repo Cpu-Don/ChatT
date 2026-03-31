@@ -159,7 +159,30 @@
         <button onclick="document.getElementById('modal-crear-grupo').style.display='none'" style="background:#ccc; color:#333; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; width:100%;">Cancelar</button>
     </div>
 </div>
-<div id="modal-reglas" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9000; justify-content:center; align-items:center;">
+
+    <div id="modal-añadir-miembro" class="modal-admin-sincro">
+    <div class="card-admin" style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.4);">
+        <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
+        <h3 style="color:#0088cc; margin-top:0;">Añadir Miembro</h3>
+        <p style="font-size:12px; color:#666; margin-bottom:15px;">Escribe el nombre exacto del usuario para invitarlo al grupo.</p>
+        
+        <input type="text" id="input-nombre-invitar" placeholder="Nombre del usuario..." 
+            style="width:100%; padding:12px; border-radius:12px; border:1px solid #ddd; outline:none; margin-bottom:15px; text-align:center; font-size: 15px;">
+        
+        <button onclick="procesarInvitacionPorNombre()" 
+            style="background:#0088cc; color:white; border:none; padding:12px; border-radius:12px; cursor:pointer; font-weight:bold; width:100%; margin-bottom:10px; font-size: 14px;">
+            ENVIAR INVITACIÓN
+        </button>
+        
+        <button onclick="document.getElementById('modal-añadir-miembro').style.display='none'" 
+            style="background:none; border:none; color:#999; cursor:pointer; font-size: 13px;">
+            Cancelar
+        </button>
+    </div>
+</div>
+
+    
+    <div id="modal-reglas" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9000; justify-content:center; align-items:center;">
     <div style="background:white; width:90%; max-width:400px; padding:25px; border-radius:15px; position:relative; max-height: 80vh; overflow-y: auto; text-align:left;">
         <button onclick="document.getElementById('modal-reglas').style.display='none'" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:24px; cursor:pointer; color:#888;">&times;</button>
         <h2 style="color:#0088cc; margin-top:0; font-size:18px;"> Reglas de la Comunidad - Sincro</h2>
@@ -964,18 +987,26 @@ function enviarMsg() {
 
 
     // Función para activar el botón de añadir personas
-// Función para activar el botón de añadir personas (Versión Mejorada por Nombre)
 function mostrarListaParaAgregar() {
     if(!chatActual || !chatActual.startsWith("Sincro_Grupos/")) {
         return notify("⚠️ Entra a un grupo para añadir personas");
     }
+    
+    // Limpiamos el input antes de abrir
+    document.getElementById('input-nombre-invitar').value = "";
+    // Mostramos el modal de cristal que pegaste antes
+    document.getElementById('modal-añadir-miembro').style.display = 'flex';
+}
 
-    let nombreBusqueda = prompt("Escribe el NOMBRE del usuario que quieres invitar:");
-    if (!nombreBusqueda) return;
+// 2. Agrega esta función para procesar la invitación desde el botón del Modal
+function procesarInvitacionPorNombre() {
+    const nombreBusqueda = document.getElementById('input-nombre-invitar').value.trim();
+    if (!nombreBusqueda) return notify("Escribe un nombre");
 
     const idDelGrupo = chatActual.split('/')[1]; 
+    const modal = document.getElementById('modal-añadir-miembro');
 
-    notify("Buscando usuario...");
+    notify("Buscando a " + nombreBusqueda + "...");
     
     db.ref('Sincro_Usuarios').once('value', snap => {
         let encontrado = false;
@@ -987,11 +1018,10 @@ function mostrarListaParaAgregar() {
             if(datos && datos.nombre && datos.nombre.toLowerCase() === nombreBusqueda.toLowerCase()) {
                 encontrado = true;
                 
-                // 1. GUARDAMOS EL MIEMBRO EN INFOGRUPOS (Aquí no estorba al chat)
+                // Guardamos el permiso en InfoGrupos
                 db.ref('Sincro_InfoGrupos/' + idDelGrupo + '/miembros/' + uidEncontrado).set(true);
 
-                // 2. ENVIAMOS EL MENSAJE AL CHAT
-                // Usamos db.ref(chatActual) para que use la ruta que ya tienes funcionando
+                // Notificamos al chat
                 db.ref(chatActual).push({
                     uid: 'sistema',
                     user: 'SISTEMA',
@@ -1001,12 +1031,14 @@ function mostrarListaParaAgregar() {
                 });
 
                 notify(`✅ ${datos.nombre} añadido`);
+                modal.style.display = 'none'; // Cerramos el modal automáticamente
             }
         });
 
         if(!encontrado) notify("❌ No se encontró a ese usuario");
     });
 }
+
 
 
 // Función para que el usuario envíe el reporte
@@ -1198,6 +1230,39 @@ function ejecutarBorradoTotal() {
     notify("Grupo eliminado");
 }
 
+function procesarInvitacionPorNombre() {
+    const nombreBusqueda = document.getElementById('input-nombre-invitar').value.trim();
+    if (!nombreBusqueda) return notify("Escribe un nombre");
+
+    const idDelGrupo = chatActual.split('/')[1]; 
+    notify("Buscando usuario...");
+    
+    db.ref('Sincro_Usuarios').once('value', snap => {
+        let encontrado = false;
+        snap.forEach(userSnap => {
+            let datos = userSnap.val();
+            if(datos.nombre && datos.nombre.toLowerCase() === nombreBusqueda.toLowerCase()) {
+                encontrado = true;
+                
+                // 1. Añadimos al usuario a la lista de miembros
+                db.ref('Sincro_InfoGrupos/' + idDelGrupo + '/miembros/' + userSnap.key).set(true);
+                
+                // 2. Enviamos el mensaje de sistema al chat
+                db.ref(chatActual).push({
+                    uid: 'sistema', 
+                    user: 'SISTEMA',
+                    msg: `${datos.nombre} ha ingresado al grupo`,
+                    type: 'texto', 
+                    timestamp: Date.now()
+                });
+
+                notify(`✅ ${datos.nombre} añadido`);
+                document.getElementById('modal-añadir-miembro').style.display = 'none';
+            }
+        });
+        if(!encontrado) notify("❌ No se encontró a ese usuario");
+    });
+}
 
 
 </script>
