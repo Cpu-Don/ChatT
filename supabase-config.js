@@ -1,15 +1,2 @@
-// supabase-config.js
-(function() {
-    const check = setInterval(() => {
-        if (typeof supabase !== 'undefined') {
-            clearInterval(check);
-            const _0x = ["aHR0cHM6Ly9xeHBuYW5kaWtzdnNmY2pjc2xnZi5zdXBhYmFzZS5jbw==", "c2JfcHVibGlzaGFibGVfZmxiMEpsTE1lV2lnZ1BtTERGTTkxZ19VSWh1MTZrTg=="];
-            try {
-                window['sincroDB'] = supabase.createClient(atob(_0x[0]), atob(_0x[1]));
-                console.log("✅ Sincro Engine: Conectado");
-            } catch (e) {
-                console.error("❌ Error en conexión");
-            }
-        }
-    }, 100); // Revisa cada 100ms si la librería ya cargó
-})();
+(function(_0x1b2c,_0x3f4a){const _0x5de2=function(_0x2d1a){while(--_0x2d1a){_0x1b2c['push'](_0x1b2c['shift']());}};_0x5de2(++_0x3f4a);}(_0xArray=['atob','createClient','aHR0cHM6Ly9xeHBuYW5kaWtzdnNmY2pjc2xnZi5zdXBhYmFzZS5jbw==','c2JfcHVibGlzaGFibGVfZmxiMEpsTE1lV2lnZ1BtTERGTTkxZ19VSWh1MTZrTg=='],0x1));
+(function(){const _0x42f1=setInterval(()=>{if(typeof supabase!=='undefined'){clearInterval(_0x42f1);try{window['sincroDB']=supabase[_0xArray[0x1]](atob(_0xArray[0x2]),atob(_0xArray[0x3]));}catch(_0x112a){}}},0x64);}());
