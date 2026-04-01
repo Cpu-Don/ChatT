@@ -8,8 +8,10 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="ChatT/supabase-config.js"></script>
 
+    
     <style>
         :root { --tg-blue: #0088cc; --tg-bg: #54759e; --msg-out: #efffde; --side-bg: #ffffff; }
         * { box-sizing: border-box; transition: all 0.2s ease; }
@@ -338,8 +340,9 @@
             </header>
             <div id="chat-box"></div>
             <footer>
-               <button onclick="abrirCloudinary()" style="border:none; background:none; font-size:26px; cursor:pointer;">📂</button>
-               <input id="msg-in" placeholder="Escribe un mensaje..." autocomplete="off">
+               <button onclick="abrirSelectorSincro()" style="border:none; background:none; font-size:26px; cursor:pointer;">📂</button>
+<input id="msg-in" placeholder="Escribe un mensaje..." autocomplete="off">
+
                <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:42px; height:42px; border-radius:50%; cursor:pointer; font-size: 18px;">🆙</button>
             </footer>
         </main>
@@ -795,23 +798,51 @@ function enviarMsg() {
 }
 
 
-    function abrirCloudinary() {
-        cloudinary.openUploadWidget({ cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET, sources: ['local', 'url', 'camera'], multiple: false }, (err, res) => {
-            if (!err && res.event === "success") {
-                const tipo = res.info.resource_type === 'video' ? 'video' : 'foto';
-                db.ref(chatActual).push({ uid: mUser.uid, user: mData.nombre || "Usuario", url: res.info.secure_url, type: tipo, timestamp: Date.now() });
-                
-                // --- INICIO AGREGADO: INBOX PARA MULTIMEDIA ---
-                if(chatActual.startsWith("Sincro_Privados/")) {
-                    const uids = chatActual.replace("Sincro_Privados/", "").split("_");
-                    const targetUid = uids[0] === mUser.uid ? uids[1] : uids[0];
-                    db.ref('Sincro_Inbox/' + mUser.uid + '/' + targetUid).set(Date.now());
-                    db.ref('Sincro_Inbox/' + targetUid + '/' + mUser.uid).set(Date.now());
-                }
-                // --- FIN AGREGADO ---
-            }
-        });
-    }
+    async function abrirSelectorMultimedia() {
+    // Creamos un selector de archivos invisible
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/*';
+    
+    input.onchange = async (e) => {
+        const archivo = e.target.files[0];
+        if (!archivo) return;
+
+        notify("Subiendo a Sincro...");
+        // Nombre único para que no se sobrescriban
+        const nombreArchivo = Date.now() + "_" + archivo.name.replace(/\s+/g, '_');
+
+        // 1. Subir el archivo al bucket "multimedia_sincro" que creaste
+        const { data, error } = await supabase.storage
+            .from('multimedia_sincro')
+            .upload(nombreArchivo, archivo);
+
+        if (error) {
+            notify("Error al subir: " + error.message);
+        } else {
+            // 2. Obtener la URL pública del archivo
+            const { data: urlData } = supabase.storage
+                .from('multimedia_sincro')
+                .getPublicUrl(nombreArchivo);
+
+            const tipo = archivo.type.includes('video') ? 'video' : 'foto';
+
+            // 3. GUARDAR EN TU FIREBASE ACTUAL (manteniendo tu estructura)
+            // Usamos las variables mUser y mData que ya tienes en tu código
+            db.ref(chatActual).push({ 
+                uid: mUser.uid, 
+                user: mData.nombre || "Usuario", 
+                url: urlData.publicUrl, 
+                type: tipo, 
+                timestamp: Date.now() 
+            });
+            
+            notify("✅ Archivo publicado");
+        }
+    };
+    input.click();
+}
+
 
     function verChatPublico() {
         chatActual = "Sincro_Chat_Publico";
