@@ -808,38 +808,35 @@ function enviarMsg() {
         const archivo = e.target.files[0];
         if (!archivo) return;
 
-        notify("Subiendo a Sincro...");
-        const nombreArchivo = Date.now() + "_" + archivo.name.replace(/\s+/g, '_');
+        // Verificamos la conexión interna
+        const s = window['sincroDB'];
+        if (!s) return notify("Error de enlace");
 
-        // 1. CAMBIO AQUÍ: Agregamos window. antes de supabase
-        const { data, error } = await window.supabase.storage
-            .from('multimedia_sincro')
-            .upload(nombreArchivo, archivo);
+        notify("Subiendo a Sincro...");
+        const n = Date.now() + "_" + archivo.name.replace(/\s+/g, '_');
+
+        // Subida segura
+        const { data, error } = await s.storage.from('multimedia_sincro').upload(n, archivo);
 
         if (error) {
-            notify("Error al subir: " + error.message);
+            notify("Error: " + error.message);
         } else {
-            // 2. CAMBIO AQUÍ: Agregamos window. antes de supabase
-            const { data: urlData } = window.supabase.storage
-                .from('multimedia_sincro')
-                .getPublicUrl(nombreArchivo);
+            const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(n);
+            const t = archivo.type.includes('video') ? 'video' : 'foto';
 
-            const tipo = archivo.type.includes('video') ? 'video' : 'foto';
-
-            // 3. GUARDAR EN TU FIREBASE (Esto se queda igual)
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: mData.nombre || "Usuario", 
-                url: urlData.publicUrl, 
-                type: tipo, 
+                url: res.publicUrl, 
+                type: t, 
                 timestamp: Date.now() 
             });
-            
-            notify("✅ Archivo publicado");
+            notify("✅ Publicado");
         }
     };
     input.click();
 }
+
 
 
     function verChatPublico() {
