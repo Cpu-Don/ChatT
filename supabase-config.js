@@ -1,3 +1,11 @@
+(function() {
+    // Datos ofuscados (Base64)
+    const _0x1a = "aHR0cHM6Ly9xeHBuYW5kaWtzdnNmY2pjc2xnZi5zdXBhYmFzZS5jbw==";
+    const _0x2b = "c2JfcHVibGlzaGFibGVfZmxiMEpsTE1lV2lnZ1BtTERGTTkxZ19VSWh1MTZrTg==";
 
-/* Sincro MD - Security Layer v1.0 */
-const _0x5a12=['\x68\x74\x74\x70\x73\x3a\x2f\x2f\x71\x78\x70\x6e\x71\x6e\x64\x69\x6b\x73\x76\x73\x66\x63\x6a\x63\x73\x6c\x67\x66\x2e\x73\x75\x70\x61\x62\x61\x73\x65\x2e\x63\x6f','\x73\x62\x5f\x70\x75\x62\x6c\x69\x73\x68\x61\x62\x6c\x65\x5f\x66\x6c\x62\x30\x4a\x6c\x4d\x65\x57\x69\x67\x67\x50\x6d\x4c\x44\x46\x4d\x39\x31\x67\x5f\x55\x49\x68\x75\x31\x36\x6b\x4e'];(function(_0x3e1a,_0x5a12){const _0x2b3c=function(_0x1a2d){while(--_0x1a2d){_0x3e1a['push'](_0x3e1a['shift']());}};_0x2b3c(++_0x5a12);}(_0x5a12,0x1a4));const _0x2b3c=function(_0x3e1a,_0x5a12){_0x3e1a=_0x3e1a-0x0;let _0x2b3c=_0x5a12[_0x3e1a];return _0x2b3c;};const supabase=supabase['createClient'](_0x5a12[0x0],_0x5a12[0x1]);console['log']('\x53\x69\x6e\x63\x72\x6f\x20\x4d\x44\x3a\x20\x53\x65\x63\x75\x72\x65\x20\x4c\x69\x6e\x6b\x20\x41\x63\x74\x69\x76\x65');
+    // Función de decodificación
+    const decode = (str) => atob(str);
+
+    // Inicialización global
+    window.supabase = supabase.createClient(decode(_0x1a), decode(_0x2b));
+})();
