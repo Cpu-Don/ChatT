@@ -816,9 +816,11 @@ function enviarMsg() {
         if (!archivo) return;
 
         // Validación de tamaño (opcional pero recomendado: 5MB)
-        if (archivo.size > 5 * 1024 * 1024) {
-            return notify("❌ El archivo es muy pesado (máx 5MB)");
-        }
+        // Nuevo límite: 50MB
+if (archivo.size > 50 * 1024 * 1024) {
+    return notify("❌ El archivo supera los 50MB");
+}
+
 
         notify("📤 Subiendo a Sincro...");
         
