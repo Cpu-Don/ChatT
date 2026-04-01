@@ -800,18 +800,11 @@ function enviarMsg() {
 
 
     async function abrirSelectorMultimedia() {
-    let s = window['sincroDB'];
+    // Verificamos si el cliente de Supabase existe en la ventana global
+    const s = window.supabaseClient;
 
-    // Si no hay enlace, intentamos forzarlo una última vez
     if (!s) {
-        notify("Reconectando enlace...");
-        const _0x = ["aHR0cHM6Ly9xeHBuYW5kaWtzdnNmY2pjc2xnZi5zdXBhYmFzZS5jbw==", "c2JfcHVibGlzaGFibGVfZmxiMEpsTE1lV2lnZ1BtTERGTTkxZ19VSWh1MTZrTg=="];
-        try {
-            window['sincroDB'] = supabase.createClient(atob(_0x[0]), atob(_0x[1]));
-            s = window['sincroDB'];
-        } catch(e) {
-            return notify("Error crítico de enlace");
-        }
+        return notify("⚠️ Error: Supabase no está configurado correctamente.");
     }
 
     const input = document.createElement('input');
@@ -820,19 +813,35 @@ function enviarMsg() {
     
     input.onchange = async (e) => {
         const archivo = e.target.files[0];
-        if (!archivo || !s) return;
+        if (!archivo) return;
 
-        notify("Subiendo a Sincro...");
-        const n = Date.now() + "_" + archivo.name.replace(/\s+/g, '_');
+        // Validación de tamaño (opcional pero recomendado: 5MB)
+        if (archivo.size > 5 * 1024 * 1024) {
+            return notify("❌ El archivo es muy pesado (máx 5MB)");
+        }
 
-        const { data, error } = await s.storage.from('multimedia_sincro').upload(n, archivo);
+        notify("📤 Subiendo a Sincro...");
+        
+        // Generamos un nombre único para evitar que se sobrescriban fotos
+        const fileExt = archivo.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-        if (error) {
-            notify("Error: " + error.message);
-        } else {
-            const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(n);
+        try {
+            // Subida al Bucket 'multimedia_sincro'
+            const { data, error } = await s.storage
+                .from('multimedia_sincro')
+                .upload(fileName, archivo);
+
+            if (error) throw error;
+
+            // Obtenemos la URL pública
+            const { data: res } = s.storage
+                .from('multimedia_sincro')
+                .getPublicUrl(fileName);
+
             const t = archivo.type.includes('video') ? 'video' : 'foto';
 
+            // Guardamos la referencia en Firebase para que aparezca en el chat
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: mData.nombre || "Usuario", 
@@ -840,11 +849,16 @@ function enviarMsg() {
                 type: t, 
                 timestamp: Date.now() 
             });
-            notify("✅ Publicado");
+            
+            notify("✅ Archivo enviado");
+        } catch (error) {
+            console.error("Error en Supabase:", error);
+            notify("❌ Error al subir: " + error.message);
         }
     };
     input.click();
 }
+
 
 
 
