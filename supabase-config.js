@@ -1,18 +1,24 @@
-(function(_s, _d) {
-    // Configuración con el ID de tu proyecto Sincro
-    const _u = "https://qxpnqndiksvsfcjcslgf.supabase.co";
+(function(_0x5a21,_0x3f1b){
+    // Configuración Blindada de Supabase para Sincro
+    const _0x1a = [104,116,116,112,115,58,47,47,113,120,112,110,113,110,100,105,107,115,118,115,102,99,106,99,115,108,103,102,46,115,117,112,97,98,97,115,101,46,99,111].map(c => String.fromCharCode(c)).join('');
     
-    // He limpiado la clave que me pasaste para que no tenga errores de formato
-    const _k = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTczOTI4NDg1NywiZXhwIjoyMDU0ODYwODU3fQ.V-m_P0_X-6N1N-vP-y_P0_X-6N1N-vP"; // (Asegúrate de que sea tu clave COMPLETA aquí)
+    // AQUÍ: Pega tu clave que empieza por eyJ entre las comillas
+    const _0x4b = "TU_CLAVE_AQUÍ_SIN_ESPACIOS"; 
 
-    try {
-        if (typeof supabase !== 'undefined') {
-            const { createClient } = _s.supabase;
-            // Usamos .trim() para eliminar cualquier espacio invisible que rompa el JWS
-            _s.supabaseClient = createClient(_u, _k.trim());
-            console.log("✅ Sincro: Conexión multimedia establecida.");
-        }
-    } catch (_e) {
-        // Error controlado
+    const _init = () => {
+        try {
+            if (typeof supabase !== 'undefined') {
+                // El .trim() es VITAL para que el video no dé error de JWS
+                const _k = _0x4b.trim();
+                window.supabaseClient = supabase.createClient(_0x1a, _k);
+                console.log("Sincro: Motor listo.");
+            }
+        } catch (e) {}
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _init);
+    } else {
+        _init();
     }
 })(window, document);
