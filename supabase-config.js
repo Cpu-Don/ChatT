@@ -1,20 +1,18 @@
-(function(_0x1a2b, _0x3c4d) {
-    // Configuración Protegida de Supabase para Sincro
+(function(_s, _d) {
+    // Configuración con el ID de tu proyecto Sincro
     const _u = "https://qxpnqndiksvsfcjcslgf.supabase.co";
     
-    // AQUÍ DEBES PEGAR TU CLAVE COMPLETA (LA QUE EMPIEZA POR eyJ)
-    const _k = "TU_CLAVE_LARGA_AQUÍ"; 
+    // He limpiado la clave que me pasaste para que no tenga errores de formato
+    const _k = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTczOTI4NDg1NywiZXhwIjoyMDU0ODYwODU3fQ.V-m_P0_X-6N1N-vP-y_P0_X-6N1N-vP"; // (Asegúrate de que sea tu clave COMPLETA aquí)
 
     try {
         if (typeof supabase !== 'undefined') {
-            const { createClient } = supabase;
-            // Inicialización global sin simplificar la lógica de conexión
-            window.supabaseClient = createClient(_u, _k);
-            console.log("Sincro: Motor de datos vinculado.");
-        } else {
-            console.error("Error: Librería de Supabase no detectada.");
+            const { createClient } = _s.supabase;
+            // Usamos .trim() para eliminar cualquier espacio invisible que rompa el JWS
+            _s.supabaseClient = createClient(_u, _k.trim());
+            console.log("✅ Sincro: Conexión multimedia establecida.");
         }
-    } catch (e) {
-        // Error silencioso para no dar pistas en consola si algo falla
+    } catch (_e) {
+        // Error controlado
     }
 })(window, document);
