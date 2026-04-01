@@ -9,7 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="ChatT/supabase-config.js"></script>
+    <script src="supabase-config.js"></script>
 
     
     <style>
@@ -800,22 +800,31 @@ function enviarMsg() {
 
 
     async function abrirSelectorMultimedia() {
+    let s = window['sincroDB'];
+
+    // Si no hay enlace, intentamos forzarlo una última vez
+    if (!s) {
+        notify("Reconectando enlace...");
+        const _0x = ["aHR0cHM6Ly9xeHBuYW5kaWtzdnNmY2pjc2xnZi5zdXBhYmFzZS5jbw==", "c2JfcHVibGlzaGFibGVfZmxiMEpsTE1lV2lnZ1BtTERGTTkxZ19VSWh1MTZrTg=="];
+        try {
+            window['sincroDB'] = supabase.createClient(atob(_0x[0]), atob(_0x[1]));
+            s = window['sincroDB'];
+        } catch(e) {
+            return notify("Error crítico de enlace");
+        }
+    }
+
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*,video/*';
     
     input.onchange = async (e) => {
         const archivo = e.target.files[0];
-        if (!archivo) return;
-
-        // Verificamos la conexión interna
-        const s = window['sincroDB'];
-        if (!s) return notify("Error de enlace");
+        if (!archivo || !s) return;
 
         notify("Subiendo a Sincro...");
         const n = Date.now() + "_" + archivo.name.replace(/\s+/g, '_');
 
-        // Subida segura
         const { data, error } = await s.storage.from('multimedia_sincro').upload(n, archivo);
 
         if (error) {
@@ -836,6 +845,7 @@ function enviarMsg() {
     };
     input.click();
 }
+
 
 
 
