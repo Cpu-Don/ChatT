@@ -800,7 +800,6 @@ function enviarMsg() {
 
 
     async function abrirSelectorMultimedia() {
-    // Creamos un selector de archivos invisible
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*,video/*';
@@ -810,26 +809,24 @@ function enviarMsg() {
         if (!archivo) return;
 
         notify("Subiendo a Sincro...");
-        // Nombre único para que no se sobrescriban
         const nombreArchivo = Date.now() + "_" + archivo.name.replace(/\s+/g, '_');
 
-        // 1. Subir el archivo al bucket "multimedia_sincro" que creaste
-        const { data, error } = await supabase.storage
+        // 1. CAMBIO AQUÍ: Agregamos window. antes de supabase
+        const { data, error } = await window.supabase.storage
             .from('multimedia_sincro')
             .upload(nombreArchivo, archivo);
 
         if (error) {
             notify("Error al subir: " + error.message);
         } else {
-            // 2. Obtener la URL pública del archivo
-            const { data: urlData } = supabase.storage
+            // 2. CAMBIO AQUÍ: Agregamos window. antes de supabase
+            const { data: urlData } = window.supabase.storage
                 .from('multimedia_sincro')
                 .getPublicUrl(nombreArchivo);
 
             const tipo = archivo.type.includes('video') ? 'video' : 'foto';
 
-            // 3. GUARDAR EN TU FIREBASE ACTUAL (manteniendo tu estructura)
-            // Usamos las variables mUser y mData que ya tienes en tu código
+            // 3. GUARDAR EN TU FIREBASE (Esto se queda igual)
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: mData.nombre || "Usuario", 
