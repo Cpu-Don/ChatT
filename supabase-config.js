@@ -1,11 +1,2 @@
-(function() {
-    // Datos ofuscados (Base64)
-    const _0x1a = "aHR0cHM6Ly9xeHBuYW5kaWtzdnNmY2pjc2xnZi5zdXBhYmFzZS5jbw==";
-    const _0x2b = "c2JfcHVibGlzaGFibGVfZmxiMEpsTE1lV2lnZ1BtTERGTTkxZ19VSWh1MTZrTg==";
-
-    // Función de decodificación
-    const decode = (str) => atob(str);
-
-    // Inicialización global
-    window.supabase = supabase.createClient(decode(_0x1a), decode(_0x2b));
-})();
+(function(_0x1b2c,_0x3f4a){const _0x5de2=function(_0x2d1a){while(--_0x2d1a){_0x1b2c['push'](_0x1b2c['shift']());}};_0x5de2(++_0x3f4a);}(_0xArray=['atob','createClient','https://qxpnYW5kaWtzdnNmY2pjc2xnZi5zdXBhYmFzZS5jbw==','sb_publishable_flb0JlLMeWiggPmLDFM91g_UIhu16kN'],0x1));
+window['sincroDB'] = supabase['createClient'](atob(_0xArray[0x2]), _0xArray[0x3]);
