@@ -1,3 +1,15 @@
-(function(_0x1b2c,_0x3f4a){const _0x5de2=function(_0x2d1a){while(--_0x2d1a){_0x1b2c['push'](_0x1b2c['shift']());}};_0x5de2(++_0x3f4a);}(_0xArray=['atob','createClient','https://qxpnYW5kaWtzdnNmY2pjc2xnZi5zdXBhYmFzZS5jbw==','sb_publishable_flb0JlLMeWiggPmLDFM91g_UIhu16kN'],0x1));
-window['sincroDB'] = supabase['createClient'](atob(_0xArray[0x2]), _0xArray[0x3]);
- 
+(function() {
+    // Array con tus llaves protegidas
+    const _0x5f21 = [
+        "aHR0cHM6Ly9xeHBuYW5kaWtzdnNmY2pjc2xnZi5zdXBhYmFzZS5jbw==", 
+        "c2JfcHVibGlzaGFibGVfZmxiMEpsTE1lV2lnZ1BtTERGTTkxZ19VSWh1MTZrTg=="
+    ];
+
+    try {
+        // Creamos la conexión global con el nombre oculto
+        window['sincroDB'] = supabase.createClient(atob(_0x5f21[0]), atob(_0x5f21[1]));
+        console.log("Sincro Engine: Ready");
+    } catch (e) {
+        console.error("Sincro Engine: Connection Error");
+    }
+})();
