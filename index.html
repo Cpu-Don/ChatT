@@ -1428,25 +1428,7 @@ document.getElementById('msg-in').addEventListener('keydown', function(e) {
     }
 });
 
-    async function escanearImagenIA(urlImagen) {
-    const apiUser = "233753530"; 
-    const apiSecret = "V8kUAJAjTVUHRvnRD72takiuwxamQEon"; 
 
-    try {
-        const response = await fetch(`https://api.sightengine.com/1.0/check.json?url=${urlImagen}&models=nudity-2.0&api_user=${apiUser}&api_secret=${apiSecret}`);
-        const data = await response.json();
-
-        if (data.status === "success") {
-            // Sumamos desnudez sexual + erótica. Si pasa de 0.5 (50%), es censurable.
-            const nivelNudity = data.nudity.sexual_display + data.nudity.erotica;
-            return nivelNudity > 0.5; 
-        }
-        return false;
-    } catch (error) {
-        console.error("Error IA:", error);
-        return false; 
-    }
-}
   
 </script>
 </body>
