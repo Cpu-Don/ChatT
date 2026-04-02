@@ -859,93 +859,9 @@ async function enviarMsg() {
 
         notify("⚙️ Analizando seguridad...");
 
-        // 1. COMPRESIÓN (Si es imagen)
-        if (archivo.type.startsWith('image/')) {
-            archivo = await comprimirImagen(archivo, 0.7);
-        }
-
-        // 2. DETECCIÓN DE DESNUDEZ (IA) - ESPERAR RESPUESTA
-        let esBorroso = false;
-        const formData = new FormData();
-        formData.append('media', archivo);
-        
-        // Si es video usamos el modelo de video, si es foto el de nudity
-        const modelo = archivo.type.startsWith('video') ? 'video' : 'nudity-2.1';
-        formData.append('models', modelo);
-        formData.append('api_user', '23375353'); 
-        formData.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
-
-        try {
-            const response = await fetch('https://api.sightengine.com/1.0/check.json', {
-                method: 'POST',
-                body: formData
-            });
-            const result = await response.json();
-
-            // Lógica para Fotos y Videos
-            if (result.status === 'success') {
-                const nuditySexual = result.nudity?.sexual || 0;
-                const nudityErotica = result.nudity?.erotica || 0;
-                // Para videos, Sightengine analiza frames
-                const videoSexual = result.video?.nudity?.sexual || 0;
-
-                if (nuditySexual > 0.5 || nudityErotica > 0.5 || videoSexual > 0.5) {
-                    esBorroso = true;
-                    notify("⚠️ Contenido sensible detectado");
-                }
-            }
-        } catch (err) { 
-            console.error("Error IA:", err);
-            // Si la IA falla, por precaución podrías ponerlo borroso o dejarlo false
-        }
-
-        // 3. SUBIDA A SUPABASE (Solo después de saber si es borroso)
-        notify("🚀 Subiendo a Sincro...");
-        const fileName = `${Date.now()}_${archivo.name}`;
-
-        try {
-            const { data: upData, error } = await s.storage.from('multimedia_sincro').upload(fileName, archivo);
-            if (error) throw error;
-
-            const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(fileName);
-            const t = archivo.type.includes('video') ? 'video' : 'foto';
-
-            // 4. GUARDAR EN FIREBASE
-            // Aquí 'blur' llevará el valor REAL que dio la IA (true o false)
-            db.ref(chatActual).push({ 
-                uid: mUser.uid, 
-                user: mData.nombre || "Usuario", 
-                url: res.publicUrl, 
-                type: t, 
-                blur: esBorroso, // <--- YA NO SERÁ SIEMPRE FALSE
-                timestamp: Date.now() 
-            });
-            
-            notify("✅ Mensaje enviado");
-        } catch (error) {
-            notify("❌ Error al subir");
-        }
-    };
-    input.click();
-}
-
-    async function abrirSelectorMultimedia() {
-    const s = window.supabaseClient;
-    if (!s) return notify("⚠️ Error: Supabase no configurado.");
-
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*,video/*';
-    
-    input.onchange = async (e) => {
-        let archivo = e.target.files[0];
-        if (!archivo) return;
-
-        notify("⚙️ Analizando seguridad...");
-
         // 1. COMPRESIÓN (Solo para imágenes)
         if (archivo.type.startsWith('image/')) {
-            archivo = await comprimirImagen(archivo, 0.7); // Baja el peso pero mantiene calidad
+            archivo = await comprimirImagen(archivo, 0.7);
         }
 
         // 2. DETECCIÓN DE IA (Sightengine)
@@ -966,16 +882,16 @@ async function enviarMsg() {
             const result = await response.json();
 
             if (result.status === 'success') {
+                // Ajustamos la sensibilidad: si es > 0.2 en contenido sexual o erótico, se activa el blur
                 const n = result.nudity;
                 const v = result.video?.nudity;
 
-                // Umbral de sensibilidad: 0.1 es muy estricto (mejor para evitar desnudos)
                 if (
-                    (n && (n.sexual > 0.1 || n.erotica > 0.1 || n.suggestive > 0.2)) ||
-                    (v && (v.sexual > 0.1 || v.erotica > 0.1))
+                    (n && (n.sexual > 0.2 || n.erotica > 0.2 || n.suggestive > 0.3)) ||
+                    (v && (v.sexual > 0.2 || v.erotica > 0.2))
                 ) {
                     esBorroso = true;
-                    notify("⚠️ Contenido sensible detectado");
+                    notify("⚠️ Contenido sensible detectado: se aplicará filtro.");
                 }
             }
         } catch (err) { 
@@ -993,19 +909,20 @@ async function enviarMsg() {
             const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(fileName);
             const t = archivo.type.includes('video') ? 'video' : 'foto';
 
-            // 4. GUARDAR EN FIREBASE (Aquí es donde se decide si se ve borroso)
+            // 4. GUARDAR EN FIREBASE con el valor real de 'esBorroso'
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: mData.nombre || "Usuario", 
                 url: res.publicUrl, 
                 type: t, 
-                blur: esBorroso, 
+                blur: esBorroso, // Aquí es donde se activa el filtro en el CSS
                 timestamp: Date.now() 
             });
             
             notify("✅ Enviado");
         } catch (error) {
             notify("❌ Error al subir");
+            console.error(error);
         }
     };
     input.click();
