@@ -675,194 +675,8 @@
         }
     }
 
-function escucharChat() {
-    const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
-    if(!box || !gal) return;
-    box.innerHTML = ""; gal.innerHTML = "";
-    if(listener) db.ref(chatActual).off();
 
-    // --- VIGILANTE DE EXPULSIÓN MEJORADO ---
-    if (chatActual.startsWith("Sincro_Grupos/")) {
-        const idG = chatActual.split('/')[1];
-        db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
-            const soyDueño = window.grupoOwnerActual === mUser.uid;
-            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-
-            if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
-                db.ref(chatActual).off(); 
-                db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
-                notify("🚫 Has sido expulsado de este grupo.");
-                if(typeof cargarGrupos === 'function') { cargarGrupos(); }
-                setTimeout(() => { verChatPublico(); }, 500);
-            }
-        });
-    }
-
-    listener = db.ref(chatActual).on('child_added', snap => {
-        const data = snap.val(), isMine = data.uid === mUser.uid;
-
-        // 1. FILTRO DE SISTEMA
-        if (data.user === "SISTEMA" || data.uid === "sistema") {
-            const divSis = document.createElement('div');
-            divSis.style = "width:100%; text-align:center; margin:10px 0; clear:both; display:block;";
-            divSis.innerHTML = `<span style="color:#888; font-size:11px; background:rgba(0,0,0,0.05); padding:4px 12px; border-radius:15px;">${data.msg}</span>`;
-            box.appendChild(divSis);
-            box.scrollTop = box.scrollHeight;
-            return; 
-        }
-
-        if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; }
-
-        const d = document.createElement('div'); 
-        d.className = "msg " + (isMine ? "me" : "them"); 
-        d.id = "m-" + snap.key;
-        
-        // Menú para borrar mensajes
-    listener = db.ref(chatActual).on('child_added', snap => {
-        const data = snap.val(), isMine = data.uid === mUser.uid;
-
-        // 1. FILTRO DE SISTEMA
-        if (data.user === "SISTEMA" || data.uid === "sistema") {
-            const divSis = document.createElement('div');
-            divSis.style = "width:100%; text-align:center; margin:10px 0; clear:both; display:block;";
-            divSis.innerHTML = `<span style="color:#888; font-size:11px; background:rgba(0,0,0,0.05); padding:4px 12px; border-radius:15px;">${data.msg}</span>`;
-            box.appendChild(divSis);
-            box.scrollTop = box.scrollHeight;
-            return; 
-        }
-
-        if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; }
-
-        const d = document.createElement('div'); 
-        d.className = "msg " + (isMine ? "me" : "them"); 
-        d.id = "m-" + snap.key;
-        
-        // Menú para borrar mensajes
-        d.oncontextmenu = (e) => {
-            e.preventDefault();
-            const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-            if (isMine || soyAdmin) {
-                const modal = document.createElement('div');
-                modal.className = 'modal-confirm';
-                modal.innerHTML = `<div class="modal-card"><p>¿Eliminar mensaje?</p><button class="btn-del" id="confirm-del">Eliminar</button><button class="btn-can" id="cancel-del">Cancelar</button></div>`;
-                document.body.appendChild(modal);
-                modal.querySelector('#confirm-del').onclick = () => { db.ref(chatActual + "/" + snap.key).remove(); modal.remove(); };
-                modal.querySelector('#cancel-del').onclick = () => { modal.remove(); };
-            }
-        };
-
-        // Construcción de cabecera (Nombre y botones)
-        let htmlCabecera = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
-        
-function escucharChat() {
-    const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
-    if(!box || !gal) return;
-    box.innerHTML = ""; gal.innerHTML = "";
-    if(listener) db.ref(chatActual).off();
-
-    // 1. VIGILANTE DE EXPULSIÓN (Mantiene tu lógica de seguridad)
-    if (chatActual.startsWith("Sincro_Grupos/")) {
-        const idG = chatActual.split('/')[1];
-        db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
-            const soyDueño = window.grupoOwnerActual === mUser.uid;
-            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-            if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
-                db.ref(chatActual).off(); 
-                notify("🚫 Has sido expulsado.");
-                verChatPublico();
-            }
-        });
-    }
-
-    // 2. LISTENER ÚNICO (Sin duplicados y con blindaje)
-    listener = db.ref(chatActual).on('child_added', snap => {
-        const data = snap.val(), isMine = data.uid === mUser.uid;
-
-        // FILTRO DE SISTEMA
-        if (data.user === "SISTEMA" || data.uid === "sistema") {
-            const divSis = document.createElement('div');
-            divSis.style = "width:100%; text-align:center; margin:10px 0; display:block;";
-            divSis.innerHTML = `<span style="color:#888; font-size:11px; background:rgba(0,0,0,0.05); padding:4px 12px; border-radius:15px;">${data.msg}</span>`;
-            box.appendChild(divSis);
-            box.scrollTop = box.scrollHeight;
-            return; 
-        }
-
-        const d = document.createElement('div'); 
-        d.className = "msg " + (isMine ? "me" : "them"); 
-        d.id = "m-" + snap.key;
-
-        // MENÚ BORRAR (Click derecho)
-        d.oncontextmenu = (e) => {
-            e.preventDefault();
-            const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-            if (isMine || soyAdmin) {
-function escucharChat() {
-    const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
-    if(!box || !gal) return;
-    box.innerHTML = ""; gal.innerHTML = "";
-    if(listener) db.ref(chatActual).off();
-
-    // 1. VIGILANTE DE EXPULSIÓN
-    if (chatActual.startsWith("Sincro_Grupos/")) {
-        const idG = chatActual.split('/')[1];
-        db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
-            const soyDueño = window.grupoOwnerActual === mUser.uid;
-            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-            if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
-                db.ref(chatActual).off(); 
-                notify("🚫 Has sido expulsado.");
-                verChatPublico();
-            }
-        });
-    }
-
-    // 2. LISTENER PRINCIPAL
-    listener = db.ref(chatActual).on('child_added', snap => {
-        const data = snap.val();
-        const isMine = data.uid === mUser.uid;
-
-        // FILTRO DE SISTEMA
-        if (data.user === "SISTEMA" || data.uid === "sistema") {
-            const divSis = document.createElement('div');
-            divSis.style = "width:100%; text-align:center; margin:10px 0; display:block;";
-            divSis.innerHTML = `<span style="color:#888; font-size:11px; background:rgba(0,0,0,0.05); padding:4px 12px; border-radius:15px;">${data.msg}</span>`;
-            box.appendChild(divSis);
-            box.scrollTop = box.scrollHeight;
-            return; 
-        }
-
-
-
-function enviarMsg() {
-    const input = document.getElementById('msg-in'); 
-    const texto = input.value.trim();
-    if(texto === "") return;
-
-    db.ref(chatActual).push({ 
-        uid: mUser.uid, 
-        user: mData.nombre || "Usuario", 
-        msg: texto, 
-        type: 'texto', 
-        timestamp: Date.now() 
-    });
-
-    // --- LÓGICA DE INBOX CON FILTRO ANTI-SISTEMA ---
-    if(chatActual.startsWith("Sincro_Privados/")) {
-        const uids = chatActual.replace("Sincro_Privados/", "").split("_");
-        const targetUid = uids[0] === mUser.uid ? uids[1] : uids[0];
-        
-        // BLOQUEO: Solo guarda en el Inbox si el destinatario NO es el sistema
-        if(targetUid !== 'sistema' && targetUid !== 'SISTEMA') {
-            db.ref('Sincro_Inbox/' + mUser.uid + '/' + targetUid).set(Date.now());
-            db.ref('Sincro_Inbox/' + targetUid + '/' + mUser.uid).set(Date.now());
-        }
-    }
-
-    input.value = ""; 
-}
-
-        function escucharChat() {
+    function escucharChat() {
     const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
     if(!box || !gal) return;
     box.innerHTML = ""; gal.innerHTML = "";
@@ -947,7 +761,35 @@ function enviarMsg() {
         box.scrollTop = box.scrollHeight;
     });
 }
+ 
 
+function enviarMsg() {
+    const input = document.getElementById('msg-in'); 
+    const texto = input.value.trim();
+    if(texto === "") return;
+
+    db.ref(chatActual).push({ 
+        uid: mUser.uid, 
+        user: mData.nombre || "Usuario", 
+        msg: texto, 
+        type: 'texto', 
+        timestamp: Date.now() 
+    });
+
+    // --- LÓGICA DE INBOX CON FILTRO ANTI-SISTEMA ---
+    if(chatActual.startsWith("Sincro_Privados/")) {
+        const uids = chatActual.replace("Sincro_Privados/", "").split("_");
+        const targetUid = uids[0] === mUser.uid ? uids[1] : uids[0];
+        
+        // BLOQUEO: Solo guarda en el Inbox si el destinatario NO es el sistema
+        if(targetUid !== 'sistema' && targetUid !== 'SISTEMA') {
+            db.ref('Sincro_Inbox/' + mUser.uid + '/' + targetUid).set(Date.now());
+            db.ref('Sincro_Inbox/' + targetUid + '/' + mUser.uid).set(Date.now());
+        }
+    }
+
+    input.value = ""; 
+}
 
 async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
