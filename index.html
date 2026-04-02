@@ -867,22 +867,33 @@ async function abrirSelectorMultimedia() {
             const esVideo = archivo.type.includes('video');
             const t = esVideo ? 'video' : 'foto';
 
-            // --- 🤖 FILTRO DE INTELIGENCIA ARTIFICIAL ---
+            // --- 🤖 FILTRO DE IA (FOTOS Y VIDEOS) ---
             let censurado = false;
-            // Solo escaneamos si es el chat público y es una imagen (ahorras créditos)
-            if (chatActual === "Sincro_Chat_Publico" && !esVideo) {
-                notify("🔍 Verificando imagen...");
+            
+            // Solo moderamos el chat público
+            if (chatActual === "Sincro_Chat_Publico") {
+                notify("🔍 Escaneando contenido...");
                 try {
                     const userIA = "233753530";
                     const secretIA = "V8kUAJAjTVUHRvnRD72takiuwxamQEon";
-                    const resIA = await fetch(`https://api.sightengine.com/1.0/check.json?url=${urlPublica}&models=nudity-2.0&api_user=${userIA}&api_secret=${secretIA}`);
+                    
+                    // Elegimos el modelo según el tipo de archivo
+                    const modelo = esVideo ? "video-content-moderation" : "nudity-2.0";
+                    const endpoint = esVideo ? "video/check-sync.json" : "check.json";
+
+                    const resIA = await fetch(`https://api.sightengine.com/1.0/${endpoint}?url=${urlPublica}&models=${modelo}&api_user=${userIA}&api_secret=${secretIA}`);
                     const jsonIA = await resIA.json();
 
                     if (jsonIA.status === "success") {
-                        const nudity = jsonIA.nudity.sexual_display + jsonIA.nudity.erotica;
-                        if (nudity > 0.5) {
-                            censurado = true;
-                            notify("🔞 Imagen censurada por seguridad");
+                        // Lógica para Fotos
+                        if (!esVideo) {
+                            const nudity = jsonIA.nudity.sexual_display + jsonIA.nudity.erotica;
+                            if (nudity > 0.5) censurado = true;
+                        } 
+                        // Lógica para Videos (revisa si algún frame es detectado)
+                        else if (jsonIA.video && jsonIA.video.summary) {
+                            const vNudity = jsonIA.video.summary.sexual_display + jsonIA.video.summary.erotica;
+                            if (vNudity > 0.5) censurado = true;
                         }
                     }
                 } catch (e) {
@@ -890,17 +901,21 @@ async function abrirSelectorMultimedia() {
                 }
             }
 
-            // 3. Guardar en Firebase con la marca de censura
+            // 3. Guardar en Firebase
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: mData.nombre || "Usuario", 
                 url: urlPublica, 
                 type: t, 
                 timestamp: Date.now(),
-                censurado: censurado // <--- Esto activa el blur que pusimos en el CSS
+                censurado: censurado 
             });
             
-            if (!censurado) notify("✅ Archivo enviado");
+            if (censurado) {
+                notify("🔞 Contenido censurado por seguridad");
+            } else {
+                notify("✅ Archivo enviado");
+            }
 
         } catch (error) {
             console.error("Error:", error);
@@ -909,6 +924,7 @@ async function abrirSelectorMultimedia() {
     };
     input.click();
 }
+
 
 
 
