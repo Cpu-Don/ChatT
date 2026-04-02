@@ -827,7 +827,6 @@ async function enviarMsg() {
     input.value = ""; 
 }
 
-
     async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
     if (!s) return notify("⚠️ Error: Supabase no configurado.");
@@ -839,15 +838,20 @@ async function enviarMsg() {
     input.onchange = async (e) => {
         const archivo = e.target.files[0];
         if (!archivo) return;
-        if (archivo.size > 50 * 1024 * 1024) return notify("❌ El archivo supera los 50MB");
 
-        notify("📤 Analizando contenido...");
+        // 1. Validación de tamaño
+        if (archivo.size > 50 * 1024 * 1024) {
+            return notify("❌ El archivo supera los 50MB");
+        }
 
-        // --- FILTRO IA SOLO PARA CHAT PÚBLICO ---
+        notify("📤 Procesando...");
+
+        // ========================================================
+        // AQUÍ VA EL FILTRO IA ULTRA SEGURO (SOLO CHAT PÚBLICO)
+        // ========================================================
         if (chatActual === "Sincro_Chat_Publico") {
             const formData = new FormData();
             formData.append('media', archivo);
-            // 'nudity-2.1' para fotos, 'video' para clips cortos
             formData.append('models', archivo.type.startsWith('video') ? 'video' : 'nudity-2.1');
             formData.append('api_user', '23375353'); 
             formData.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
@@ -859,7 +863,11 @@ async function enviarMsg() {
                 });
                 const result = await response.json();
 
-                // Lógica de bloqueo si detecta desnudez sexual
+                if (result.status === 'failure') {
+                    console.error("Sightengine Error:", result.error.message);
+                    return notify("⚠️ Límite gratuito alcanzado. ¿Deseas Donar para que Sincro siga creciendo? ❤️");
+                }
+
                 let esInapropiado = false;
                 if (result.status === 'success') {
                     if (result.nudity && result.nudity.sexual > 0.5) esInapropiado = true;
@@ -870,32 +878,49 @@ async function enviarMsg() {
                     return notify("🚫 Contenido prohibido detectado en el Chat Público.");
                 }
             } catch (err) {
-                console.error("Error en IA:", err);
+                console.error("Error en validación IA:", err);
+                return notify("⚠️ Validación temporalmente no disponible. ¿Deseas Donar para mejorar nuestros servidores? ✨");
             }
         }
+        // ========================================================
+        // FIN DEL FILTRO IA
+        // ========================================================
 
-        // --- SUBIDA NORMAL SI PASA EL FILTRO ---
-        notify("🚀 Subiendo...");
+        // A PARTIR DE AQUÍ SIGUE TU SUBIDA NORMAL A SUPABASE
+        notify("🚀 Subiendo a Sincro...");
         const fileExt = archivo.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         try {
-            const { data, error } = await s.storage.from('multimedia_sincro').upload(fileName, archivo);
+            const { data, error } = await s.storage
+                .from('multimedia_sincro')
+                .upload(fileName, archivo);
+
             if (error) throw error;
-            const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(fileName);
+
+            const { data: res } = s.storage
+                .from('multimedia_sincro')
+                .getPublicUrl(fileName);
+
             const t = archivo.type.includes('video') ? 'video' : 'foto';
 
             db.ref(chatActual).push({ 
-                uid: mUser.uid, user: mData.nombre || "Usuario", 
-                url: res.publicUrl, type: t, timestamp: Date.now() 
+                uid: mUser.uid, 
+                user: mData.nombre || "Usuario", 
+                url: res.publicUrl, 
+                type: t, 
+                timestamp: Date.now() 
             });
-            notify("✅ Enviado");
+            
+            notify("✅ Archivo enviado");
         } catch (error) {
-            notify("❌ Error: " + error.message);
+            console.error("Error en Supabase:", error);
+            notify("❌ Error al subir: " + error.message);
         }
     };
     input.click();
 }
+    
 
 
 
