@@ -11,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
 
+
     
     <style>
         :root { --tg-blue: #0088cc; --tg-bg: #54759e; --msg-out: #efffde; --side-bg: #ffffff; }
@@ -141,22 +142,6 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-
-        /* Filtro ultra fuerte para imágenes y videos sensibles */
-.media-sincro.borroso {
-    filter: blur(55px) brightness(0.7) !important;
-    -webkit-filter: blur(55px) brightness(0.7) !important;
-    transition: none !important;
-    pointer-events: auto; /* Permite el clic para abrirla, pero mantendrá el blur */
-    user-select: none;
-}
-
-/* ELIMINAMOS EL :active QUE TENÍAS PARA QUE NO SE QUITE EL BLUR AL TOCAR */
-.media-sincro.borroso:active {
-    filter: blur(55px) !important; 
-}
-
-        /* Aplica esto a las imágenes/videos que tengan la propiedad blur */
 
         
     </style>
@@ -454,6 +439,13 @@
     const db = firebase.database(), auth = firebase.auth();
     const CLOUD_NAME = "dhtyepcjg", UPLOAD_PRESET = "Historial";
 
+    // --- CONFIGURACIÓN DE IA SIGHTENGINE ---
+     const IA_USER = "233753530"; 
+     const IA_SECRET = "V8kUAJAjTVUHRvnRD72takiuwxamQEon";
+
+
+    
+    
     let mUser = null, mData = { vip: false, nombre: "" }, chatActual = "Sincro_Chat_Publico", listener = null;
     
     // --- INICIO AGREGADO: VARIABLES GLOBALES PARA GRUPOS ---
@@ -667,38 +659,50 @@
         }
     }
 
-
     function escucharChat() {
     const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
     if(!box || !gal) return;
     box.innerHTML = ""; gal.innerHTML = "";
     if(listener) db.ref(chatActual).off();
 
-    // --- VIGILANTE DE EXPULSIÓN MEJORADO ---
-    if (chatActual.startsWith("Sincro_Grupos/")) {
-        const idG = chatActual.split('/')[1];
-        
-        db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
-            const soyDueño = window.grupoOwnerActual === mUser.uid;
-            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+// --- VIGILANTE DE EXPULSIÓN MEJORADO ---
+if (chatActual.startsWith("Sincro_Grupos/")) {
+    const idG = chatActual.split('/')[1];
+    
+    db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
+        const soyDueño = window.grupoOwnerActual === mUser.uid;
+        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
 
-            if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
-                db.ref(chatActual).off(); 
-                db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
-                notify("🚫 Has sido expulsado de este grupo.");
-                if(typeof cargarGrupos === 'function') {
-                    cargarGrupos();
-                }
-                setTimeout(() => { 
-                    verChatPublico(); 
-                }, 500);
+        if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
+            // 1. APAGAR INMEDIATAMENTE el listener del chat para que no procese el mensaje de expulsión
+            db.ref(chatActual).off(); 
+            
+            // 2. Apagar este mismo vigilante
+            db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
+            
+            notify("🚫 Has sido expulsado de este grupo.");
+
+            // 3. Limpiar cualquier rastro del grupo en la interfaz
+            if(typeof cargarGrupos === 'function') {
+                cargarGrupos(); // Esto refresca la lista y borra el grupo del menú
             }
-        });
-    }
+
+            // 4. Salir pitando al chat público
+            setTimeout(() => { 
+                verChatPublico(); 
+            }, 500); // Reducido a 500ms para que sea más rápido
+        }
+    });
+}
+
+
+
+// -----------------------------
         
     listener = db.ref(chatActual).on('child_added', snap => {
         const data = snap.val(), isMine = data.uid === mUser.uid;
 
+        // 1. FILTRO DE SISTEMA (Mensajes de "Rosa entró" en gris y sin botones)
         if (data.user === "SISTEMA" || data.uid === "sistema") {
             const divSis = document.createElement('div');
             divSis.style = "width:100%; text-align:center; margin:10px 0; clear:both; display:block;";
@@ -708,6 +712,7 @@
             return; 
         }
 
+        // 2. SEGURIDAD: Texto limpio de comandos
         const msgLimpio = data.msg ? data.msg.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
         
         if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; }
@@ -716,11 +721,11 @@
         d.className = "msg " + (isMine ? "me" : "them"); 
         d.id = "m-" + snap.key;
         
-        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-
+        // Menú para borrar mensajes
         d.oncontextmenu = (e) => {
             e.preventDefault();
-            if (isMine || soyAdminGlobal) {
+            const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+            if (isMine || soyAdmin) {
                 const modal = document.createElement('div');
                 modal.className = 'modal-confirm';
                 modal.innerHTML = `<div class="modal-card"><p>¿Eliminar mensaje?</p><button class="btn-del" id="confirm-del">Eliminar</button><button class="btn-can" id="cancel-del">Cancelar</button></div>`;
@@ -732,47 +737,65 @@
 
         let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
         
+        // Botones de Reportar y Kick
         if (!isMine) {
             html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Media'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
             
+            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
             if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal)) {
                 html += ` <button onclick="expulsarDeGrupo('${data.uid}', '${data.user}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK</button>`;
             }
         }
 
-        // --- LÓGICA DE PRIVACIDAD APLICADA ---
-        // Solo aplicamos la clase borroso si la data dice blur Y NO eres el admin global
-        const aplicarClaseBlur = (data.blur && !soyAdminGlobal) ? "borroso" : "";
-        
-        if(data.type === 'foto' || data.type === 'video') {
-            // El clic en el chat: El Admin abre la media, el usuario recibe notificación de bloqueo
-            const clickMedia = soyAdminGlobal 
-                ? `abrirMedia('${data.url}', '${data.type}')` 
-                : `notify('🔒 Contenido sensible bloqueado')`;
+                if(data.type === 'foto' || data.type === 'video') {
+            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+            const esIlegal = data.restringido === true;
 
-            const mediaTag = data.type === 'video' 
-                ? `<video src="${data.url}" class="media-sincro ${aplicarClaseBlur}" style="width:100%; border-radius:8px;" onclick="${clickMedia}"></video>` 
-                : `<img src="${data.url}" class="media-sincro ${aplicarClaseBlur}" style="width:100%; border-radius:8px;" onclick="${clickMedia}">`;
-            
-            html += `<div class="media-container">${mediaTag}</div>`; 
-
-            const itemGal = document.createElement('div');
-            itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative; margin-bottom:5px;";
-            itemGal.innerHTML = data.type === 'video' 
-                ? `<video src="${data.url}" class="media-sincro ${aplicarClaseBlur}" style="width:100%; height:100%; object-fit:cover;"></video>` 
-                : `<img src="${data.url}" class="media-sincro ${aplicarClaseBlur}" style="width:100%; height:100%; object-fit:cover;">`;
-            
-            itemGal.onclick = () => {
-                if(soyAdminGlobal || !data.blur) {
-                    abrirMedia(data.url, data.type);
+            if (esIlegal) {
+                // SI ES ILEGAL Y ERES EL ADMIN (BOTÓN REVELAR)
+                if (soyAdminGlobal) {
+                    const idUnico = "rev-" + snap.key;
+                    html += `
+                    <div id="cont-${idUnico}" style="background:#1a1a1a; color:#ff4757; padding:15px; border-radius:10px; text-align:center; border:2px dashed #ff4757; margin-top:5px;">
+                        <span style="font-size:20px;">⚠️</span><br>
+                        <b style="font-size:11px;">IA: DETECTÓ DESNUDEZ</b><br>
+                        <button onclick="revelarMediaAdmin('${idUnico}', '${data.url}', '${data.type}')" 
+                            style="margin-top:10px; background:#ff4757; color:white; border:none; padding:5px 12px; border-radius:5px; font-size:10px; cursor:pointer; font-weight:bold;">
+                            REVELAR (SOLO TÚ)
+                        </button>
+                    </div>
+                    <div id="${idUnico}" class="media-container" style="display:none;" onclick="abrirMedia('${data.url}', '${data.type}')"></div>
+                    `;
                 } else {
-                    notify("🔒 Solo el administrador puede abrir esto");
+                    // SI ES ILEGAL Y ES UN USUARIO NORMAL (CENSURA)
+                    html += `
+                    <div style="background:#000; color:#ff4757; padding:25px; border-radius:10px; text-align:center; border:1px solid #333; margin-top:5px;">
+                        <span style="font-size:24px;">🚫</span><br>
+                        <b style="font-size:13px; letter-spacing:1px;">CONTENIDO ILEGAL</b><br>
+                        <small style="color:#666; font-size:10px;">Censurado por la IA de Sincro.</small>
+                    </div>`;
                 }
-            };
-            gal.prepend(itemGal);
-        } else { 
-            html += `<span>${msgLimpio}</span>`; 
+            } else {
+                // SI ES CONTENIDO NORMAL O CHAT PRIVADO
+                const mediaTag = data.type === 'video' 
+                    ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` 
+                    : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
+                
+                html += `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`; 
+            }
+
+            // MINIATURAS EN GALERÍA
+            if (!esIlegal || soyAdminGlobal) {
+                const itemGal = document.createElement('div');
+                itemGal.style = `height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative; ${esIlegal ? 'border:2px solid red;' : ''}`;
+                itemGal.innerHTML = data.type === 'video' 
+                    ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` 
+                    : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+                itemGal.onclick = () => abrirMedia(data.url, data.type);
+                gal.prepend(itemGal);
+            }
         }
+
 
         d.innerHTML = html; 
         box.appendChild(d); 
@@ -785,44 +808,11 @@
     });
 }
 
-
-        
-
-async function enviarMsg() {
+function enviarMsg() {
     const input = document.getElementById('msg-in'); 
     const texto = input.value.trim();
     if(texto === "") return;
 
-    // --- FILTRO DE IA (SOLO CHAT PÚBLICO) ---
-    if (chatActual === "Sincro_Chat_Publico") {
-        try {
-            // Preparamos los parámetros para la API de Sightengine
-            const params = new URLSearchParams();
-            params.append('text', texto);
-            params.append('lang', 'es'); // Idioma español
-            params.append('mode', 'standard');
-            params.append('api_user', '23375353');
-            params.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
-
-            const response = await fetch('https://api.sightengine.com/1.0/text/check.json?' + params.toString());
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                // Bloqueamos si hay insultos (profanity) o contenido sexual detectado en el texto
-                // result.profanity.matches contiene las palabras prohibidas encontradas
-                if (result.profanity.matches.length > 0) {
-                    notify("🚫 Tu mensaje contiene palabras no permitidas en el chat público.");
-                    input.value = ""; // Limpiamos para evitar reenvíos
-                    return; 
-                }
-            }
-        } catch (err) {
-            console.error("Error al validar texto con IA:", err);
-            // En caso de error de conexión, el mensaje se envía normalmente para no romper la app
-        }
-    }
-
-    // --- PROCESO DE ENVÍO NORMAL (FIREBASE) ---
     db.ref(chatActual).push({ 
         uid: mUser.uid, 
         user: mData.nombre || "Usuario", 
@@ -836,6 +826,7 @@ async function enviarMsg() {
         const uids = chatActual.replace("Sincro_Privados/", "").split("_");
         const targetUid = uids[0] === mUser.uid ? uids[1] : uids[0];
         
+        // BLOQUEO: Solo guarda en el Inbox si el destinatario NO es el sistema
         if(targetUid !== 'sistema' && targetUid !== 'SISTEMA') {
             db.ref('Sincro_Inbox/' + mUser.uid + '/' + targetUid).set(Date.now());
             db.ref('Sincro_Inbox/' + targetUid + '/' + mUser.uid).set(Date.now());
@@ -845,7 +836,9 @@ async function enviarMsg() {
     input.value = ""; 
 }
 
-    async function abrirSelectorMultimedia() {
+
+    
+async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
     if (!s) return notify("⚠️ Error: Supabase no configurado.");
 
@@ -854,121 +847,64 @@ async function enviarMsg() {
     input.accept = 'image/*,video/*';
     
     input.onchange = async (e) => {
-        let archivo = e.target.files[0];
+        const archivo = e.target.files[0];
         if (!archivo) return;
+        if (archivo.size > 50 * 1024 * 1024) return notify("❌ El archivo supera los 50MB");
 
-        notify("⚙️ Analizando seguridad...");
+        let esIlegal = false;
+        const esChatPublico = chatActual === "Sincro_Chat_Publico";
 
-        // 1. COMPRESIÓN (Solo para imágenes)
-        if (archivo.type.startsWith('image/')) {
-            archivo = await comprimirImagen(archivo, 0.7);
-        }
+        // EL FILTRO SOLO SE ACTIVA EN EL CHAT PÚBLICO
+        if (esChatPublico) {
+            notify("🧠 Analizando contenido público...");
+            try {
+                const formDataIA = new FormData();
+                formDataIA.append('media', archivo);
+                formDataIA.append('models', 'nudity-2.0');
+                formDataIA.append('api_user', IA_USER);
+                formDataIA.append('api_secret', IA_SECRET);
 
-        // 2. DETECCIÓN DE IA (Sightengine)
-        let esBorroso = false;
-        const formData = new FormData();
-        formData.append('media', archivo);
-        
-        const modelo = archivo.type.startsWith('video') ? 'video' : 'nudity-2.1';
-        formData.append('models', modelo);
-        formData.append('api_user', '23375353'); 
-        formData.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
+                const resIA = await fetch('https://api.sightengine.com/1.0/check.json', { method: 'POST', body: formDataIA });
+                const dataIA = await resIA.json();
 
-        try {
-            const response = await fetch('https://api.sightengine.com/1.0/check.json', {
-                method: 'POST',
-                body: formData
-            });
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                // Ajustamos la sensibilidad: si es > 0.2 en contenido sexual o erótico, se activa el blur
-                const n = result.nudity;
-                const v = result.video?.nudity;
-
-                if (
-                    (n && (n.sexual > 0.2 || n.erotica > 0.2 || n.suggestive > 0.3)) ||
-                    (v && (v.sexual > 0.2 || v.erotica > 0.2))
-                ) {
-                    esBorroso = true;
-                    notify("⚠️ Contenido sensible detectado: se aplicará filtro.");
+                if (dataIA.status === "success") {
+                    const n = dataIA.nudity;
+                    // Si detecta desnudez, lencería o actividad sexual
+                    if (n.none < 0.30 || n.sexual_activity > 0.50 || n.sexual_display > 0.50) {
+                        esIlegal = true;
+                    }
                 }
-            }
-        } catch (err) { 
-            console.error("Error IA:", err);
+            } catch (err) { console.error("Error IA:", err); }
         }
 
-        // 3. SUBIDA A SUPABASE
-        notify("🚀 Subiendo a Sincro...");
-        const fileName = `${Date.now()}_${archivo.name}`;
+        notify("📤 Subiendo archivo...");
+        const fileExt = archivo.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         try {
-            const { data: upData, error } = await s.storage.from('multimedia_sincro').upload(fileName, archivo);
+            const { data, error } = await s.storage.from('multimedia_sincro').upload(fileName, archivo);
             if (error) throw error;
 
             const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(fileName);
             const t = archivo.type.includes('video') ? 'video' : 'foto';
 
-            // 4. GUARDAR EN FIREBASE con el valor real de 'esBorroso'
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: mData.nombre || "Usuario", 
                 url: res.publicUrl, 
                 type: t, 
-                blur: esBorroso, // Aquí es donde se activa el filtro en el CSS
+                restringido: esIlegal, 
                 timestamp: Date.now() 
             });
             
-            notify("✅ Enviado");
-        } catch (error) {
-            notify("❌ Error al subir");
-            console.error(error);
-        }
+            notify(esIlegal ? "⚠️ Contenido detectado como Restringido" : "✅ Enviado con éxito");
+        } catch (error) { notify("❌ Error de subida a Supabase"); }
     };
     input.click();
 }
 
-// --- FUNCIÓN COMPRIMIDORA DE FOTOS ---
-function comprimirImagen(archivo, calidad) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(archivo);
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
 
-                // Redimensionar si es muy grande (máximo 1200px de ancho/alto)
-                const max = 1200;
-                if (width > max || height > max) {
-                    if (width > height) {
-                        height *= max / width;
-                        width = max;
-                    } else {
-                        width *= max / height;
-                        height = max;
-                    }
-                }
 
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                canvas.toBlob((blob) => {
-                    const file = new File([blob], archivo.name, {
-                        type: 'image/jpeg',
-                        lastModified: Date.now()
-                    });
-                    resolve(file);
-                }, 'image/jpeg', calidad);
-            };
-        };
-    });
-}
 
 
 
@@ -1469,6 +1405,21 @@ function procesarInvitacionPorNombre() {
     }).catch(e => notify("Error: " + e.message));
 }
 
+   function revelarMediaAdmin(idDiv, url, tipo) {
+    const contenedorCensura = document.getElementById('cont-' + idDiv);
+    const contenedorMedia = document.getElementById(idDiv);
+    
+    const tag = tipo === 'video' 
+        ? `<video src="${url}" controls style="width:100%; border-radius:8px; border:3px solid #ff4757;"></video>` 
+        : `<img src="${url}" style="width:100%; border-radius:8px; border:3px solid #ff4757;">`;
+    
+    contenedorMedia.innerHTML = tag;
+    contenedorMedia.style.display = "flex";
+    contenedorCensura.style.display = "none";
+    
+    notify("👁️ Estás viendo contenido restringido");
+}
+ 
 
 </script>
 </body>
