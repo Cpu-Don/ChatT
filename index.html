@@ -668,33 +668,33 @@
     }
 
 
-function escucharChat() {
+    function escucharChat() {
     const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
     if(!box || !gal) return;
     box.innerHTML = ""; gal.innerHTML = "";
     if(listener) db.ref(chatActual).off();
 
-// --- VIGILANTE DE EXPULSIÓN MEJORADO ---
-if (chatActual.startsWith("Sincro_Grupos/")) {
-    const idG = chatActual.split('/')[1];
-    
-    db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
-        const soyDueño = window.grupoOwnerActual === mUser.uid;
-        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+    // --- VIGILANTE DE EXPULSIÓN MEJORADO ---
+    if (chatActual.startsWith("Sincro_Grupos/")) {
+        const idG = chatActual.split('/')[1];
+        
+        db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
+            const soyDueño = window.grupoOwnerActual === mUser.uid;
+            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
 
-        if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
-            db.ref(chatActual).off(); 
-            db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
-            notify("🚫 Has sido expulsado de este grupo.");
-            if(typeof cargarGrupos === 'function') {
-                cargarGrupos();
+            if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
+                db.ref(chatActual).off(); 
+                db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
+                notify("🚫 Has sido expulsado de este grupo.");
+                if(typeof cargarGrupos === 'function') {
+                    cargarGrupos();
+                }
+                setTimeout(() => { 
+                    verChatPublico(); 
+                }, 500);
             }
-            setTimeout(() => { 
-                verChatPublico(); 
-            }, 500);
-        }
-    });
-}
+        });
+    }
         
     listener = db.ref(chatActual).on('child_added', snap => {
         const data = snap.val(), isMine = data.uid === mUser.uid;
@@ -716,10 +716,11 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
         d.className = "msg " + (isMine ? "me" : "them"); 
         d.id = "m-" + snap.key;
         
+        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+
         d.oncontextmenu = (e) => {
             e.preventDefault();
-            const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-            if (isMine || soyAdmin) {
+            if (isMine || soyAdminGlobal) {
                 const modal = document.createElement('div');
                 modal.className = 'modal-confirm';
                 modal.innerHTML = `<div class="modal-card"><p>¿Eliminar mensaje?</p><button class="btn-del" id="confirm-del">Eliminar</button><button class="btn-can" id="cancel-del">Cancelar</button></div>`;
@@ -734,35 +735,35 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
         if (!isMine) {
             html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Media'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
             
-            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
             if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal)) {
                 html += ` <button onclick="expulsarDeGrupo('${data.uid}', '${data.user}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK</button>`;
             }
         }
 
-        // --- LÓGICA DE PRIVACIDAD CORREGIDA ---
-        const claseBlur = data.blur ? "borroso" : "";
-        const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+        // --- LÓGICA DE PRIVACIDAD APLICADA ---
+        // Solo aplicamos la clase borroso si la data dice blur Y NO eres el admin global
+        const aplicarClaseBlur = (data.blur && !soyAdminGlobal) ? "borroso" : "";
         
-        // Esta es la clave: Si NO es admin, el clic solo muestra un aviso, no quita el borroso
-        const clickMedia = soyAdmin ? `this.classList.toggle('borroso')` : `notify('🔒 Contenido sensible bloqueado')`;
-
         if(data.type === 'foto' || data.type === 'video') {
+            // El clic en el chat: El Admin abre la media, el usuario recibe notificación de bloqueo
+            const clickMedia = soyAdminGlobal 
+                ? `abrirMedia('${data.url}', '${data.type}')` 
+                : `notify('🔒 Contenido sensible bloqueado')`;
+
             const mediaTag = data.type === 'video' 
-                ? `<video src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; border-radius:8px;" onclick="${clickMedia}"></video>` 
-                : `<img src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; border-radius:8px;" onclick="${clickMedia}">`;
+                ? `<video src="${data.url}" class="media-sincro ${aplicarClaseBlur}" style="width:100%; border-radius:8px;" onclick="${clickMedia}"></video>` 
+                : `<img src="${data.url}" class="media-sincro ${aplicarClaseBlur}" style="width:100%; border-radius:8px;" onclick="${clickMedia}">`;
             
             html += `<div class="media-container">${mediaTag}</div>`; 
 
             const itemGal = document.createElement('div');
-            itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;";
+            itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative; margin-bottom:5px;";
             itemGal.innerHTML = data.type === 'video' 
-                ? `<video src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; height:100%; object-fit:cover;"></video>` 
-                : `<img src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; height:100%; object-fit:cover;">`;
+                ? `<video src="${data.url}" class="media-sincro ${aplicarClaseBlur}" style="width:100%; height:100%; object-fit:cover;"></video>` 
+                : `<img src="${data.url}" class="media-sincro ${aplicarClaseBlur}" style="width:100%; height:100%; object-fit:cover;">`;
             
-            // En la galería también bloqueamos si no es admin
             itemGal.onclick = () => {
-                if(soyAdmin) {
+                if(soyAdminGlobal || !data.blur) {
                     abrirMedia(data.url, data.type);
                 } else {
                     notify("🔒 Solo el administrador puede abrir esto");
@@ -784,7 +785,8 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
     });
 }
 
-    
+
+        
 
 async function enviarMsg() {
     const input = document.getElementById('msg-in'); 
