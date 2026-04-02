@@ -837,7 +837,7 @@ async function enviarMsg() {
     input.value = ""; 
 }
 
-async function abrirSelectorMultimedia() {
+    async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
     if (!s) return notify("⚠️ Error: Supabase no configurado.");
 
@@ -849,12 +849,8 @@ async function abrirSelectorMultimedia() {
         const archivo = e.target.files[0];
         if (!archivo) return;
 
-        if (archivo.size > 50 * 1024 * 1024) {
-            return notify("❌ El archivo supera los 50MB");
-        }
-
-        let esBorroso = false; // <--- INICIA COMO FALSO
-        notify("📤 Procesando...");
+        let esBorroso = false; 
+        notify("📤 Analizando contenido...");
 
         if (chatActual === "Sincro_Chat_Publico") {
             const formData = new FormData();
@@ -870,20 +866,19 @@ async function abrirSelectorMultimedia() {
                 });
                 const result = await response.json();
 
-                if (result.status === 'failure') {
-                    // SI LA IA NO TIENE CRÉDITOS, ACTIVAMOS EL BORROSO
-                    esBorroso = true;
-                    notify("⚠️ Filtro ocupado. Se subirá con desenfoque.");
-                } else {
+                if (result.status === 'success') {
+                    // SI DETECTA DESNUDEZ, ACTIVAMOS EL BORROSO EN LUGAR DE BLOQUEAR
                     if ((result.nudity && result.nudity.sexual > 0.5) || 
                         (result.video && result.video.nudity && result.video.nudity.sexual > 0.5)) {
-                        return notify("🚫 Contenido prohibido detectado.");
+                        esBorroso = true;
+                        notify("👁️ Contenido sensible detectado. Se subirá borroso.");
                     }
+                } else {
+                    // Si la API falla por créditos, también por si acaso borroso
+                    esBorroso = true;
                 }
             } catch (err) {
-                // SI HAY ERROR DE RED (FAILED TO FETCH), ACTIVAMOS EL BORROSO
-                esBorroso = true;
-                notify("📡 Error de red. Foto protegida con desenfoque.");
+                esBorroso = true; // Error de red = borroso preventivo
             }
         }
 
@@ -898,26 +893,23 @@ async function abrirSelectorMultimedia() {
             const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(fileName);
             const t = archivo.type.includes('video') ? 'video' : 'foto';
 
-            // GUARDAMOS EN FIREBASE INCLUYENDO EL ESTADO DE 'BLUR'
+            // ENVIAMOS A FIREBASE CON LA MARCA DE BORROSO
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: mData.nombre || "Usuario", 
                 url: res.publicUrl, 
                 type: t, 
-                blur: esBorroso, // <--- ESTO ENVÍA EL DATO A FIREBASE
+                blur: esBorroso, 
                 timestamp: Date.now() 
             });
             
-            notify("✅ Archivo enviado");
+            notify("✅ Mensaje enviado");
         } catch (error) {
-            console.error("Error en Supabase:", error);
-            notify("❌ Error al subir: " + error.message);
+            notify("❌ Error al subir");
         }
     };
     input.click();
 }
-    
-
 
 
     function verChatPublico() {
