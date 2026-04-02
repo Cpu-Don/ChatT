@@ -141,16 +141,22 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Aplica esto a las imágenes/videos que tengan la propiedad blur */
+
+        /* Filtro ultra fuerte para imágenes y videos sensibles */
 .media-sincro.borroso {
-    filter: blur(20px);
-    transition: filter 0.3s ease;
+    filter: blur(55px) brightness(0.7) !important;
+    -webkit-filter: blur(55px) brightness(0.7) !important;
+    transition: none !important;
+    pointer-events: auto; /* Permite el clic para abrirla, pero mantendrá el blur */
+    user-select: none;
 }
 
-/* Opcional: Que se vea normal si el admin le hace clic (o como prefieras) */
+/* ELIMINAMOS EL :active QUE TENÍAS PARA QUE NO SE QUITE EL BLUR AL TOCAR */
 .media-sincro.borroso:active {
-    filter: blur(0px);
+    filter: blur(55px) !important; 
 }
+
+        /* Aplica esto a las imágenes/videos que tengan la propiedad blur */
 
         
     </style>
