@@ -142,6 +142,30 @@
 }
 
 
+       /* Estilo de censura para Sincro MD */
+.img-censurada {
+    filter: blur(50px) brightness(0.8); /* Muy borroso y un poco oscuro */
+    cursor: pointer;
+    transition: 0.3s;
+    pointer-events: none; /* Evita que la guarden fácil si está censurada */
+}
+
+.aviso-censura {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.85);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 30px;
+    font-size: 10px;
+    font-weight: bold;
+    z-index: 10;
+    text-transform: uppercase;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+ 
         
     </style>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
@@ -694,6 +718,26 @@ function escucharChat() {
         d.id = "m-" + snap.key;
         
         // Menú para borrar mensajes
+    listener = db.ref(chatActual).on('child_added', snap => {
+        const data = snap.val(), isMine = data.uid === mUser.uid;
+
+        // 1. FILTRO DE SISTEMA
+        if (data.user === "SISTEMA" || data.uid === "sistema") {
+            const divSis = document.createElement('div');
+            divSis.style = "width:100%; text-align:center; margin:10px 0; clear:both; display:block;";
+            divSis.innerHTML = `<span style="color:#888; font-size:11px; background:rgba(0,0,0,0.05); padding:4px 12px; border-radius:15px;">${data.msg}</span>`;
+            box.appendChild(divSis);
+            box.scrollTop = box.scrollHeight;
+            return; 
+        }
+
+        if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; }
+
+        const d = document.createElement('div'); 
+        d.className = "msg " + (isMine ? "me" : "them"); 
+        d.id = "m-" + snap.key;
+        
+        // Menú para borrar mensajes
         d.oncontextmenu = (e) => {
             e.preventDefault();
             const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
@@ -718,40 +762,44 @@ function escucharChat() {
             }
         }
 
-        // 2. LÓGICA DE RENDERIZADO SEGURA
+        // --- NUEVA LÓGICA DE RENDERIZADO CON IA Y SEGURIDAD ---
         if(data.type === 'foto' || data.type === 'video') {
-            const mediaTag = data.type === 'video' 
-                ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` 
-                : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
-            
-            d.innerHTML = htmlCabecera + `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`; 
+            const esSensible = data.censurado === true;
+            const claseCensura = esSensible ? "img-censurada" : "";
+            const avisoHTML = esSensible ? `<div class="aviso-censura">🔞 Contenido Sensible</div>` : "";
 
-            // Miniatura en galería
+            const mediaTag = data.type === 'video' 
+                ? `<video src="${data.url}" class="${claseCensura}" style="width:100%; border-radius:8px;"></video>` 
+                : `<img src="${data.url}" class="${claseCensura}" style="width:100%; border-radius:8px;">`;
+            
+            d.innerHTML = htmlCabecera + `
+                <div class="media-container" style="position:relative; overflow:hidden; border-radius:8px; margin-top:5px;" onclick="abrirMedia('${data.url}', '${data.type}')">
+                    ${avisoHTML}
+                    ${mediaTag}
+                </div>`; 
+
             const itemGal = document.createElement('div');
             itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;";
             itemGal.innerHTML = data.type === 'video' 
-                ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` 
-                : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+                ? `<video src="${data.url}" class="${claseCensura}" style="width:100%; height:100%; object-fit:cover;"></video>` 
+                : `<img src="${data.url}" class="${claseCensura}" style="width:100%; height:100%; object-fit:cover;">`;
             itemGal.onclick = () => abrirMedia(data.url, data.type);
             gal.prepend(itemGal);
+
         } else { 
-            // AQUÍ ESTÁ EL BLINDAJE: Nombre/Botones como HTML, pero el Mensaje como TEXTO PURO
             d.innerHTML = htmlCabecera; 
             const spanMsg = document.createElement('span');
-            spanMsg.style.display = "block"; // Para que el texto baje después del nombre
-            spanMsg.textContent = data.msg; // <--- Bloquea cualquier comando inyectado
+            spanMsg.style.display = "block";
+            spanMsg.style.marginTop = "4px";
+            spanMsg.textContent = data.msg; 
             d.appendChild(spanMsg);
         }
 
         box.appendChild(d); 
         box.scrollTop = box.scrollHeight;
-    });
+    }); // <--- Cierre del listener
+} // <--- Cierre de la función escucharChat
 
-    db.ref(chatActual).on('child_removed', snap => { 
-        const el = document.getElementById("m-" + snap.key); 
-        if(el) el.remove(); 
-    });
-}
 
 function enviarMsg() {
     const input = document.getElementById('msg-in'); 
@@ -1353,7 +1401,26 @@ document.getElementById('msg-in').addEventListener('keydown', function(e) {
     }
 });
 
+    async function escanearImagenIA(urlImagen) {
+    const apiUser = "233753530"; 
+    const apiSecret = "V8kUAJAjTVUHRvnRD72takiuwxamQEon"; 
 
+    try {
+        const response = await fetch(`https://api.sightengine.com/1.0/check.json?url=${urlImagen}&models=nudity-2.0&api_user=${apiUser}&api_secret=${apiSecret}`);
+        const data = await response.json();
+
+        if (data.status === "success") {
+            // Sumamos desnudez sexual + erótica. Si pasa de 0.5 (50%), es censurable.
+            const nivelNudity = data.nudity.sexual_display + data.nudity.erotica;
+            return nivelNudity > 0.5; 
+        }
+        return false;
+    } catch (error) {
+        console.error("Error IA:", error);
+        return false; 
+    }
+}
+  
 </script>
 </body>
 </html>
