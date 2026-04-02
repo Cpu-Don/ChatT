@@ -668,27 +668,42 @@
     box.innerHTML = ""; gal.innerHTML = "";
     if(listener) db.ref(chatActual).off();
 
-    // --- VIGILANTE DE EXPULSIÓN (Igual que antes) ---
-    if (chatActual.startsWith("Sincro_Grupos/")) {
-        const idG = chatActual.split('/')[1];
-        db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
-            const soyDueño = window.grupoOwnerActual === mUser.uid;
-            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-            if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
-                db.ref(chatActual).off(); 
-                db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
-                notify("🚫 Has sido expulsado de este grupo.");
-                if(typeof cargarGrupos === 'function') cargarGrupos();
-                setTimeout(() => { verChatPublico(); }, 500);
-            }
-        });
-    }
+// --- VIGILANTE DE EXPULSIÓN MEJORADO ---
+if (chatActual.startsWith("Sincro_Grupos/")) {
+    const idG = chatActual.split('/')[1];
+    
+    db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
+        const soyDueño = window.grupoOwnerActual === mUser.uid;
+        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
 
-    // --- LISTENER DE MENSAJES ---
+        if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
+            // 1. APAGAR INMEDIATAMENTE el listener del chat para que no procese el mensaje de expulsión
+            db.ref(chatActual).off(); 
+            
+            // 2. Apagar este mismo vigilante
+            db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
+            
+            notify("🚫 Has sido expulsado de este grupo.");
+
+            // 3. Limpiar cualquier rastro del grupo en la interfaz
+            if(typeof cargarGrupos === 'function') {
+                cargarGrupos(); // Esto refresca la lista y borra el grupo del menú
+            }
+
+            // 4. Salir pitando al chat público
+            setTimeout(() => { 
+                verChatPublico(); 
+            }, 500); // Reducido a 500ms para que sea más rápido
+        }
+    });
+}
+
+// -----------------------------
+        
     listener = db.ref(chatActual).on('child_added', snap => {
         const data = snap.val(), isMine = data.uid === mUser.uid;
 
-        // FILTRO DE SISTEMA
+        // 1. FILTRO DE SISTEMA (Mensajes de "Rosa entró" en gris y sin botones)
         if (data.user === "SISTEMA" || data.uid === "sistema") {
             const divSis = document.createElement('div');
             divSis.style = "width:100%; text-align:center; margin:10px 0; clear:both; display:block;";
@@ -698,42 +713,58 @@
             return; 
         }
 
+        // 2. SEGURIDAD: Texto limpio de comandos
         const msgLimpio = data.msg ? data.msg.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
+        
         if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; }
 
         const d = document.createElement('div'); 
         d.className = "msg " + (isMine ? "me" : "them"); 
         d.id = "m-" + snap.key;
         
-        // --- CAMBIO AQUÍ: DEFINIR CLASE BORROSA ---
-        const claseCensura = data.blur ? "borroso" : ""; 
-        // ------------------------------------------
+        // Menú para borrar mensajes
+        d.oncontextmenu = (e) => {
+            e.preventDefault();
+            const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+            if (isMine || soyAdmin) {
+                const modal = document.createElement('div');
+                modal.className = 'modal-confirm';
+                modal.innerHTML = `<div class="modal-card"><p>¿Eliminar mensaje?</p><button class="btn-del" id="confirm-del">Eliminar</button><button class="btn-can" id="cancel-del">Cancelar</button></div>`;
+                document.body.appendChild(modal);
+                modal.querySelector('#confirm-del').onclick = () => { db.ref(chatActual + "/" + snap.key).remove(); modal.remove(); };
+                modal.querySelector('#cancel-del').onclick = () => { modal.remove(); };
+            }
+        };
 
         let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
         
+        // Botones de Reportar y Kick
         if (!isMine) {
             html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Media'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
+            
             const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
             if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal)) {
                 html += ` <button onclick="expulsarDeGrupo('${data.uid}', '${data.user}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK</button>`;
             }
         }
 
-        // --- MULTIMEDIA CON SISTEMA DE BORROSO ---
-        if(data.type === 'foto' || data.type === 'video') {
-            // Aplicamos la clase "media-sincro" y la "claseCensura" (que será "borroso" si data.blur es true)
-            const mediaTag = data.type === 'video' 
-                ? `<video src="${data.url}" class="media-sincro ${claseCensura}" style="width:100%; border-radius:8px;" onclick="this.classList.toggle('borroso')"></video>` 
-                : `<img src="${data.url}" class="media-sincro ${claseCensura}" style="width:100%; border-radius:8px;" onclick="this.classList.toggle('borroso')">`;
-            
-            html += `<div class="media-container">${mediaTag}</div>`; 
+        // --- LÓGICA DE BORROSO (AÑADIDA) ---
+        const claseBlur = data.blur ? "borroso" : "";
 
-            // Miniatura en galería (también borrosa por seguridad)
+        // 3. MULTIMEDIA LIBRE (Añadida clase media-sincro y claseBlur)
+        if(data.type === 'foto' || data.type === 'video') {
+            const mediaTag = data.type === 'video' 
+                ? `<video src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; border-radius:8px;" onclick="this.classList.toggle('borroso')"></video>` 
+                : `<img src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; border-radius:8px;" onclick="this.classList.toggle('borroso')">`;
+            
+            html += `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`; 
+
+            // Miniatura en galería (Añadida clase media-sincro y claseBlur)
             const itemGal = document.createElement('div');
             itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;";
             itemGal.innerHTML = data.type === 'video' 
-                ? `<video src="${data.url}" class="media-sincro ${claseCensura}" style="width:100%; height:100%; object-fit:cover;"></video>` 
-                : `<img src="${data.url}" class="media-sincro ${claseCensura}" style="width:100%; height:100%; object-fit:cover;">`;
+                ? `<video src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; height:100%; object-fit:cover;"></video>` 
+                : `<img src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; height:100%; object-fit:cover;">`;
             itemGal.onclick = () => abrirMedia(data.url, data.type);
             gal.prepend(itemGal);
         } else { 
@@ -750,7 +781,7 @@
         if(el) el.remove(); 
     });
 }
-
+    
         
     
 
