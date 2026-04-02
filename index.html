@@ -651,50 +651,33 @@
         }
     }
 
-    function escucharChat() {
+function escucharChat() {
     const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
     if(!box || !gal) return;
     box.innerHTML = ""; gal.innerHTML = "";
     if(listener) db.ref(chatActual).off();
 
-// --- VIGILANTE DE EXPULSIÓN MEJORADO ---
-if (chatActual.startsWith("Sincro_Grupos/")) {
-    const idG = chatActual.split('/')[1];
-    
-    db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
-        const soyDueño = window.grupoOwnerActual === mUser.uid;
-        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+    // --- VIGILANTE DE EXPULSIÓN MEJORADO ---
+    if (chatActual.startsWith("Sincro_Grupos/")) {
+        const idG = chatActual.split('/')[1];
+        db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
+            const soyDueño = window.grupoOwnerActual === mUser.uid;
+            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
 
-        if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
-            // 1. APAGAR INMEDIATAMENTE el listener del chat para que no procese el mensaje de expulsión
-            db.ref(chatActual).off(); 
-            
-            // 2. Apagar este mismo vigilante
-            db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
-            
-            notify("🚫 Has sido expulsado de este grupo.");
-
-            // 3. Limpiar cualquier rastro del grupo en la interfaz
-            if(typeof cargarGrupos === 'function') {
-                cargarGrupos(); // Esto refresca la lista y borra el grupo del menú
+            if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
+                db.ref(chatActual).off(); 
+                db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
+                notify("🚫 Has sido expulsado de este grupo.");
+                if(typeof cargarGrupos === 'function') { cargarGrupos(); }
+                setTimeout(() => { verChatPublico(); }, 500);
             }
+        });
+    }
 
-            // 4. Salir pitando al chat público
-            setTimeout(() => { 
-                verChatPublico(); 
-            }, 500); // Reducido a 500ms para que sea más rápido
-        }
-    });
-}
-
-
-
-// -----------------------------
-        
     listener = db.ref(chatActual).on('child_added', snap => {
         const data = snap.val(), isMine = data.uid === mUser.uid;
 
-        // 1. FILTRO DE SISTEMA (Mensajes de "Rosa entró" en gris y sin botones)
+        // 1. FILTRO DE SISTEMA
         if (data.user === "SISTEMA" || data.uid === "sistema") {
             const divSis = document.createElement('div');
             divSis.style = "width:100%; text-align:center; margin:10px 0; clear:both; display:block;";
@@ -704,9 +687,6 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
             return; 
         }
 
-        // 2. SEGURIDAD: Texto limpio de comandos
-        const msgLimpio = data.msg ? data.msg.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
-        
         if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; }
 
         const d = document.createElement('div'); 
@@ -727,25 +707,24 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
             }
         };
 
-        let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
+        // Construcción de cabecera (Nombre y botones)
+        let htmlCabecera = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
         
-        // Botones de Reportar y Kick
         if (!isMine) {
-            html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Media'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
-            
+            htmlCabecera += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Media'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
             const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
             if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal)) {
-                html += ` <button onclick="expulsarDeGrupo('${data.uid}', '${data.user}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK</button>`;
+                htmlCabecera += ` <button onclick="expulsarDeGrupo('${data.uid}', '${data.user}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK</button>`;
             }
         }
 
-        // 3. MULTIMEDIA LIBRE (Sin VIP ni Candados)
+        // 2. LÓGICA DE RENDERIZADO SEGURA
         if(data.type === 'foto' || data.type === 'video') {
             const mediaTag = data.type === 'video' 
                 ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` 
                 : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
             
-            html += `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`; 
+            d.innerHTML = htmlCabecera + `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`; 
 
             // Miniatura en galería
             const itemGal = document.createElement('div');
@@ -756,10 +735,14 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
             itemGal.onclick = () => abrirMedia(data.url, data.type);
             gal.prepend(itemGal);
         } else { 
-            html += `<span>${msgLimpio}</span>`; 
+            // AQUÍ ESTÁ EL BLINDAJE: Nombre/Botones como HTML, pero el Mensaje como TEXTO PURO
+            d.innerHTML = htmlCabecera; 
+            const spanMsg = document.createElement('span');
+            spanMsg.style.display = "block"; // Para que el texto baje después del nombre
+            spanMsg.textContent = data.msg; // <--- Bloquea cualquier comando inyectado
+            d.appendChild(spanMsg);
         }
 
-        d.innerHTML = html; 
         box.appendChild(d); 
         box.scrollTop = box.scrollHeight;
     });
