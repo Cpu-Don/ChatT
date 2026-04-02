@@ -1345,6 +1345,14 @@ function procesarInvitacionPorNombre() {
     }).catch(e => notify("Error: " + e.message));
 }
 
+    // --- ENVIAR CON ENTER (Ajustado a tu ID 'msg-in') ---
+document.getElementById('msg-in').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault(); 
+        enviarMsg(); // Llama directo a tu función de la línea 756
+    }
+});
+
 
 </script>
 </body>
