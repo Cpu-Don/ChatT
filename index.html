@@ -830,13 +830,9 @@ function enviarMsg() {
 }
 
 
-    async function abrirSelectorMultimedia() {
-    // Verificamos si el cliente de Supabase existe en la ventana global
+async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
-
-    if (!s) {
-        return notify("⚠️ Error: Supabase no está configurado correctamente.");
-    }
+    if (!s) return notify("⚠️ Error: Supabase no configurado.");
 
     const input = document.createElement('input');
     input.type = 'file';
@@ -846,51 +842,74 @@ function enviarMsg() {
         const archivo = e.target.files[0];
         if (!archivo) return;
 
-        // Validación de tamaño (opcional pero recomendado: 5MB)
-        // Nuevo límite: 50MB
-if (archivo.size > 50 * 1024 * 1024) {
-    return notify("❌ El archivo supera los 50MB");
-}
-
+        if (archivo.size > 50 * 1024 * 1024) {
+            return notify("❌ El archivo supera los 50MB");
+        }
 
         notify("📤 Subiendo a Sincro...");
-        
-        // Generamos un nombre único para evitar que se sobrescriban fotos
         const fileExt = archivo.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         try {
-            // Subida al Bucket 'multimedia_sincro'
+            // 1. Subida al Bucket de Supabase
             const { data, error } = await s.storage
                 .from('multimedia_sincro')
                 .upload(fileName, archivo);
 
             if (error) throw error;
 
-            // Obtenemos la URL pública
+            // 2. Obtener URL pública
             const { data: res } = s.storage
                 .from('multimedia_sincro')
                 .getPublicUrl(fileName);
 
-            const t = archivo.type.includes('video') ? 'video' : 'foto';
+            const urlPublica = res.publicUrl;
+            const esVideo = archivo.type.includes('video');
+            const t = esVideo ? 'video' : 'foto';
 
-            // Guardamos la referencia en Firebase para que aparezca en el chat
+            // --- 🤖 FILTRO DE INTELIGENCIA ARTIFICIAL ---
+            let censurado = false;
+            // Solo escaneamos si es el chat público y es una imagen (ahorras créditos)
+            if (chatActual === "Sincro_Chat_Publico" && !esVideo) {
+                notify("🔍 Verificando imagen...");
+                try {
+                    const userIA = "233753530";
+                    const secretIA = "V8kUAJAjTVUHRvnRD72takiuwxamQEon";
+                    const resIA = await fetch(`https://api.sightengine.com/1.0/check.json?url=${urlPublica}&models=nudity-2.0&api_user=${userIA}&api_secret=${secretIA}`);
+                    const jsonIA = await resIA.json();
+
+                    if (jsonIA.status === "success") {
+                        const nudity = jsonIA.nudity.sexual_display + jsonIA.nudity.erotica;
+                        if (nudity > 0.5) {
+                            censurado = true;
+                            notify("🔞 Imagen censurada por seguridad");
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error en IA:", e);
+                }
+            }
+
+            // 3. Guardar en Firebase con la marca de censura
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: mData.nombre || "Usuario", 
-                url: res.publicUrl, 
+                url: urlPublica, 
                 type: t, 
-                timestamp: Date.now() 
+                timestamp: Date.now(),
+                censurado: censurado // <--- Esto activa el blur que pusimos en el CSS
             });
             
-            notify("✅ Archivo enviado");
+            if (!censurado) notify("✅ Archivo enviado");
+
         } catch (error) {
-            console.error("Error en Supabase:", error);
+            console.error("Error:", error);
             notify("❌ Error al subir: " + error.message);
         }
     };
     input.click();
 }
+
 
 
 
