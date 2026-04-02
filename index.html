@@ -141,6 +141,16 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Aplica esto a las imágenes/videos que tengan la propiedad blur */
+.media-sincro.borroso {
+    filter: blur(20px);
+    transition: filter 0.3s ease;
+}
+
+/* Opcional: Que se vea normal si el admin le hace clic (o como prefieras) */
+.media-sincro.borroso:active {
+    filter: blur(0px);
+}
 
         
     </style>
@@ -827,7 +837,7 @@ async function enviarMsg() {
     input.value = ""; 
 }
 
-    async function abrirSelectorMultimedia() {
+async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
     if (!s) return notify("⚠️ Error: Supabase no configurado.");
 
@@ -839,16 +849,13 @@ async function enviarMsg() {
         const archivo = e.target.files[0];
         if (!archivo) return;
 
-        // 1. Validación de tamaño
         if (archivo.size > 50 * 1024 * 1024) {
             return notify("❌ El archivo supera los 50MB");
         }
 
+        let esBorroso = false; // <--- INICIA COMO FALSO
         notify("📤 Procesando...");
 
-        // ========================================================
-        // AQUÍ VA EL FILTRO IA ULTRA SEGURO (SOLO CHAT PÚBLICO)
-        // ========================================================
         if (chatActual === "Sincro_Chat_Publico") {
             const formData = new FormData();
             formData.append('media', archivo);
@@ -864,51 +871,40 @@ async function enviarMsg() {
                 const result = await response.json();
 
                 if (result.status === 'failure') {
-                    console.error("Sightengine Error:", result.error.message);
-                    return notify("⚠️ Límite gratuito alcanzado. ¿Deseas Donar para que Sincro siga creciendo? ❤️");
-                }
-
-                let esInapropiado = false;
-                if (result.status === 'success') {
-                    if (result.nudity && result.nudity.sexual > 0.5) esInapropiado = true;
-                    if (result.video && result.video.nudity && result.video.nudity.sexual > 0.5) esInapropiado = true;
-                }
-
-                if (esInapropiado) {
-                    return notify("🚫 Contenido prohibido detectado en el Chat Público.");
+                    // SI LA IA NO TIENE CRÉDITOS, ACTIVAMOS EL BORROSO
+                    esBorroso = true;
+                    notify("⚠️ Filtro ocupado. Se subirá con desenfoque.");
+                } else {
+                    if ((result.nudity && result.nudity.sexual > 0.5) || 
+                        (result.video && result.video.nudity && result.video.nudity.sexual > 0.5)) {
+                        return notify("🚫 Contenido prohibido detectado.");
+                    }
                 }
             } catch (err) {
-                console.error("Error en validación IA:", err);
-                return notify("⚠️ Validación temporalmente no disponible. ¿Deseas Donar para mejorar nuestros servidores? ✨");
+                // SI HAY ERROR DE RED (FAILED TO FETCH), ACTIVAMOS EL BORROSO
+                esBorroso = true;
+                notify("📡 Error de red. Foto protegida con desenfoque.");
             }
         }
-        // ========================================================
-        // FIN DEL FILTRO IA
-        // ========================================================
 
-        // A PARTIR DE AQUÍ SIGUE TU SUBIDA NORMAL A SUPABASE
         notify("🚀 Subiendo a Sincro...");
         const fileExt = archivo.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         try {
-            const { data, error } = await s.storage
-                .from('multimedia_sincro')
-                .upload(fileName, archivo);
-
+            const { data, error } = await s.storage.from('multimedia_sincro').upload(fileName, archivo);
             if (error) throw error;
 
-            const { data: res } = s.storage
-                .from('multimedia_sincro')
-                .getPublicUrl(fileName);
-
+            const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(fileName);
             const t = archivo.type.includes('video') ? 'video' : 'foto';
 
+            // GUARDAMOS EN FIREBASE INCLUYENDO EL ESTADO DE 'BLUR'
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: mData.nombre || "Usuario", 
                 url: res.publicUrl, 
                 type: t, 
+                blur: esBorroso, // <--- ESTO ENVÍA EL DATO A FIREBASE
                 timestamp: Date.now() 
             });
             
