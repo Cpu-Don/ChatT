@@ -927,7 +927,89 @@ async function enviarMsg() {
     input.click();
 }
 
-// --- FUNCIÓN AUXILIAR DE COMPRESIÓN (Pégala debajo de la anterior) ---
+    async function abrirSelectorMultimedia() {
+    const s = window.supabaseClient;
+    if (!s) return notify("⚠️ Error: Supabase no configurado.");
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/*';
+    
+    input.onchange = async (e) => {
+        let archivo = e.target.files[0];
+        if (!archivo) return;
+
+        notify("⚙️ Analizando seguridad...");
+
+        // 1. COMPRESIÓN (Solo para imágenes)
+        if (archivo.type.startsWith('image/')) {
+            archivo = await comprimirImagen(archivo, 0.7); // Baja el peso pero mantiene calidad
+        }
+
+        // 2. DETECCIÓN DE IA (Sightengine)
+        let esBorroso = false;
+        const formData = new FormData();
+        formData.append('media', archivo);
+        
+        const modelo = archivo.type.startsWith('video') ? 'video' : 'nudity-2.1';
+        formData.append('models', modelo);
+        formData.append('api_user', '23375353'); 
+        formData.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
+
+        try {
+            const response = await fetch('https://api.sightengine.com/1.0/check.json', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                const n = result.nudity;
+                const v = result.video?.nudity;
+
+                // Umbral de sensibilidad: 0.1 es muy estricto (mejor para evitar desnudos)
+                if (
+                    (n && (n.sexual > 0.1 || n.erotica > 0.1 || n.suggestive > 0.2)) ||
+                    (v && (v.sexual > 0.1 || v.erotica > 0.1))
+                ) {
+                    esBorroso = true;
+                    notify("⚠️ Contenido sensible detectado");
+                }
+            }
+        } catch (err) { 
+            console.error("Error IA:", err);
+        }
+
+        // 3. SUBIDA A SUPABASE
+        notify("🚀 Subiendo a Sincro...");
+        const fileName = `${Date.now()}_${archivo.name}`;
+
+        try {
+            const { data: upData, error } = await s.storage.from('multimedia_sincro').upload(fileName, archivo);
+            if (error) throw error;
+
+            const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(fileName);
+            const t = archivo.type.includes('video') ? 'video' : 'foto';
+
+            // 4. GUARDAR EN FIREBASE (Aquí es donde se decide si se ve borroso)
+            db.ref(chatActual).push({ 
+                uid: mUser.uid, 
+                user: mData.nombre || "Usuario", 
+                url: res.publicUrl, 
+                type: t, 
+                blur: esBorroso, 
+                timestamp: Date.now() 
+            });
+            
+            notify("✅ Enviado");
+        } catch (error) {
+            notify("❌ Error al subir");
+        }
+    };
+    input.click();
+}
+
+// --- FUNCIÓN COMPRIMIDORA DE FOTOS ---
 function comprimirImagen(archivo, calidad) {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -940,8 +1022,8 @@ function comprimirImagen(archivo, calidad) {
                 let width = img.width;
                 let height = img.height;
 
-                // Redimensionar si es muy grande (max 1280px)
-                const max = 1280;
+                // Redimensionar si es muy grande (máximo 1200px de ancho/alto)
+                const max = 1200;
                 if (width > max || height > max) {
                     if (width > height) {
                         height *= max / width;
@@ -968,7 +1050,7 @@ function comprimirImagen(archivo, calidad) {
         };
     });
 }
-    
+
 
 
     function verChatPublico() {
