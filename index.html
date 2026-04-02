@@ -837,8 +837,8 @@ function enviarMsg() {
 }
 
 
-    
-async function abrirSelectorMultimedia() {
+
+    async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
     if (!s) return notify("⚠️ Error: Supabase no configurado.");
 
@@ -850,75 +850,68 @@ async function abrirSelectorMultimedia() {
         const archivo = e.target.files[0];
         if (!archivo) return;
         
-        if (archivo.size > 50 * 1024 * 1024) return notify("❌ Máximo 50MB");
-
         let esIlegal = false;
-        const esChatPublico = (chatActual === "Sincro_Chat_Publico");
+        const BUCKET = 'MULTIMEDIA_SINCRO'; // Asegúrate que esté igual en Supabase
 
-        // --- 1. IA SIGHTENGINE ---
-        if (esChatPublico) {
+        // --- 1. IA SIGHTENGINE (BLOQUE ANTIFALLOS) ---
+        if (chatActual === "Sincro_Chat_Publico") {
             notify("🧠 Analizando...");
             try {
                 const fd = new FormData();
                 fd.append('media', archivo);
-                fd.append('models', 'nudity-2.0,wad'); 
+                fd.append('models', 'nudity-2.0'); 
                 fd.append('api_user', '233753530'); 
                 fd.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
 
-                const resIA = await fetch('https://api.sightengine.com/1.0/check.json', { method: 'POST', body: fd });
-                const dataIA = await resIA.json();
+                const res = await fetch('https://api.sightengine.com/1.0/check.json', { method: 'POST', body: fd });
+                const dataIA = await res.json();
 
-                if (dataIA && dataIA.status === "success") {
-                    const n = dataIA.nudity || {};
-                    if (n.sexual_activity > 0.10 || n.sexual_display > 0.10 || n.erotica > 0.15 || (n.none && n.none < 0.50)) {
+                // REVISIÓN SEGURA: Solo si la IA responde con éxito y tiene el campo 'nudity'
+                if (dataIA && dataIA.status === "success" && dataIA.nudity) {
+                    const n = dataIA.nudity;
+                    // Si el porcentaje de "seguridad" (none) es bajo, es ilegal
+                    if (n.none < 0.40) {
                         esIlegal = true;
                     }
                 }
             } catch (err) { 
-                console.log("IA omitida por error de red.");
+                console.log("Error de IA: Se enviará como contenido normal.");
             }
         }
 
-        // --- 2. SUBIDA A SUPABASE ---
+        // --- 2. SUBIDA INDEPENDIENTE (AQUÍ ES DONDE SE ARREGLA) ---
         notify("📤 Subiendo...");
-        
-        // LIMPIEZA TOTAL DEL NOMBRE: Solo números y la extensión
-        const ext = archivo.name.split('.').pop().toLowerCase();
-        const nombreLimpio = `${Date.now()}.${ext}`; 
+        const nombreFinal = `${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
         try {
-            // Intentamos la subida con el nombre limpio y el bucket en MAYÚSCULAS
             const { data, error } = await s.storage
-                .from('MULTIMEDIA_SINCRO')
-                .upload(nombreLimpio, archivo, {
-                    cacheControl: '3600',
-                    upsert: false
-                });
+                .from(BUCKET)
+                .upload(nombreFinal, archivo);
             
             if (error) throw error;
 
-            const { data: resUrl } = s.storage.from('MULTIMEDIA_SINCRO').getPublicUrl(nombreLimpio);
-            const tipoMedia = archivo.type.includes('video') ? 'video' : 'foto';
+            const { data: resUrl } = s.storage.from(BUCKET).getPublicUrl(nombreFinal);
 
-            // --- 3. FIREBASE ---
+            // --- 3. REGISTRO EN FIREBASE ---
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: (mData?.nombre || "Usuario"), 
                 url: resUrl.publicUrl, 
-                type: tipoMedia, 
-                restringido: esIlegal,
+                type: archivo.type.includes('video') ? 'video' : 'foto', 
+                restringido: esIlegal, // <--- Aquí va el veredicto de la IA
                 timestamp: Date.now() 
             });
             
-            notify(esIlegal ? "🚫 Censurado por IA" : "✅ Enviado");
+            notify(esIlegal ? "🚫 Contenido Censurado" : "✅ Enviado");
 
         } catch (error) { 
-            console.error("ERROR REAL AQUÍ ->", error);
-            notify("❌ Error de Storage: Verifica el nombre del Bucket"); 
+            console.error("Error en Storage:", error);
+            notify("❌ Error al subir a Supabase"); 
         }
     };
     input.click();
 }
+        
         
 
 
