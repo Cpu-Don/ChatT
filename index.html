@@ -851,10 +851,19 @@ async function enviarMsg() {
     input.accept = 'image/*,video/*';
     
     input.onchange = async (e) => {
-        const archivo = e.target.files[0];
+        let archivo = e.target.files[0];
         if (!archivo) return;
 
-        let esBorroso = false; 
+        notify("⚙️ Procesando multimedia...");
+
+        // --- FUNCIÓN PARA COMPRIMIR IMÁGENES ---
+        if (archivo.type.startsWith('image/')) {
+            archivo = await comprimirImagen(archivo, 0.7); // 0.7 es 70% de calidad
+        }
+
+        if (archivo.size > 50 * 1024 * 1024) return notify("❌ Supera los 50MB");
+
+        let esBorroso = false;
         notify("📤 Analizando contenido...");
 
         if (chatActual === "Sincro_Chat_Publico") {
@@ -870,35 +879,28 @@ async function enviarMsg() {
                     body: formData
                 });
                 const result = await response.json();
-
                 if (result.status === 'success') {
-                    // SI DETECTA DESNUDEZ, ACTIVAMOS EL BORROSO EN LUGAR DE BLOQUEAR
-                    if ((result.nudity && result.nudity.sexual > 0.5) || 
-                        (result.video && result.video.nudity && result.video.nudity.sexual > 0.5)) {
+                    const nud = result.nudity && result.nudity.sexual > 0.5;
+                    const vidNud = result.video && result.video.nudity && result.video.nudity.sexual > 0.5;
+                    if (nud || vidNud) {
                         esBorroso = true;
-                        notify("👁️ Contenido sensible detectado. Se subirá borroso.");
+                        notify("👁️ Contenido sensible detectado.");
                     }
-                } else {
-                    // Si la API falla por créditos, también por si acaso borroso
-                    esBorroso = true;
                 }
-            } catch (err) {
-                esBorroso = true; // Error de red = borroso preventivo
-            }
+            } catch (err) { esBorroso = true; }
         }
 
         notify("🚀 Subiendo a Sincro...");
-        const fileExt = archivo.name.split('.').pop();
+        const fileExt = archivo.name.split('.').pop() || 'jpg';
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         try {
-            const { data, error } = await s.storage.from('multimedia_sincro').upload(fileName, archivo);
+            const { data: upData, error } = await s.storage.from('multimedia_sincro').upload(fileName, archivo);
             if (error) throw error;
 
             const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(fileName);
             const t = archivo.type.includes('video') ? 'video' : 'foto';
 
-            // ENVIAMOS A FIREBASE CON LA MARCA DE BORROSO
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: mData.nombre || "Usuario", 
@@ -908,13 +910,56 @@ async function enviarMsg() {
                 timestamp: Date.now() 
             });
             
-            notify("✅ Mensaje enviado");
+            notify("✅ Enviado");
         } catch (error) {
             notify("❌ Error al subir");
         }
     };
     input.click();
 }
+
+// --- FUNCIÓN AUXILIAR DE COMPRESIÓN (Pégala debajo de la anterior) ---
+function comprimirImagen(archivo, calidad) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(archivo);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Redimensionar si es muy grande (max 1280px)
+                const max = 1280;
+                if (width > max || height > max) {
+                    if (width > height) {
+                        height *= max / width;
+                        width = max;
+                    } else {
+                        width *= max / height;
+                        height = max;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    const file = new File([blob], archivo.name, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                    });
+                    resolve(file);
+                }, 'image/jpeg', calidad);
+            };
+        };
+    });
+}
+    
 
 
     function verChatPublico() {
