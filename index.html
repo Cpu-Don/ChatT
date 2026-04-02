@@ -851,9 +851,9 @@ function enviarMsg() {
         if (!archivo) return;
         
         let esIlegal = false;
-        const BUCKET = 'MULTIMEDIA_SINCRO'; // Asegúrate que esté igual en Supabase
+        const BUCKET = 'MULTIMEDIA_SINCRO';
 
-        // --- 1. IA SIGHTENGINE (BLOQUE ANTIFALLOS) ---
+        // --- 1. IA SIGHTENGINE ---
         if (chatActual === "Sincro_Chat_Publico") {
             notify("🧠 Analizando...");
             try {
@@ -866,52 +866,53 @@ function enviarMsg() {
                 const res = await fetch('https://api.sightengine.com/1.0/check.json', { method: 'POST', body: fd });
                 const dataIA = await res.json();
 
-                // REVISIÓN SEGURA: Solo si la IA responde con éxito y tiene el campo 'nudity'
-                if (dataIA && dataIA.status === "success" && dataIA.nudity) {
-                    const n = dataIA.nudity;
-                    // Si el porcentaje de "seguridad" (none) es bajo, es ilegal
-                    if (n.none < 0.40) {
-                        esIlegal = true;
-                    }
+                if (dataIA?.status === "success" && dataIA.nudity) {
+                    if (dataIA.nudity.none < 0.45) esIlegal = true;
                 }
             } catch (err) { 
-                console.log("Error de IA: Se enviará como contenido normal.");
+                console.log("IA omitida."); 
             }
         }
 
-        // --- 2. SUBIDA INDEPENDIENTE (AQUÍ ES DONDE SE ARREGLA) ---
+        // --- PAUSA DE SEGURIDAD (500ms) ---
+        // Esto evita el "Failed to fetch" al no solapar conexiones
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // --- 2. SUBIDA A SUPABASE ---
         notify("📤 Subiendo...");
         const nombreFinal = `${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
         try {
+            // Forzamos la subida sin importar lo que diga la IA
             const { data, error } = await s.storage
                 .from(BUCKET)
-                .upload(nombreFinal, archivo);
+                .upload(nombreFinal, archivo, { cacheControl: '3600', upsert: false });
             
             if (error) throw error;
 
             const { data: resUrl } = s.storage.from(BUCKET).getPublicUrl(nombreFinal);
 
-            // --- 3. REGISTRO EN FIREBASE ---
+            // --- 3. FIREBASE ---
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: (mData?.nombre || "Usuario"), 
                 url: resUrl.publicUrl, 
                 type: archivo.type.includes('video') ? 'video' : 'foto', 
-                restringido: esIlegal, // <--- Aquí va el veredicto de la IA
+                restringido: esIlegal,
                 timestamp: Date.now() 
             });
             
             notify(esIlegal ? "🚫 Contenido Censurado" : "✅ Enviado");
 
         } catch (error) { 
-            console.error("Error en Storage:", error);
-            notify("❌ Error al subir a Supabase"); 
+            console.error("Error final:", error);
+            // Si sigue dando error, es que la red bloquea la subida de ese archivo específico
+            notify("❌ Error de red al subir. Intenta de nuevo."); 
         }
     };
     input.click();
 }
-        
+
         
 
 
