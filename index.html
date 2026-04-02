@@ -837,8 +837,7 @@ function enviarMsg() {
 }
 
 
-    
-async function abrirSelectorMultimedia() {
+    async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
     if (!s) return notify("⚠️ Error: Supabase no configurado.");
 
@@ -854,30 +853,43 @@ async function abrirSelectorMultimedia() {
         let esIlegal = false;
         const esChatPublico = chatActual === "Sincro_Chat_Publico";
 
-        // EL FILTRO SOLO SE ACTIVA EN EL CHAT PÚBLICO
         if (esChatPublico) {
-            notify("🧠 Analizando contenido público...");
+            notify("🧠 Analizando con IA...");
             try {
                 const formDataIA = new FormData();
+                // Importante: El orden y el nombre de los campos para Sightengine
                 formDataIA.append('media', archivo);
                 formDataIA.append('models', 'nudity-2.0');
-                formDataIA.append('api_user', IA_USER);
-                formDataIA.append('api_secret', IA_SECRET);
+                formDataIA.append('api_user', IA_USER.trim()); // Limpiamos espacios por si acaso
+                formDataIA.append('api_secret', IA_SECRET.trim());
 
-                const resIA = await fetch('https://api.sightengine.com/1.0/check.json', { method: 'POST', body: formDataIA });
+                const resIA = await fetch('https://api.sightengine.com/1.0/check.json', { 
+                    method: 'POST', 
+                    body: formDataIA 
+                    // No pongas Content-Type, el navegador lo pone solo con FormData
+                });
+
+                if (!resIA.ok) throw new Error("Respuesta de red no exitosa");
+                
                 const dataIA = await resIA.json();
 
                 if (dataIA.status === "success") {
                     const n = dataIA.nudity;
-                    // Si detecta desnudez, lencería o actividad sexual
-                    if (n.none < 0.30 || n.sexual_activity > 0.50 || n.sexual_display > 0.50) {
+                    // Lógica: Si el score de 'none' es muy bajo, hay algo raro
+                    if (n && (n.none < 0.25 || n.sexual_activity > 0.40 || n.sexual_display > 0.40)) {
                         esIlegal = true;
                     }
+                } else {
+                    console.error("Error en respuesta de Sightengine:", dataIA.error.message);
                 }
-            } catch (err) { console.error("Error IA:", err); }
+            } catch (err) { 
+                console.error("Error detallado IA:", err);
+                // Si la IA falla por red, por seguridad podrías dejar pasar o bloquear
+                notify("⚠️ Fallo en el análisis, procediendo con cautela.");
+            }
         }
 
-        notify("📤 Subiendo archivo...");
+        notify("📤 Subiendo...");
         const fileExt = archivo.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
@@ -897,15 +909,14 @@ async function abrirSelectorMultimedia() {
                 timestamp: Date.now() 
             });
             
-            notify(esIlegal ? "⚠️ Contenido detectado como Restringido" : "✅ Enviado con éxito");
-        } catch (error) { notify("❌ Error de subida a Supabase"); }
+            notify(esIlegal ? "🚫 Bloqueado por seguridad" : "✅ Enviado");
+        } catch (error) { 
+            console.error("Error Supabase:", error);
+            notify("❌ Error de subida"); 
+        }
     };
     input.click();
 }
-
-
-
-
 
 
     function verChatPublico() {
