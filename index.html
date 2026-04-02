@@ -662,7 +662,7 @@
     }
 
 
-    function escucharChat() {
+function escucharChat() {
     const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
     if(!box || !gal) return;
     box.innerHTML = ""; gal.innerHTML = "";
@@ -677,33 +677,22 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
         const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
 
         if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
-            // 1. APAGAR INMEDIATAMENTE el listener del chat para que no procese el mensaje de expulsión
             db.ref(chatActual).off(); 
-            
-            // 2. Apagar este mismo vigilante
             db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
-            
             notify("🚫 Has sido expulsado de este grupo.");
-
-            // 3. Limpiar cualquier rastro del grupo en la interfaz
             if(typeof cargarGrupos === 'function') {
-                cargarGrupos(); // Esto refresca la lista y borra el grupo del menú
+                cargarGrupos();
             }
-
-            // 4. Salir pitando al chat público
             setTimeout(() => { 
                 verChatPublico(); 
-            }, 500); // Reducido a 500ms para que sea más rápido
+            }, 500);
         }
     });
 }
-
-// -----------------------------
         
     listener = db.ref(chatActual).on('child_added', snap => {
         const data = snap.val(), isMine = data.uid === mUser.uid;
 
-        // 1. FILTRO DE SISTEMA (Mensajes de "Rosa entró" en gris y sin botones)
         if (data.user === "SISTEMA" || data.uid === "sistema") {
             const divSis = document.createElement('div');
             divSis.style = "width:100%; text-align:center; margin:10px 0; clear:both; display:block;";
@@ -713,7 +702,6 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
             return; 
         }
 
-        // 2. SEGURIDAD: Texto limpio de comandos
         const msgLimpio = data.msg ? data.msg.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
         
         if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; }
@@ -722,7 +710,6 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
         d.className = "msg " + (isMine ? "me" : "them"); 
         d.id = "m-" + snap.key;
         
-        // Menú para borrar mensajes
         d.oncontextmenu = (e) => {
             e.preventDefault();
             const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
@@ -738,7 +725,6 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
 
         let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
         
-        // Botones de Reportar y Kick
         if (!isMine) {
             html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Media'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
             
@@ -748,24 +734,34 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
             }
         }
 
-        // --- LÓGICA DE BORROSO (AÑADIDA) ---
+        // --- LÓGICA DE PRIVACIDAD CORREGIDA ---
         const claseBlur = data.blur ? "borroso" : "";
+        const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+        
+        // Esta es la clave: Si NO es admin, el clic solo muestra un aviso, no quita el borroso
+        const clickMedia = soyAdmin ? `this.classList.toggle('borroso')` : `notify('🔒 Contenido sensible bloqueado')`;
 
-        // 3. MULTIMEDIA LIBRE (Añadida clase media-sincro y claseBlur)
         if(data.type === 'foto' || data.type === 'video') {
             const mediaTag = data.type === 'video' 
-                ? `<video src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; border-radius:8px;" onclick="this.classList.toggle('borroso')"></video>` 
-                : `<img src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; border-radius:8px;" onclick="this.classList.toggle('borroso')">`;
+                ? `<video src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; border-radius:8px;" onclick="${clickMedia}"></video>` 
+                : `<img src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; border-radius:8px;" onclick="${clickMedia}">`;
             
-            html += `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`; 
+            html += `<div class="media-container">${mediaTag}</div>`; 
 
-            // Miniatura en galería (Añadida clase media-sincro y claseBlur)
             const itemGal = document.createElement('div');
             itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;";
             itemGal.innerHTML = data.type === 'video' 
                 ? `<video src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; height:100%; object-fit:cover;"></video>` 
                 : `<img src="${data.url}" class="media-sincro ${claseBlur}" style="width:100%; height:100%; object-fit:cover;">`;
-            itemGal.onclick = () => abrirMedia(data.url, data.type);
+            
+            // En la galería también bloqueamos si no es admin
+            itemGal.onclick = () => {
+                if(soyAdmin) {
+                    abrirMedia(data.url, data.type);
+                } else {
+                    notify("🔒 Solo el administrador puede abrir esto");
+                }
+            };
             gal.prepend(itemGal);
         } else { 
             html += `<span>${msgLimpio}</span>`; 
@@ -781,8 +777,7 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
         if(el) el.remove(); 
     });
 }
-    
-        
+
     
 
 async function enviarMsg() {
