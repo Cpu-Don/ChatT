@@ -867,37 +867,33 @@ async function abrirSelectorMultimedia() {
             const esVideo = archivo.type.includes('video');
             const t = esVideo ? 'video' : 'foto';
 
-            // --- 🤖 FILTRO DE IA (FOTOS Y VIDEOS) ---
+            // --- 🤖 FILTRO DE IA ---
             let censurado = false;
             
-            // Solo moderamos el chat público
             if (chatActual === "Sincro_Chat_Publico") {
                 notify("🔍 Escaneando contenido...");
                 try {
                     const userIA = "233753530";
                     const secretIA = "V8kUAJAjTVUHRvnRD72takiuwxamQEon";
                     
-                    // Elegimos el modelo según el tipo de archivo
                     const modelo = esVideo ? "video-content-moderation" : "nudity-2.0";
                     const endpoint = esVideo ? "video/check-sync.json" : "check.json";
+                    const urlApi = `https://api.sightengine.com/1.0/${endpoint}?url=${encodeURIComponent(urlPublica)}&models=${modelo}&api_user=${userIA}&api_secret=${secretIA}`;
 
-                    const resIA = await fetch(`https://api.sightengine.com/1.0/${endpoint}?url=${urlPublica}&models=${modelo}&api_user=${userIA}&api_secret=${secretIA}`);
+                    const resIA = await fetch(urlApi);
                     const jsonIA = await resIA.json();
 
                     if (jsonIA.status === "success") {
-                        // Lógica para Fotos
                         if (!esVideo) {
-                            const nudity = jsonIA.nudity.sexual_display + jsonIA.nudity.erotica;
+                            const nudity = (jsonIA.nudity.sexual_display || 0) + (jsonIA.nudity.erotica || 0);
                             if (nudity > 0.5) censurado = true;
-                        } 
-                        // Lógica para Videos (revisa si algún frame es detectado)
-                        else if (jsonIA.video && jsonIA.video.summary) {
-                            const vNudity = jsonIA.video.summary.sexual_display + jsonIA.video.summary.erotica;
+                        } else if (jsonIA.video && jsonIA.video.summary) {
+                            const vNudity = (jsonIA.video.summary.sexual_display || 0) + (jsonIA.video.summary.erotica || 0);
                             if (vNudity > 0.5) censurado = true;
                         }
                     }
-                } catch (e) {
-                    console.error("Error en IA:", e);
+                } catch (errIA) {
+                    console.error("Error en IA:", errIA);
                 }
             }
 
@@ -912,22 +908,18 @@ async function abrirSelectorMultimedia() {
             });
             
             if (censurado) {
-                notify("🔞 Contenido censurado por seguridad");
+                notify("🔞 CONTENIDO ILEGAL DETECTADO");
             } else {
                 notify("✅ Archivo enviado");
             }
 
         } catch (error) {
-            console.error("Error:", error);
+            console.error("Error general:", error);
             notify("❌ Error al subir: " + error.message);
         }
     };
     input.click();
 }
-
-
-
-
 
 
 
