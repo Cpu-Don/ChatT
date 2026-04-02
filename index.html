@@ -838,7 +838,7 @@ function enviarMsg() {
 
 
     
-            async function abrirSelectorMultimedia() {
+       async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
     if (!s) return notify("⚠️ Error: Supabase no configurado.");
 
@@ -849,20 +849,23 @@ function enviarMsg() {
     input.onchange = async (e) => {
         const archivo = e.target.files[0];
         if (!archivo) return;
+        
+        // Límite de seguridad: 50MB
         if (archivo.size > 50 * 1024 * 1024) return notify("❌ El archivo supera los 50MB");
 
         let esIlegal = false;
-        const esChatPublico = chatActual === "Sincro_Chat_Publico";
+        const esChatPublico = (chatActual === "Sincro_Chat_Publico");
 
-        // --- BLOQUE DE ANÁLISIS IA ---
+        // --- 1. ANÁLISIS DE INTELIGENCIA ARTIFICIAL (SIGHTENGINE) ---
         if (esChatPublico) {
-            notify("🧠 Analizando con IA...");
+            notify("🧠 Analizando contenido...");
             try {
                 const formDataIA = new FormData();
                 formDataIA.append('media', archivo);
-                formDataIA.append('models', 'nudity-2.0');
+                // Modelos para detectar desnudez y contenido sugerente
+                formDataIA.append('models', 'nudity-2.0,wad'); 
                 formDataIA.append('api_user', '233753530'); 
-                formDataIA.append('api_secret', 'VRMUAYMvjTVUHHvnRDJ2tmkUwnxmQEon');
+                formDataIA.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
 
                 const resIA = await fetch('https://api.sightengine.com/1.0/check.json', { 
                     method: 'POST', 
@@ -871,50 +874,69 @@ function enviarMsg() {
 
                 const dataIA = await resIA.json();
 
-                if (dataIA.status === "success" && dataIA.nudity) {
-                    const n = dataIA.nudity;
-                    // Si el nivel de 'none' (seguro) es bajo, o hay actividad sexual, es ilegal
-                    if (n.none < 0.30 || n.sexual_activity > 0.20 || n.sexual_display > 0.20) {
+                // Validación robusta de la respuesta de la IA
+                if (dataIA && dataIA.status === "success") {
+                    // Lógica para Fotos y Videos (Sightengine devuelve estructuras similares)
+                    const n = dataIA.nudity || {};
+                    
+                    // Umbrales de detección (Ajustados para máxima seguridad)
+                    const nudityDetected = (n.sexual_activity > 0.10 || n.sexual_display > 0.10 || n.erotica > 0.15);
+                    const isNotSafe = (n.none && n.none < 0.50);
+
+                    if (nudityDetected || isNotSafe) {
                         esIlegal = true;
                     }
                 }
             } catch (err) { 
-                console.error("Error IA:", err);
-                // Si la IA falla, dejamos que intente subir pero avisamos en consola
+                console.warn("⚠️ IA Sightengine no disponible o error de red. Continuando sin filtro...");
             }
         }
 
-        // --- BLOQUE DE SUBIDA A SUPABASE ---
-        notify("📤 Subiendo...");
+        // --- 2. SUBIDA A LA NUBE (SUPABASE STORAGE) ---
+        notify("📤 Subiendo a la nube...");
         const fileExt = archivo.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         try {
+            // Subimos el archivo a Supabase
             const { data, error } = await s.storage.from('multimedia_sincro').upload(fileName, archivo);
             if (error) throw error;
 
-            const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(fileName);
-            const t = archivo.type.includes('video') ? 'video' : 'foto';
+            // Obtenemos la URL pública
+            const { data: resPublic } = s.storage.from('multimedia_sincro').getPublicUrl(fileName);
+            const urlFinal = resPublic.publicUrl;
+            
+            // Detectamos si es video o foto para el nodo de Firebase
+            const tipoMedia = archivo.type.includes('video') ? 'video' : 'foto';
 
-            // --- ENVÍO A FIREBASE ---
+            // --- 3. REGISTRO EN FIREBASE (HISTORIAL) ---
+            // Usamos un respaldo para el nombre por si mData no ha cargado
+            const nombreRemitente = (mData && mData.nombre) ? mData.nombre : "Usuario Sincro";
+
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
-                user: mData.nombre || "Usuario", 
-                url: res.publicUrl, 
-                type: t, 
-                restringido: esIlegal, 
+                user: nombreRemitente, 
+                url: urlFinal, 
+                type: tipoMedia, 
+                restringido: esIlegal, // Aquí viaja el veredicto de la IA
                 timestamp: Date.now() 
             });
             
-            notify(esIlegal ? "🚫 Contenido restringido" : "✅ Enviado");
+            if (esIlegal) {
+                notify("🚫 Contenido restringido detectado y censurado.");
+            } else {
+                notify("✅ Archivo enviado con éxito");
+            }
+
         } catch (error) { 
-            console.error("Error Supabase:", error);
-            notify("❌ Error de subida a la nube"); 
+            console.error("Error crítico en el proceso de subida:", error);
+            notify("❌ Error al subir el archivo."); 
         }
     };
     input.click();
 }
-            
+     
+                
 
 
     function verChatPublico() {
