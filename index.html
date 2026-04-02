@@ -837,8 +837,7 @@ function enviarMsg() {
 }
 
 
-
-    async function abrirSelectorMultimedia() {
+      async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
     if (!s) return notify("⚠️ Error: Supabase no configurado.");
 
@@ -850,12 +849,16 @@ function enviarMsg() {
         const archivo = e.target.files[0];
         if (!archivo) return;
         
+        // Límite de 50MB para evitar que Supabase corte la conexión (Failed to fetch)
+        if (archivo.size > 50 * 1024 * 1024) return notify("❌ El archivo supera los 50MB");
+
         let esIlegal = false;
         const BUCKET = 'MULTIMEDIA_SINCRO';
+        const esChatPublico = (chatActual === "Sincro_Chat_Publico");
 
-        // --- 1. IA SIGHTENGINE ---
-        if (chatActual === "Sincro_Chat_Publico") {
-            notify("🧠 Analizando...");
+        // --- PASO 1: ANÁLISIS DE IA ---
+        if (esChatPublico) {
+            notify("🧠 Analizando contenido...");
             try {
                 const fd = new FormData();
                 fd.append('media', archivo);
@@ -863,57 +866,79 @@ function enviarMsg() {
                 fd.append('api_user', '233753530'); 
                 fd.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
 
-                const res = await fetch('https://api.sightengine.com/1.0/check.json', { method: 'POST', body: fd });
-                const dataIA = await res.json();
+                const resIA = await fetch('https://api.sightengine.com/1.0/check.json', { 
+                    method: 'POST', 
+                    body: fd 
+                });
+                
+                const dataIA = await resIA.json();
 
-                if (dataIA?.status === "success" && dataIA.nudity) {
-                    if (dataIA.nudity.none < 0.45) esIlegal = true;
+                if (dataIA && dataIA.status === "success" && dataIA.nudity) {
+                    // Si el porcentaje de "seguridad" es bajo, marcamos como ilegal
+                    if (dataIA.nudity.none < 0.45) {
+                        esIlegal = true;
+                    }
                 }
             } catch (err) { 
-                console.log("IA omitida."); 
+                console.warn("⚠️ IA falló o fue bloqueada, procediendo normal.");
             }
         }
 
-        // --- PAUSA DE SEGURIDAD (500ms) ---
-        // Esto evita el "Failed to fetch" al no solapar conexiones
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // --- PASO 2: PAUSA DE DESCOMPRESIÓN DE RED ---
+        // Esperamos 1.5 segundos para que el navegador libere el socket de la IA
+        // Esto previene el error "Failed to fetch" en móviles
+        notify("⏳ Preparando subida segura...");
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-        // --- 2. SUBIDA A SUPABASE ---
-        notify("📤 Subiendo...");
-        const nombreFinal = `${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        // --- PASO 3: SUBIDA A SUPABASE ---
+        notify("📤 Subiendo a la nube...");
+        
+        // Generamos un nombre ultra-limpio para evitar errores de caracteres
+        const ext = archivo.name.split('.').pop().toLowerCase();
+        const nombreFinal = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
 
         try {
-            // Forzamos la subida sin importar lo que diga la IA
             const { data, error } = await s.storage
                 .from(BUCKET)
-                .upload(nombreFinal, archivo, { cacheControl: '3600', upsert: false });
+                .upload(nombreFinal, archivo, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
             
             if (error) throw error;
 
+            // Obtener la URL pública una vez confirmada la subida
             const { data: resUrl } = s.storage.from(BUCKET).getPublicUrl(nombreFinal);
+            const urlFinal = resUrl.publicUrl;
 
-            // --- 3. FIREBASE ---
+            // --- PASO 4: REGISTRO EN FIREBASE ---
+            const tipoMedia = archivo.type.includes('video') ? 'video' : 'foto';
+            const usuarioNombre = (window.mData && mData.nombre) ? mData.nombre : "Usuario";
+
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
-                user: (mData?.nombre || "Usuario"), 
-                url: resUrl.publicUrl, 
-                type: archivo.type.includes('video') ? 'video' : 'foto', 
-                restringido: esIlegal,
+                user: usuarioNombre, 
+                url: urlFinal, 
+                type: tipoMedia, 
+                restringido: esIlegal, 
                 timestamp: Date.now() 
             });
             
-            notify(esIlegal ? "🚫 Contenido Censurado" : "✅ Enviado");
+            if (esIlegal) {
+                notify("🚫 Contenido censurado por seguridad");
+            } else {
+                notify("✅ Enviado con éxito");
+            }
 
         } catch (error) { 
-            console.error("Error final:", error);
-            // Si sigue dando error, es que la red bloquea la subida de ese archivo específico
-            notify("❌ Error de red al subir. Intenta de nuevo."); 
+            console.error("❌ ERROR FINAL STORAGE:", error);
+            // Si sale "Failed to fetch" aquí, es por saturación de red o tamaño de archivo
+            notify("❌ Error de red: Intenta con un archivo más pequeño."); 
         }
     };
     input.click();
 }
-
-        
+  
 
 
     function verChatPublico() {
