@@ -849,45 +849,51 @@ async function enviarMsg() {
         let archivo = e.target.files[0];
         if (!archivo) return;
 
-        notify("⚙️ Procesando multimedia...");
+        notify("⚙️ Analizando seguridad...");
 
-        // --- FUNCIÓN PARA COMPRIMIR IMÁGENES ---
+        // 1. COMPRESIÓN (Si es imagen)
         if (archivo.type.startsWith('image/')) {
-            archivo = await comprimirImagen(archivo, 0.7); // 0.7 es 70% de calidad
+            archivo = await comprimirImagen(archivo, 0.7);
         }
 
-        if (archivo.size > 50 * 1024 * 1024) return notify("❌ Supera los 50MB");
-
+        // 2. DETECCIÓN DE DESNUDEZ (IA) - ESPERAR RESPUESTA
         let esBorroso = false;
-        notify("📤 Analizando contenido...");
+        const formData = new FormData();
+        formData.append('media', archivo);
+        
+        // Si es video usamos el modelo de video, si es foto el de nudity
+        const modelo = archivo.type.startsWith('video') ? 'video' : 'nudity-2.1';
+        formData.append('models', modelo);
+        formData.append('api_user', '23375353'); 
+        formData.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
 
-        if (chatActual === "Sincro_Chat_Publico") {
-            const formData = new FormData();
-            formData.append('media', archivo);
-            formData.append('models', archivo.type.startsWith('video') ? 'video' : 'nudity-2.1');
-            formData.append('api_user', '23375353'); 
-            formData.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
+        try {
+            const response = await fetch('https://api.sightengine.com/1.0/check.json', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
 
-            try {
-                const response = await fetch('https://api.sightengine.com/1.0/check.json', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-                if (result.status === 'success') {
-                    const nud = result.nudity && result.nudity.sexual > 0.5;
-                    const vidNud = result.video && result.video.nudity && result.video.nudity.sexual > 0.5;
-                    if (nud || vidNud) {
-                        esBorroso = true;
-                        notify("👁️ Contenido sensible detectado.");
-                    }
+            // Lógica para Fotos y Videos
+            if (result.status === 'success') {
+                const nuditySexual = result.nudity?.sexual || 0;
+                const nudityErotica = result.nudity?.erotica || 0;
+                // Para videos, Sightengine analiza frames
+                const videoSexual = result.video?.nudity?.sexual || 0;
+
+                if (nuditySexual > 0.5 || nudityErotica > 0.5 || videoSexual > 0.5) {
+                    esBorroso = true;
+                    notify("⚠️ Contenido sensible detectado");
                 }
-            } catch (err) { esBorroso = true; }
+            }
+        } catch (err) { 
+            console.error("Error IA:", err);
+            // Si la IA falla, por precaución podrías ponerlo borroso o dejarlo false
         }
 
+        // 3. SUBIDA A SUPABASE (Solo después de saber si es borroso)
         notify("🚀 Subiendo a Sincro...");
-        const fileExt = archivo.name.split('.').pop() || 'jpg';
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const fileName = `${Date.now()}_${archivo.name}`;
 
         try {
             const { data: upData, error } = await s.storage.from('multimedia_sincro').upload(fileName, archivo);
@@ -896,16 +902,18 @@ async function enviarMsg() {
             const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(fileName);
             const t = archivo.type.includes('video') ? 'video' : 'foto';
 
+            // 4. GUARDAR EN FIREBASE
+            // Aquí 'blur' llevará el valor REAL que dio la IA (true o false)
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: mData.nombre || "Usuario", 
                 url: res.publicUrl, 
                 type: t, 
-                blur: esBorroso, 
+                blur: esBorroso, // <--- YA NO SERÁ SIEMPRE FALSE
                 timestamp: Date.now() 
             });
             
-            notify("✅ Enviado");
+            notify("✅ Mensaje enviado");
         } catch (error) {
             notify("❌ Error al subir");
         }
