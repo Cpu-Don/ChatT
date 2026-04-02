@@ -770,11 +770,41 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
     });
 }
 
-function enviarMsg() {
+async function enviarMsg() {
     const input = document.getElementById('msg-in'); 
     const texto = input.value.trim();
     if(texto === "") return;
 
+    // --- FILTRO DE IA (SOLO CHAT PÚBLICO) ---
+    if (chatActual === "Sincro_Chat_Publico") {
+        try {
+            // Preparamos los parámetros para la API de Sightengine
+            const params = new URLSearchParams();
+            params.append('text', texto);
+            params.append('lang', 'es'); // Idioma español
+            params.append('mode', 'standard');
+            params.append('api_user', '23375353');
+            params.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
+
+            const response = await fetch('https://api.sightengine.com/1.0/text/check.json?' + params.toString());
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                // Bloqueamos si hay insultos (profanity) o contenido sexual detectado en el texto
+                // result.profanity.matches contiene las palabras prohibidas encontradas
+                if (result.profanity.matches.length > 0) {
+                    notify("🚫 Tu mensaje contiene palabras no permitidas en el chat público.");
+                    input.value = ""; // Limpiamos para evitar reenvíos
+                    return; 
+                }
+            }
+        } catch (err) {
+            console.error("Error al validar texto con IA:", err);
+            // En caso de error de conexión, el mensaje se envía normalmente para no romper la app
+        }
+    }
+
+    // --- PROCESO DE ENVÍO NORMAL (FIREBASE) ---
     db.ref(chatActual).push({ 
         uid: mUser.uid, 
         user: mData.nombre || "Usuario", 
@@ -788,7 +818,6 @@ function enviarMsg() {
         const uids = chatActual.replace("Sincro_Privados/", "").split("_");
         const targetUid = uids[0] === mUser.uid ? uids[1] : uids[0];
         
-        // BLOQUEO: Solo guarda en el Inbox si el destinatario NO es el sistema
         if(targetUid !== 'sistema' && targetUid !== 'SISTEMA') {
             db.ref('Sincro_Inbox/' + mUser.uid + '/' + targetUid).set(Date.now());
             db.ref('Sincro_Inbox/' + targetUid + '/' + mUser.uid).set(Date.now());
@@ -800,12 +829,8 @@ function enviarMsg() {
 
 
     async function abrirSelectorMultimedia() {
-    // Verificamos si el cliente de Supabase existe en la ventana global
     const s = window.supabaseClient;
-
-    if (!s) {
-        return notify("⚠️ Error: Supabase no está configurado correctamente.");
-    }
+    if (!s) return notify("⚠️ Error: Supabase no configurado.");
 
     const input = document.createElement('input');
     input.type = 'file';
@@ -814,54 +839,63 @@ function enviarMsg() {
     input.onchange = async (e) => {
         const archivo = e.target.files[0];
         if (!archivo) return;
+        if (archivo.size > 50 * 1024 * 1024) return notify("❌ El archivo supera los 50MB");
 
-        // Validación de tamaño (opcional pero recomendado: 5MB)
-        // Nuevo límite: 50MB
-if (archivo.size > 50 * 1024 * 1024) {
-    return notify("❌ El archivo supera los 50MB");
-}
+        notify("📤 Analizando contenido...");
 
+        // --- FILTRO IA SOLO PARA CHAT PÚBLICO ---
+        if (chatActual === "Sincro_Chat_Publico") {
+            const formData = new FormData();
+            formData.append('media', archivo);
+            // 'nudity-2.1' para fotos, 'video' para clips cortos
+            formData.append('models', archivo.type.startsWith('video') ? 'video' : 'nudity-2.1');
+            formData.append('api_user', '23375353'); 
+            formData.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
 
-        notify("📤 Subiendo a Sincro...");
-        
-        // Generamos un nombre único para evitar que se sobrescriban fotos
+            try {
+                const response = await fetch('https://api.sightengine.com/1.0/check.json', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                // Lógica de bloqueo si detecta desnudez sexual
+                let esInapropiado = false;
+                if (result.status === 'success') {
+                    if (result.nudity && result.nudity.sexual > 0.5) esInapropiado = true;
+                    if (result.video && result.video.nudity && result.video.nudity.sexual > 0.5) esInapropiado = true;
+                }
+
+                if (esInapropiado) {
+                    return notify("🚫 Contenido prohibido detectado en el Chat Público.");
+                }
+            } catch (err) {
+                console.error("Error en IA:", err);
+            }
+        }
+
+        // --- SUBIDA NORMAL SI PASA EL FILTRO ---
+        notify("🚀 Subiendo...");
         const fileExt = archivo.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         try {
-            // Subida al Bucket 'multimedia_sincro'
-            const { data, error } = await s.storage
-                .from('multimedia_sincro')
-                .upload(fileName, archivo);
-
+            const { data, error } = await s.storage.from('multimedia_sincro').upload(fileName, archivo);
             if (error) throw error;
-
-            // Obtenemos la URL pública
-            const { data: res } = s.storage
-                .from('multimedia_sincro')
-                .getPublicUrl(fileName);
-
+            const { data: res } = s.storage.from('multimedia_sincro').getPublicUrl(fileName);
             const t = archivo.type.includes('video') ? 'video' : 'foto';
 
-            // Guardamos la referencia en Firebase para que aparezca en el chat
             db.ref(chatActual).push({ 
-                uid: mUser.uid, 
-                user: mData.nombre || "Usuario", 
-                url: res.publicUrl, 
-                type: t, 
-                timestamp: Date.now() 
+                uid: mUser.uid, user: mData.nombre || "Usuario", 
+                url: res.publicUrl, type: t, timestamp: Date.now() 
             });
-            
-            notify("✅ Archivo enviado");
+            notify("✅ Enviado");
         } catch (error) {
-            console.error("Error en Supabase:", error);
-            notify("❌ Error al subir: " + error.message);
+            notify("❌ Error: " + error.message);
         }
     };
     input.click();
 }
-
-
 
 
 
