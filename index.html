@@ -142,30 +142,6 @@
 }
 
 
-       /* Estilo de censura para Sincro MD */
-.img-censurada {
-    filter: blur(50px) brightness(0.8); /* Muy borroso y un poco oscuro */
-    cursor: pointer;
-    transition: 0.3s;
-    pointer-events: none; /* Evita que la guarden fácil si está censurada */
-}
-
-.aviso-censura {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.85);
-    color: white;
-    padding: 10px 15px;
-    border-radius: 30px;
-    font-size: 10px;
-    font-weight: bold;
-    z-index: 10;
-    text-transform: uppercase;
-    border: 1px solid rgba(255,255,255,0.2);
-}
- 
         
     </style>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
@@ -675,7 +651,6 @@
         }
     }
 
-
     function escucharChat() {
     const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
     if(!box || !gal) return;
@@ -795,8 +770,6 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
     });
 }
 
-
- 
 function enviarMsg() {
     const input = document.getElementById('msg-in'); 
     const texto = input.value.trim();
@@ -825,9 +798,14 @@ function enviarMsg() {
     input.value = ""; 
 }
 
-async function abrirSelectorMultimedia() {
+
+    async function abrirSelectorMultimedia() {
+    // Verificamos si el cliente de Supabase existe en la ventana global
     const s = window.supabaseClient;
-    if (!s) return notify("⚠️ Error: Supabase no configurado.");
+
+    if (!s) {
+        return notify("⚠️ Error: Supabase no está configurado correctamente.");
+    }
 
     const input = document.createElement('input');
     input.type = 'file';
@@ -837,84 +815,53 @@ async function abrirSelectorMultimedia() {
         const archivo = e.target.files[0];
         if (!archivo) return;
 
-        if (archivo.size > 50 * 1024 * 1024) {
-            return notify("❌ El archivo supera los 50MB");
-        }
+        // Validación de tamaño (opcional pero recomendado: 5MB)
+        // Nuevo límite: 50MB
+if (archivo.size > 50 * 1024 * 1024) {
+    return notify("❌ El archivo supera los 50MB");
+}
+
 
         notify("📤 Subiendo a Sincro...");
+        
+        // Generamos un nombre único para evitar que se sobrescriban fotos
         const fileExt = archivo.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         try {
-            // 1. Subida al Bucket de Supabase
+            // Subida al Bucket 'multimedia_sincro'
             const { data, error } = await s.storage
                 .from('multimedia_sincro')
                 .upload(fileName, archivo);
 
             if (error) throw error;
 
-            // 2. Obtener URL pública
+            // Obtenemos la URL pública
             const { data: res } = s.storage
                 .from('multimedia_sincro')
                 .getPublicUrl(fileName);
 
-            const urlPublica = res.publicUrl;
-            const esVideo = archivo.type.includes('video');
-            const t = esVideo ? 'video' : 'foto';
+            const t = archivo.type.includes('video') ? 'video' : 'foto';
 
-            // --- 🤖 FILTRO DE IA ---
-            let censurado = false;
-            
-            if (chatActual === "Sincro_Chat_Publico") {
-                notify("🔍 Escaneando contenido...");
-                try {
-                    const userIA = "233753530";
-                    const secretIA = "V8kUAJAjTVUHRvnRD72takiuwxamQEon";
-                    
-                    const modelo = esVideo ? "video-content-moderation" : "nudity-2.0";
-                    const endpoint = esVideo ? "video/check-sync.json" : "check.json";
-                    const urlApi = `https://api.sightengine.com/1.0/${endpoint}?url=${encodeURIComponent(urlPublica)}&models=${modelo}&api_user=${userIA}&api_secret=${secretIA}`;
-
-                    const resIA = await fetch(urlApi);
-                    const jsonIA = await resIA.json();
-
-                    if (jsonIA.status === "success") {
-                        if (!esVideo) {
-                            const nudity = (jsonIA.nudity.sexual_display || 0) + (jsonIA.nudity.erotica || 0);
-                            if (nudity > 0.5) censurado = true;
-                        } else if (jsonIA.video && jsonIA.video.summary) {
-                            const vNudity = (jsonIA.video.summary.sexual_display || 0) + (jsonIA.video.summary.erotica || 0);
-                            if (vNudity > 0.5) censurado = true;
-                        }
-                    }
-                } catch (errIA) {
-                    console.error("Error en IA:", errIA);
-                }
-            }
-
-            // 3. Guardar en Firebase
+            // Guardamos la referencia en Firebase para que aparezca en el chat
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
                 user: mData.nombre || "Usuario", 
-                url: urlPublica, 
+                url: res.publicUrl, 
                 type: t, 
-                timestamp: Date.now(),
-                censurado: censurado 
+                timestamp: Date.now() 
             });
             
-            if (censurado) {
-                notify("🔞 CONTENIDO ILEGAL DETECTADO");
-            } else {
-                notify("✅ Archivo enviado");
-            }
-
+            notify("✅ Archivo enviado");
         } catch (error) {
-            console.error("Error general:", error);
+            console.error("Error en Supabase:", error);
             notify("❌ Error al subir: " + error.message);
         }
-    });
+    };
     input.click();
 }
+
+
 
 
 
@@ -1415,16 +1362,7 @@ function procesarInvitacionPorNombre() {
     }).catch(e => notify("Error: " + e.message));
 }
 
-    // --- ENVIAR CON ENTER (Ajustado a tu ID 'msg-in') ---
-document.getElementById('msg-in').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault(); 
-        enviarMsg(); // Llama directo a tu función de la línea 756
-    }
-});
 
-
-  
 </script>
 </body>
 </html>
