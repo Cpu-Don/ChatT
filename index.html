@@ -845,9 +845,10 @@ function enviarMsg() {
 }
 
 
-    async function abrirSelectorMultimedia() {
+
+         async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
-    const BUCKET_NAME = 'MULTIMEDIA_SINCRO'; // Nombre exacto de tu bucket
+    const BUCKET_NAME = 'MULTIMEDIA_SINCRO'; 
     
     const input = document.createElement('input');
     input.type = 'file';
@@ -857,10 +858,10 @@ function enviarMsg() {
         const archivo = e.target.files[0];
         if (!archivo) return;
 
-        notify("🧠 Analizando con IA...");
+        notify("🧠 Analizando contenido...");
         let esIlegal = false;
 
-        // --- 1. VALIDACIÓN CON SIGHTENGINE (TUS CLAVES REALES) ---
+        // 1. VALIDACIÓN CON SIGHTENGINE (TUS CLAVES)
         try {
             const fd = new FormData();
             fd.append('media', archivo);
@@ -875,58 +876,52 @@ function enviarMsg() {
 
             if (resIA.ok) {
                 const dataIA = await resIA.json();
-                // Si la IA detecta que NO es seguro (nudity.none < 0.45), marcamos como ilegal
-                if (dataIA && dataIA.nudity && dataIA.nudity.none < 0.45) {
+                // Si la confianza en que NO hay desnudez es menor al 45%
+                if (dataIA?.nudity?.none < 0.45) {
                     esIlegal = true;
                 }
             }
         } catch (err) { 
-            console.warn("IA no disponible, subiendo como normal.");
+            console.warn("Fallo en IA, continuando subida...");
         }
 
-        // --- 2. SUBIDA A SUPABASE ---
-        notify("📤 Subiendo a la nube...");
+        // 2. SUBIDA A SUPABASE (CON TUS POLÍTICAS DE INSERT)
+        notify("📤 Subiendo archivo...");
         const ext = archivo.name.split('.').pop();
-        const nombreArchivo = `sincro_${Date.now()}.${ext}`;
+        const nombreArchivo = `post_${Date.now()}.${ext}`;
 
         try {
-            // Intentar subir el archivo físico
             const { data, error: errorSubida } = await s.storage
                 .from(BUCKET_NAME)
                 .upload(nombreArchivo, archivo);
 
-            if (errorSubida) {
-                console.error("Error Supabase:", errorSubida);
-                return notify("❌ Error: " + errorSubida.message);
-            }
+            if (errorSubida) throw errorSubida;
 
-            // Obtener la URL pública del archivo
-            const { data: resUrl } = s.storage
-                .from(BUCKET_NAME)
-                .getPublicUrl(nombreArchivo);
-
+            const { data: resUrl } = s.storage.from(BUCKET_NAME).getPublicUrl(nombreArchivo);
             const urlFinal = resUrl.publicUrl;
 
-            // --- 3. REGISTRO EN FIREBASE ---
-            db.ref(chatActual).push({
+            // 3. REGISTRO EN TU FIREBASE (SEGÚN TU CAPTURA)
+            // Asegúrate de que 'chatActual' sea por ejemplo "Sincro_Chat_Publico"
+            const rutaChat = typeof chatActual !== 'undefined' ? chatActual : "Sincro_Chat_Publico";
+
+            db.ref(rutaChat).push({
                 uid: mUser.uid,
                 user: mData.nombre || "Usuario",
                 url: urlFinal,
                 type: archivo.type.includes('video') ? 'video' : 'foto',
-                restringido: esIlegal, // <--- Esto activará tu censura en el chat
+                restringido: esIlegal,
                 timestamp: Date.now()
             });
 
-            notify(esIlegal ? "⚠️ Contenido Censurado" : "✅ Enviado con éxito");
+            notify(esIlegal ? "⚠️ Contenido restringido" : "✅ Enviado");
 
         } catch (err) {
-            console.error("Error de conexión:", err);
-            notify("❌ Error de red");
+            console.error("Error crítico:", err);
+            notify("❌ Error de subida");
         }
     };
     input.click();
-}
-
+}   
             
   
       
