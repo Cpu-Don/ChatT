@@ -845,7 +845,7 @@ function enviarMsg() {
 }
 
 
-      async function abrirSelectorMultimedia() {
+    async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
     const BUCKET = 'MULTIMEDIA_SINCRO';
     
@@ -857,59 +857,64 @@ function enviarMsg() {
         const archivo = e.target.files[0];
         if (!archivo) return;
 
-        notify("⏳ Procesando...");
+        notify("🧠 Analizando...");
         let esIlegal = false;
 
-        // --- PASO 1: DETECCIÓN (Solo en chat público) ---
-        if (chatActual === "Sincro_Chat_Publico") {
-            try {
-                const fd = new FormData();
-                fd.append('media', archivo);
-                fd.append('models', 'nudity-2.0');
-                fd.append('api_user', '233753530');
-                fd.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
+        // --- VALIDACIÓN CON SIGHTENGINE (CON CORRECCIÓN DE ERROR) ---
+        try {
+            const fd = new FormData();
+            fd.append('media', archivo);
+            fd.append('models', 'nudity-2.0'); 
+            fd.append('api_user', '233753530'); 
+            fd.append('api_secret', 'PON_AQUI_TU_SECRETO'); // Asegúrate de poner el secreto real
 
-                const resIA = await fetch('https://api.sightengine.com/1.0/check.json', { method: 'POST', body: fd });
+            const resIA = await fetch('https://api.sightengine.com/1.0/check.json', { 
+                method: 'POST', 
+                body: fd 
+            });
+
+            if (resIA.ok) {
                 const dataIA = await resIA.json();
-                
-                // Si la confianza de que NO hay desnudez es baja, marcamos como ilegal
-                if (dataIA?.status === "success" && dataIA.nudity?.none < 0.45) {
+                // Verificamos si la IA detectó algo (nudity.none < 0.45 significa que hay riesgo)
+                if (dataIA && dataIA.nudity && dataIA.nudity.none < 0.45) {
                     esIlegal = true;
                 }
-            } catch (err) { console.error("Error IA:", err); }
+            }
+        } catch (err) { 
+            console.error("Error IA:", err);
+            // Si la IA falla, no bloqueamos al usuario, dejamos esIlegal como false
         }
 
-        // Espera de seguridad para evitar error de red (Failed to fetch)
-        await new Promise(r => setTimeout(r, 1000));
+        notify("📤 Subiendo...");
+        const extension = archivo.name.split('.').pop();
+        const nombreArchivo = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${extension}`;
 
-        // --- PASO 2: SUBIDA A SUPABASE ---
-        const nombreLimpio = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${archivo.name.split('.').pop()}`;
-        
         try {
-            const { data, error } = await s.storage.from(BUCKET).upload(nombreLimpio, archivo);
+            // SUBIDA A SUPABASE
+            const { data, error } = await s.storage.from(BUCKET).upload(nombreArchivo, archivo);
             if (error) throw error;
 
-            const { data: resUrl } = s.storage.from(BUCKET).getPublicUrl(nombreLimpio);
-            
-            // --- PASO 3: GUARDAR EN FIREBASE ---
-            // Guardamos el flag 'restringido' para saber luego si debemos censurarlo
+            const { data: resUrl } = s.storage.from(BUCKET).getPublicUrl(nombreArchivo);
+
+            // REGISTRO EN FIREBASE
             db.ref(chatActual).push({
                 uid: mUser.uid,
                 user: mData.nombre || "Usuario",
                 url: resUrl.publicUrl,
                 type: archivo.type.includes('video') ? 'video' : 'foto',
-                restringido: esIlegal, // <--- VALOR CLAVE
+                restringido: esIlegal,
                 timestamp: Date.now()
             });
 
-            notify(esIlegal ? "🚫 Contenido sensible enviado" : "✅ Enviado");
+            notify(esIlegal ? "⚠️ Contenido restringido" : "✅ Enviado");
         } catch (err) {
+            console.error("Error Subida:", err);
             notify("❌ Error al subir");
         }
     };
     input.click();
 }
-
+  
       
             
     function verChatPublico() {
