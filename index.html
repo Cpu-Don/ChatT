@@ -849,14 +849,15 @@ function enviarMsg() {
         const archivo = e.target.files[0];
         if (!archivo) return;
         
-        // Límite de 50MB para evitar que Supabase corte la conexión (Failed to fetch)
+        // Límite de seguridad para evitar que la red colapse
         if (archivo.size > 50 * 1024 * 1024) return notify("❌ El archivo supera los 50MB");
 
         let esIlegal = false;
         const BUCKET = 'MULTIMEDIA_SINCRO';
         const esChatPublico = (chatActual === "Sincro_Chat_Publico");
 
-        // --- PASO 1: ANÁLISIS DE IA ---
+        // --- PASO 1: ANÁLISIS DE IA (DETECCIÓN) ---
+        // Analizamos la foto ANTES de subirla para saber si lleva el sello de "restringido"
         if (esChatPublico) {
             notify("🧠 Analizando contenido...");
             try {
@@ -874,26 +875,24 @@ function enviarMsg() {
                 const dataIA = await resIA.json();
 
                 if (dataIA && dataIA.status === "success" && dataIA.nudity) {
-                    // Si el porcentaje de "seguridad" es bajo, marcamos como ilegal
+                    // Si el porcentaje de "seguridad" es bajo (menos de 0.45 de "none"), es desnudez
                     if (dataIA.nudity.none < 0.45) {
                         esIlegal = true;
+                        console.log("🚫 IA: Desnudez detectada. Se marcará como restringido.");
                     }
                 }
             } catch (err) { 
-                console.warn("⚠️ IA falló o fue bloqueada, procediendo normal.");
+                console.warn("⚠️ Error en IA, se subirá como contenido normal.");
             }
         }
 
-        // --- PASO 2: PAUSA DE DESCOMPRESIÓN DE RED ---
-        // Esperamos 1.5 segundos para que el navegador libere el socket de la IA
-        // Esto previene el error "Failed to fetch" en móviles
-        notify("⏳ Preparando subida segura...");
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // --- PASO 2: PAUSA TÉCNICA (EVITA EL FAILED TO FETCH) ---
+        // Esperamos 1 segundo para que el navegador "respire" después de la IA
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // --- PASO 3: SUBIDA A SUPABASE ---
+        // --- PASO 3: SUBIDA A SUPABASE (SIN IMPORTAR EL CONTENIDO) ---
         notify("📤 Subiendo a la nube...");
         
-        // Generamos un nombre ultra-limpio para evitar errores de caracteres
         const ext = archivo.name.split('.').pop().toLowerCase();
         const nombreFinal = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
 
@@ -907,40 +906,37 @@ function enviarMsg() {
             
             if (error) throw error;
 
-            // Obtener la URL pública una vez confirmada la subida
+            // Obtenemos la URL pública
             const { data: resUrl } = s.storage.from(BUCKET).getPublicUrl(nombreFinal);
             const urlFinal = resUrl.publicUrl;
 
-            // --- PASO 4: REGISTRO EN FIREBASE ---
+            // --- PASO 4: REGISTRO EN FIREBASE CON EL FLAG DE RESTRINGIDO ---
             const tipoMedia = archivo.type.includes('video') ? 'video' : 'foto';
-            const usuarioNombre = (window.mData && mData.nombre) ? mData.nombre : "Usuario";
 
             db.ref(chatActual).push({ 
                 uid: mUser.uid, 
-                user: usuarioNombre, 
+                user: mData.nombre || "Usuario", 
                 url: urlFinal, 
                 type: tipoMedia, 
-                restringido: esIlegal, 
+                restringido: esIlegal, // <--- AQUÍ SE GUARDA LA CENSURA
                 timestamp: Date.now() 
             });
             
             if (esIlegal) {
-                notify("🚫 Contenido censurado por seguridad");
+                notify("🚫 Foto subida (con censura activa)");
             } else {
-                notify("✅ Enviado con éxito");
+                notify("✅ Foto subida correctamente");
             }
 
         } catch (error) { 
-            console.error("❌ ERROR FINAL STORAGE:", error);
-            // Si sale "Failed to fetch" aquí, es por saturación de red o tamaño de archivo
-            notify("❌ Error de red: Intenta con un archivo más pequeño."); 
+            console.error("❌ ERROR STORAGE:", error);
+            notify("❌ Error de red: Intenta de nuevo."); 
         }
     };
     input.click();
 }
-  
-
-
+                
+            
     function verChatPublico() {
         chatActual = "Sincro_Chat_Publico";
         window.grupoOwnerActual = null; // --- AGREGADO ---
