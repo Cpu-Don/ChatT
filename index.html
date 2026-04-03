@@ -839,8 +839,8 @@ function enviarMsg() {
 
       async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
-    if (!s) return notify("⚠️ Error: Supabase no configurado.");
-
+    const BUCKET = 'MULTIMEDIA_SINCRO';
+    
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*,video/*';
@@ -848,94 +848,61 @@ function enviarMsg() {
     input.onchange = async (e) => {
         const archivo = e.target.files[0];
         if (!archivo) return;
-        
-        // Límite de seguridad para evitar que la red colapse
-        if (archivo.size > 50 * 1024 * 1024) return notify("❌ El archivo supera los 50MB");
 
+        notify("⏳ Procesando...");
         let esIlegal = false;
-        const BUCKET = 'MULTIMEDIA_SINCRO';
-        const esChatPublico = (chatActual === "Sincro_Chat_Publico");
 
-        // --- PASO 1: ANÁLISIS DE IA (DETECCIÓN) ---
-        // Analizamos la foto ANTES de subirla para saber si lleva el sello de "restringido"
-        if (esChatPublico) {
-            notify("🧠 Analizando contenido...");
+        // --- PASO 1: DETECCIÓN (Solo en chat público) ---
+        if (chatActual === "Sincro_Chat_Publico") {
             try {
                 const fd = new FormData();
                 fd.append('media', archivo);
-                fd.append('models', 'nudity-2.0'); 
-                fd.append('api_user', '233753530'); 
+                fd.append('models', 'nudity-2.0');
+                fd.append('api_user', '233753530');
                 fd.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon');
 
-                const resIA = await fetch('https://api.sightengine.com/1.0/check.json', { 
-                    method: 'POST', 
-                    body: fd 
-                });
-                
+                const resIA = await fetch('https://api.sightengine.com/1.0/check.json', { method: 'POST', body: fd });
                 const dataIA = await resIA.json();
-
-                if (dataIA && dataIA.status === "success" && dataIA.nudity) {
-                    // Si el porcentaje de "seguridad" es bajo (menos de 0.45 de "none"), es desnudez
-                    if (dataIA.nudity.none < 0.45) {
-                        esIlegal = true;
-                        console.log("🚫 IA: Desnudez detectada. Se marcará como restringido.");
-                    }
+                
+                // Si la confianza de que NO hay desnudez es baja, marcamos como ilegal
+                if (dataIA?.status === "success" && dataIA.nudity?.none < 0.45) {
+                    esIlegal = true;
                 }
-            } catch (err) { 
-                console.warn("⚠️ Error en IA, se subirá como contenido normal.");
-            }
+            } catch (err) { console.error("Error IA:", err); }
         }
 
-        // --- PASO 2: PAUSA TÉCNICA (EVITA EL FAILED TO FETCH) ---
-        // Esperamos 1 segundo para que el navegador "respire" después de la IA
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Espera de seguridad para evitar error de red (Failed to fetch)
+        await new Promise(r => setTimeout(r, 1000));
 
-        // --- PASO 3: SUBIDA A SUPABASE (SIN IMPORTAR EL CONTENIDO) ---
-        notify("📤 Subiendo a la nube...");
+        // --- PASO 2: SUBIDA A SUPABASE ---
+        const nombreLimpio = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${archivo.name.split('.').pop()}`;
         
-        const ext = archivo.name.split('.').pop().toLowerCase();
-        const nombreFinal = `${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
-
         try {
-            const { data, error } = await s.storage
-                .from(BUCKET)
-                .upload(nombreFinal, archivo, {
-                    cacheControl: '3600',
-                    upsert: false
-                });
-            
+            const { data, error } = await s.storage.from(BUCKET).upload(nombreLimpio, archivo);
             if (error) throw error;
 
-            // Obtenemos la URL pública
-            const { data: resUrl } = s.storage.from(BUCKET).getPublicUrl(nombreFinal);
-            const urlFinal = resUrl.publicUrl;
-
-            // --- PASO 4: REGISTRO EN FIREBASE CON EL FLAG DE RESTRINGIDO ---
-            const tipoMedia = archivo.type.includes('video') ? 'video' : 'foto';
-
-            db.ref(chatActual).push({ 
-                uid: mUser.uid, 
-                user: mData.nombre || "Usuario", 
-                url: urlFinal, 
-                type: tipoMedia, 
-                restringido: esIlegal, // <--- AQUÍ SE GUARDA LA CENSURA
-                timestamp: Date.now() 
-            });
+            const { data: resUrl } = s.storage.from(BUCKET).getPublicUrl(nombreLimpio);
             
-            if (esIlegal) {
-                notify("🚫 Foto subida (con censura activa)");
-            } else {
-                notify("✅ Foto subida correctamente");
-            }
+            // --- PASO 3: GUARDAR EN FIREBASE ---
+            // Guardamos el flag 'restringido' para saber luego si debemos censurarlo
+            db.ref(chatActual).push({
+                uid: mUser.uid,
+                user: mData.nombre || "Usuario",
+                url: resUrl.publicUrl,
+                type: archivo.type.includes('video') ? 'video' : 'foto',
+                restringido: esIlegal, // <--- VALOR CLAVE
+                timestamp: Date.now()
+            });
 
-        } catch (error) { 
-            console.error("❌ ERROR STORAGE:", error);
-            notify("❌ Error de red: Intenta de nuevo."); 
+            notify(esIlegal ? "🚫 Contenido sensible enviado" : "✅ Enviado");
+        } catch (err) {
+            notify("❌ Error al subir");
         }
     };
     input.click();
 }
-                
+
+      
             
     function verChatPublico() {
         chatActual = "Sincro_Chat_Publico";
