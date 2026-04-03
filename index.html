@@ -847,7 +847,7 @@ function enviarMsg() {
 
     async function abrirSelectorMultimedia() {
     const s = window.supabaseClient;
-    const BUCKET = 'MULTIMEDIA_SINCRO';
+    const BUCKET_NAME = 'MULTIMEDIA_SINCRO'; // Nombre exacto de tu bucket
     
     const input = document.createElement('input');
     input.type = 'file';
@@ -857,16 +857,16 @@ function enviarMsg() {
         const archivo = e.target.files[0];
         if (!archivo) return;
 
-        notify("🧠 Analizando...");
+        notify("🧠 Analizando con IA...");
         let esIlegal = false;
 
-        // --- VALIDACIÓN CON SIGHTENGINE (CON CORRECCIÓN DE ERROR) ---
+        // --- 1. VALIDACIÓN CON SIGHTENGINE (TUS CLAVES REALES) ---
         try {
             const fd = new FormData();
             fd.append('media', archivo);
             fd.append('models', 'nudity-2.0'); 
             fd.append('api_user', '233753530'); 
-            fd.append('api_secret', 'PON_AQUI_TU_SECRETO'); // Asegúrate de poner el secreto real
+            fd.append('api_secret', 'V8kUAJAjTVUHRvnRD72takiuwxamQEon'); 
 
             const resIA = await fetch('https://api.sightengine.com/1.0/check.json', { 
                 method: 'POST', 
@@ -875,45 +875,59 @@ function enviarMsg() {
 
             if (resIA.ok) {
                 const dataIA = await resIA.json();
-                // Verificamos si la IA detectó algo (nudity.none < 0.45 significa que hay riesgo)
+                // Si la IA detecta que NO es seguro (nudity.none < 0.45), marcamos como ilegal
                 if (dataIA && dataIA.nudity && dataIA.nudity.none < 0.45) {
                     esIlegal = true;
                 }
             }
         } catch (err) { 
-            console.error("Error IA:", err);
-            // Si la IA falla, no bloqueamos al usuario, dejamos esIlegal como false
+            console.warn("IA no disponible, subiendo como normal.");
         }
 
-        notify("📤 Subiendo...");
-        const extension = archivo.name.split('.').pop();
-        const nombreArchivo = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${extension}`;
+        // --- 2. SUBIDA A SUPABASE ---
+        notify("📤 Subiendo a la nube...");
+        const ext = archivo.name.split('.').pop();
+        const nombreArchivo = `sincro_${Date.now()}.${ext}`;
 
         try {
-            // SUBIDA A SUPABASE
-            const { data, error } = await s.storage.from(BUCKET).upload(nombreArchivo, archivo);
-            if (error) throw error;
+            // Intentar subir el archivo físico
+            const { data, error: errorSubida } = await s.storage
+                .from(BUCKET_NAME)
+                .upload(nombreArchivo, archivo);
 
-            const { data: resUrl } = s.storage.from(BUCKET).getPublicUrl(nombreArchivo);
+            if (errorSubida) {
+                console.error("Error Supabase:", errorSubida);
+                return notify("❌ Error: " + errorSubida.message);
+            }
 
-            // REGISTRO EN FIREBASE
+            // Obtener la URL pública del archivo
+            const { data: resUrl } = s.storage
+                .from(BUCKET_NAME)
+                .getPublicUrl(nombreArchivo);
+
+            const urlFinal = resUrl.publicUrl;
+
+            // --- 3. REGISTRO EN FIREBASE ---
             db.ref(chatActual).push({
                 uid: mUser.uid,
                 user: mData.nombre || "Usuario",
-                url: resUrl.publicUrl,
+                url: urlFinal,
                 type: archivo.type.includes('video') ? 'video' : 'foto',
-                restringido: esIlegal,
+                restringido: esIlegal, // <--- Esto activará tu censura en el chat
                 timestamp: Date.now()
             });
 
-            notify(esIlegal ? "⚠️ Contenido restringido" : "✅ Enviado");
+            notify(esIlegal ? "⚠️ Contenido Censurado" : "✅ Enviado con éxito");
+
         } catch (err) {
-            console.error("Error Subida:", err);
-            notify("❌ Error al subir");
+            console.error("Error de conexión:", err);
+            notify("❌ Error de red");
         }
     };
     input.click();
 }
+
+            
   
       
             
