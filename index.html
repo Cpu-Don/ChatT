@@ -700,50 +700,39 @@
         }
     }
 
-    function escucharChat() {
+    
+function escucharChat() {
     const box = document.getElementById('chat-box'), gal = document.getElementById('gallery');
     if(!box || !gal) return;
+    
+    // 1. APLICAR ESTILO AL ENTRAR
+    const contenedor = document.getElementById('contenedor-chat');
+    if(contenedor) contenedor.style.display = 'flex'; 
+
     box.innerHTML = ""; gal.innerHTML = "";
     if(listener) db.ref(chatActual).off();
 
-// --- VIGILANTE DE EXPULSIÓN MEJORADO ---
-if (chatActual.startsWith("Sincro_Grupos/")) {
-    const idG = chatActual.split('/')[1];
-    
-    db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
-        const soyDueño = window.grupoOwnerActual === mUser.uid;
-        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-
-        if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
-            // 1. APAGAR INMEDIATAMENTE el listener del chat para que no procese el mensaje de expulsión
-            db.ref(chatActual).off(); 
-            
-            // 2. Apagar este mismo vigilante
-            db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
-            
-            notify("🚫 Has sido expulsado de este grupo.");
-
-            // 3. Limpiar cualquier rastro del grupo en la interfaz
-            if(typeof cargarGrupos === 'function') {
-                cargarGrupos(); // Esto refresca la lista y borra el grupo del menú
+    // 2. VIGILANTE DE EXPULSIÓN (TU ORIGINAL)
+    if (chatActual.startsWith("Sincro_Grupos/")) {
+        const idG = chatActual.split('/')[1];
+        db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).on('value', snap => {
+            const soyDueño = window.grupoOwnerActual === mUser.uid;
+            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+            if (!snap.exists() && !soyDueño && !soyAdminGlobal) {
+                db.ref(chatActual).off(); 
+                db.ref('Sincro_InfoGrupos/' + idG + '/miembros/' + mUser.uid).off();
+                notify("🚫 Has sido expulsado.");
+                if(typeof cargarGrupos === 'function') cargarGrupos();
+                setTimeout(() => { verChatPublico(); }, 500);
             }
+        });
+    }
 
-            // 4. Salir pitando al chat público
-            setTimeout(() => { 
-                verChatPublico(); 
-            }, 500); // Reducido a 500ms para que sea más rápido
-        }
-    });
-}
-
-
-
-// -----------------------------
-        
+    // 3. ESCUCHA DE MENSAJES CON TU CENSURA DE ADMIN
     listener = db.ref(chatActual).on('child_added', snap => {
         const data = snap.val(), isMine = data.uid === mUser.uid;
+        const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
 
-        // 1. FILTRO DE SISTEMA (Mensajes de "Rosa entró" en gris y sin botones)
         if (data.user === "SISTEMA" || data.uid === "sistema") {
             const divSis = document.createElement('div');
             divSis.style = "width:100%; text-align:center; margin:10px 0; clear:both; display:block;";
@@ -753,78 +742,45 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
             return; 
         }
 
-        // 2. SEGURIDAD: Texto limpio de comandos
         const msgLimpio = data.msg ? data.msg.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
-        
         if (chatActual.startsWith("Sincro_Grupos/") && data.kicked) { return; }
 
         const d = document.createElement('div'); 
         d.className = "msg " + (isMine ? "me" : "them"); 
         d.id = "m-" + snap.key;
         
-        // Menú para borrar mensajes
-        d.oncontextmenu = (e) => {
-            e.preventDefault();
-            const soyAdmin = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-            if (isMine || soyAdmin) {
-                const modal = document.createElement('div');
-                modal.className = 'modal-confirm';
-                modal.innerHTML = `<div class="modal-card"><p>¿Eliminar mensaje?</p><button class="btn-del" id="confirm-del">Eliminar</button><button class="btn-can" id="cancel-del">Cancelar</button></div>`;
-                document.body.appendChild(modal);
-                modal.querySelector('#confirm-del').onclick = () => { db.ref(chatActual + "/" + snap.key).remove(); modal.remove(); };
-                modal.querySelector('#cancel-del').onclick = () => { modal.remove(); };
-            }
-        };
-
         let html = `<b onclick="iniciarPrivado('${data.uid}', '${data.user}')">${data.user}</b>`;
         
-        // Botones de Reportar y Kick
         if (!isMine) {
             html += `<button onclick="abrirReporte('${data.uid}', '${data.user}', '${data.url || data.msg || 'Media'}')" style="background:none; border:none; color:#d9534f; cursor:pointer; font-size:10px; margin-left:8px; opacity:0.7;">🚩 Reportar</button>`;
-            
-            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
             if (chatActual.startsWith("Sincro_Grupos/") && (window.grupoOwnerActual === mUser.uid || soyAdminGlobal)) {
                 html += ` <button onclick="expulsarDeGrupo('${data.uid}', '${data.user}')" style="background:#ff4757; color:white; border:none; border-radius:4px; font-size:9px; padding:2px 5px; cursor:pointer; margin-left:5px;">KICK</button>`;
             }
         }
 
-                    // 3. MULTIMEDIA CON MODERACIÓN IA (Chat + Galería)
+        // --- LÓGICA DE MULTIMEDIA Y CENSURA ---
         if(data.type === 'foto' || data.type === 'video') {
-            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
+            // Si está moderado y NO eres el admin global "chat", se censura
             const censurar = data.moderado === true && !soyAdminGlobal;
             
-            const claseCensura = censurar ? 'censurado' : '';
-            const avisoCensura = censurar ? `<div class="capa-aviso-ia">🔞 CONTENIDO RESTRINGIDO</div>` : '';
+            const estiloImg = censurar ? "filter: blur(25px); opacity: 0.5;" : "";
+            const aviso = censurar ? '<div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:white; font-weight:bold; font-size:10px; text-shadow:1px 1px 2px black; text-align:center; width:100%;">⚠️ CONTENIDO SENSIBLE</div>' : '';
 
-            // Renderizado en el chat
             const mediaTag = data.type === 'video' 
-                ? `<video src="${data.url}" class="${claseCensura}" style="width:100%; border-radius:8px;" ${censurar ? '' : 'controls'}></video>` 
-                : `<img src="${data.url}" class="${claseCensura}" style="width:100%; border-radius:8px;">`;
+                ? `<video src="${data.url}" style="width:100%; border-radius:8px; ${estiloImg}"></video>` 
+                : `<img src="${data.url}" style="width:100%; border-radius:8px; ${estiloImg}">`;
+            
+            const accionClick = censurar ? "" : `onclick="abrirMedia('${data.url}', '${data.type}')"`;
+            html += `<div class="media-container" style="position:relative; cursor:pointer;" ${accionClick}>${mediaTag}${aviso}</div>`; 
 
-            const clickMedia = (!censurar || soyAdminGlobal) ? `onclick="abrirMedia('${data.url}', '${data.type}')"` : '';
-
-            html += `
-                <div class="msg-media-container" style="position:relative;" ${clickMedia}>
-                    ${mediaTag}
-                    ${avisoCensura}
-                </div>`;
-
-            // Renderizado en la galería
+            // Miniatura en galería
             const itemGal = document.createElement('div');
-            itemGal.className = `gal-item ${claseCensura}`;
-            itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative; margin-bottom:5px;";
+            itemGal.style = `height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative; ${censurar ? 'filter: blur(8px);' : ''}`;
             itemGal.innerHTML = data.type === 'video' 
                 ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` 
                 : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
-            
-            itemGal.onclick = () => {
-                if (!censurar || soyAdminGlobal) { abrirMedia(data.url, data.type); }
-            };
-
+            if(!censurar) itemGal.onclick = () => abrirMedia(data.url, data.type);
             gal.prepend(itemGal);
-        }
-    
-
         } else { 
             html += `<span>${msgLimpio}</span>`; 
         }
@@ -838,7 +794,8 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
         const el = document.getElementById("m-" + snap.key); 
         if(el) el.remove(); 
     });
-}
+}    
+            
 
 function enviarMsg() {
     const input = document.getElementById('msg-in'); 
