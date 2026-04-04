@@ -12,6 +12,7 @@
     <script src="supabase-config.js"></script>
 
     
+    
     <style>
         :root { --tg-blue: #0088cc; --tg-bg: #54759e; --msg-out: #efffde; --side-bg: #ffffff; }
         * { box-sizing: border-box; transition: all 0.2s ease; }
@@ -141,6 +142,51 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
+
+        /* 1. Contenedor del mensaje multimedia */
+.msg-media-container {
+    position: relative;
+    width: 100%;
+    max-width: 250px;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #1a1a1a;
+    margin: 8px 0;
+}
+
+/* 2. Clase que aplica el desenfoque (Blur) */
+.censurado {
+    filter: blur(40px) brightness(0.5);
+    pointer-events: none; /* Evita que puedan darle play o click */
+    user-select: none;
+    transition: filter 0.3s ease;
+}
+
+/* 3. Etiqueta de aviso que aparece sobre el blur */
+.capa-aviso-ia {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 0, 0, 0.2);
+    backdrop-filter: blur(5px);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: bold;
+    text-align: center;
+    width: 80%;
+    z-index: 10;
+    text-shadow: 1px 1px 2px black;
+    pointer-events: none;
+}
+
+/* 4. Estilo opcional para que el Admin vea un borde indicador */
+.admin-view-moderated {
+    border: 2px dashed #ff4d4d !important;
+}
 
         
     </style>
@@ -436,7 +482,10 @@
     };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database(), auth = firebase.auth();
-    const CLOUD_NAME = "dhtyepcjg", UPLOAD_PRESET = "Historial";
+    // --- CONFIGURACIÓN DE CLOUDINARY ---
+    const CLOUD_NAME = "dhtyepcjg";
+    const UPLOAD_PRESET = "ml_default";
+
 
     let mUser = null, mData = { vip: false, nombre: "" }, chatActual = "Sincro_Chat_Publico", listener = null;
     
@@ -739,22 +788,47 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
             }
         }
 
-        // 3. MULTIMEDIA LIBRE (Sin VIP ni Candados)
+                // 3. MULTIMEDIA CON MODERACIÓN IA (Chat + Galería)
         if(data.type === 'foto' || data.type === 'video') {
-            const mediaTag = data.type === 'video' 
-                ? `<video src="${data.url}" style="width:100%; border-radius:8px;"></video>` 
-                : `<img src="${data.url}" style="width:100%; border-radius:8px;">`;
+            const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
             
-            html += `<div class="media-container" onclick="abrirMedia('${data.url}', '${data.type}')">${mediaTag}</div>`; 
+            // Si la IA marcó el contenido y NO eres admin, se aplica el filtro
+            const censurar = data.moderado === true && !soyAdminGlobal;
+            
+            const claseCensura = censurar ? 'censurado' : '';
+            const avisoCensura = censurar ? `<div class="capa-aviso-ia">🔞 CONTENIDO RESTRINGIDO</div>` : '';
 
-            // Miniatura en galería
+            // --- RENDERIZADO EN EL CHAT ---
+            const mediaTag = data.type === 'video' 
+                ? `<video src="${data.url}" class="${claseCensura}" style="width:100%; border-radius:8px;" ${censurar ? '' : 'controls'}></video>` 
+                : `<img src="${data.url}" class="${claseCensura}" style="width:100%; border-radius:8px;">`;
+
+            const clickMedia = (!censurar || soyAdminGlobal) ? `onclick="abrirMedia('${data.url}', '${data.type}')"` : '';
+
+            html += `
+                <div class="msg-media-container" style="position:relative;" ${clickMedia}>
+                    ${mediaTag}
+                    ${avisoCensura}
+                </div>`;
+
+            // --- RENDERIZADO EN LA GALERÍA DERECHA ---
             const itemGal = document.createElement('div');
-            itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative;";
+            // Aplicamos la clase de censura también aquí
+            itemGal.className = `gal-item ${claseCensura}`;
+            itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative; margin-bottom:5px;";
+            
             itemGal.innerHTML = data.type === 'video' 
                 ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` 
                 : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
-            itemGal.onclick = () => abrirMedia(data.url, data.type);
+            
+            // Solo se puede abrir desde la galería si no está censurado o eres admin
+            itemGal.onclick = () => {
+                if (!censurar || soyAdminGlobal) abrirMedia(data.url, data.type);
+            };
+
             gal.prepend(itemGal);
+        } 
+
         } else { 
             html += `<span>${msgLimpio}</span>`; 
         }
@@ -799,14 +873,9 @@ function enviarMsg() {
 }
 
 
-    async function abrirSelectorMultimedia() {
-    // Verificamos si el cliente de Supabase existe en la ventana global
-    const s = window.supabaseClient;
-
-    if (!s) {
-        return notify("⚠️ Error: Supabase no está configurado correctamente.");
-    }
-
+    
+            
+async function abrirSelectorMultimedia() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*,video/*';
@@ -815,47 +884,53 @@ function enviarMsg() {
         const archivo = e.target.files[0];
         if (!archivo) return;
 
-        // Validación de tamaño (opcional pero recomendado: 5MB)
-        // Nuevo límite: 50MB
-if (archivo.size > 50 * 1024 * 1024) {
-    return notify("❌ El archivo supera los 50MB");
-}
-
-
-        notify("📤 Subiendo a Sincro...");
-        
-        // Generamos un nombre único para evitar que se sobrescriban fotos
-        const fileExt = archivo.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        notify("🛡️ Analizando seguridad...");
 
         try {
-            // Subida al Bucket 'multimedia_sincro'
-            const { data, error } = await s.storage
-                .from('multimedia_sincro')
-                .upload(fileName, archivo);
+            // --- PASO 1: ANÁLISIS EN CLOUDINARY ---
+            const formDataCL = new FormData();
+            formDataCL.append('file', archivo);
+            formDataCL.append('upload_preset', UPLOAD_PRESET);
+            formDataCL.append('moderation', 'aws_rek'); // IA de Amazon
 
-            if (error) throw error;
-
-            // Obtenemos la URL pública
-            const { data: res } = s.storage
-                .from('multimedia_sincro')
-                .getPublicUrl(fileName);
-
-            const t = archivo.type.includes('video') ? 'video' : 'foto';
-
-            // Guardamos la referencia en Firebase para que aparezca en el chat
-            db.ref(chatActual).push({ 
-                uid: mUser.uid, 
-                user: mData.nombre || "Usuario", 
-                url: res.publicUrl, 
-                type: t, 
-                timestamp: Date.now() 
-            });
+            const esVideo = archivo.type.startsWith('video');
+            const urlCL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${esVideo ? 'video' : 'image'}/upload`;
             
-            notify("✅ Archivo enviado");
+            const resCL = await fetch(urlCL, { method: 'POST', body: formDataCL });
+            const dataCL = await resCL.json();
+
+            // Guardamos el veredicto (true si detecta desnudez)
+            const esInapropiado = dataCL.moderation && dataCL.moderation[0].status === 'rejected';
+
+            notify("📦 Guardando en Supabase...");
+
+            // --- PASO 2: SUBIDA REAL A TU SUPABASE ---
+            const nombreFinal = `${Date.now()}_${archivo.name}`;
+            const { data: dataSB, error: errorSB } = await supabase.storage
+                .from('multimedia') // Asegúrate que tu Bucket se llame así
+                .upload(nombreFinal, archivo);
+
+            if (errorSB) throw errorSB;
+
+            const { data: publicURL } = supabase.storage
+                .from('multimedia')
+                .getPublicUrl(nombreFinal);
+
+            // --- PASO 3: REGISTRO EN TU FIREBASE ---
+            db.ref(chatActual).push({
+                uid: mUser.uid,
+                user: mData.nombre || "Usuario",
+                url: publicURL.publicUrl,
+                type: esVideo ? 'video' : 'foto',
+                moderado: esInapropiado, // Sello de la IA
+                timestamp: Date.now()
+            });
+
+            notify(esInapropiado ? "⚠️ Contenido marcado como sensible" : "✅ Enviado");
+
         } catch (error) {
-            console.error("Error en Supabase:", error);
-            notify("❌ Error al subir: " + error.message);
+            console.error(error);
+            notify("❌ Error al procesar");
         }
     };
     input.click();
