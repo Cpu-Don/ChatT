@@ -788,17 +788,15 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
             }
         }
 
-                // 3. MULTIMEDIA CON MODERACIÓN IA (Chat + Galería)
+                    // 3. MULTIMEDIA CON MODERACIÓN IA (Chat + Galería)
         if(data.type === 'foto' || data.type === 'video') {
             const soyAdminGlobal = mData.nombre && mData.nombre.toLowerCase() === 'chat';
-            
-            // Si la IA marcó el contenido y NO eres admin, se aplica el filtro
             const censurar = data.moderado === true && !soyAdminGlobal;
             
             const claseCensura = censurar ? 'censurado' : '';
             const avisoCensura = censurar ? `<div class="capa-aviso-ia">🔞 CONTENIDO RESTRINGIDO</div>` : '';
 
-            // --- RENDERIZADO EN EL CHAT ---
+            // Renderizado en el chat
             const mediaTag = data.type === 'video' 
                 ? `<video src="${data.url}" class="${claseCensura}" style="width:100%; border-radius:8px;" ${censurar ? '' : 'controls'}></video>` 
                 : `<img src="${data.url}" class="${claseCensura}" style="width:100%; border-radius:8px;">`;
@@ -811,23 +809,21 @@ if (chatActual.startsWith("Sincro_Grupos/")) {
                     ${avisoCensura}
                 </div>`;
 
-            // --- RENDERIZADO EN LA GALERÍA DERECHA ---
+            // Renderizado en la galería
             const itemGal = document.createElement('div');
-            // Aplicamos la clase de censura también aquí
             itemGal.className = `gal-item ${claseCensura}`;
             itemGal.style = "height:65px; background:#000; border-radius:4px; overflow:hidden; cursor:pointer; position:relative; margin-bottom:5px;";
-            
             itemGal.innerHTML = data.type === 'video' 
                 ? `<video src="${data.url}" style="width:100%; height:100%; object-fit:cover;"></video>` 
                 : `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
             
-            // Solo se puede abrir desde la galería si no está censurado o eres admin
             itemGal.onclick = () => {
-                if (!censurar || soyAdminGlobal) abrirMedia(data.url, data.type);
+                if (!censurar || soyAdminGlobal) { abrirMedia(data.url, data.type); }
             };
 
             gal.prepend(itemGal);
-        } 
+        }
+    
 
         } else { 
             html += `<span>${msgLimpio}</span>`; 
