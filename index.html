@@ -355,28 +355,27 @@
             </div>
                     
             <div style="padding:20px; text-align:center;">
-                <div id="info-icon" style="width:80px; height:80px; background:#0088cc; color:white; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:bold;">S</div>
+
+                                <div id="info-icon" style="width:80px; height:80px; background:#0088cc; color:white; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:bold;">S</div>
                 <h3 id="info-name" style="margin:5px 0; font-size: 18px;">Sincro MD</h3>
 
-<!-- CONTENEDOR FLOTANTE PARA EL ANUNCIO -->
-<div style="position: relative; width: 100%; height: 260px; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; background: #f9f9f9; border-radius: 8px; border: 1px dashed #ccc;">
-    
-    <div style="transform: scale(0.7); transform-origin: center; position: absolute; z-index: 10;">
-        <script type="text/javascript">
-            atOptions = {
-                'key' : 'a474e797518c7de8fb11f33e69f0be26',
-                'format' : 'iframe',
-                'height' : 250,
-                'width' : 300,
-                'params' : {}
-            };
-        </script>
-        <script type="text/javascript" src="https://www.highperformanceformat.com/a474e797518c7de8fb11f33e69f0be26/invoke.js"></script>
-    </div>
+                <!-- BLOQUE DE ANUNCIO SOBRE EL BOTÓN -->
+                <div style="width: 100%; height: 260px; display: flex; justify-content: center; align-items: center; position: relative; z-index: 5;">
+                    <div style="transform: scale(0.8); transform-origin: center;">
+                        <script type="text/javascript">
+                            atOptions = {
+                                'key' : 'a474e797518c7de8fb11f33e69f0be26',
+                                'format' : 'iframe',
+                                'height' : 250,
+                                'width' : 300,
+                                'params' : {}
+                            };
+                        </script>
+                        <script type="text/javascript" src="https://www.highperformanceformat.com/a474e797518c7de8fb11f33e69f0be26/invoke.js"></script>
+                    </div>
+                </div>
 
-    <!-- Etiqueta opcional para que sepas que es zona de publicidad -->
-    <span style="position: absolute; bottom: 5px; right: 5px; font-size: 10px; color: #999;">Publicidad</span>
-</div>
+                <button id="btn-edit-group" onclick="editarNombreGrupo()" style="display:none; background:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:5px 12px; font-size:11px; cursor:pointer; margin-top:8px; position: relative; z-index: 10;">Editar Info</button>
 
                 
                 <button id="btn-edit-group" onclick="editarNombreGrupo()" style="display:none; background:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:5px 12px; font-size:11px; cursor:pointer; margin-top:8px;">Editar Info</button>
