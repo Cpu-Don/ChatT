@@ -294,7 +294,7 @@
     <div id="scr-chat" class="screen" style="flex-direction: row; padding: 0;">
         <aside id="sidebar-left">
             <div style="padding:15px; background:#0088cc; color:white; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
-                SINCRO <span onclick="toggleMenu('left')" style="cursor:pointer; font-size:20px;">—</span>
+                SINCRO <span onclick="toggleMenu('left')" style="cursor:pointer; font-size:20px;">Ⓜ️</span>
             </div>
 
             <div id="vip-status-container" style="padding:10px 15px; border-bottom:1px solid #eee; display:none;">
@@ -330,39 +330,54 @@
 
         <main id="chat-section">
             <header class="header">
-               <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;">☰</button>
+               <button onclick="toggleMenu('left')" style="border:none; background:none; font-size:24px; cursor:pointer;">♈</button>
                <div style="text-align:center;">
                    <b id="chat-title" style="display:block; font-size: 15px;">Cargando...</b>
                    <small id="chat-desc" style="font-size:10px; color:#888; display:block; margin-top:-2px;"></small>
                    <small id="chat-status" style="font-size:10px; color:#888;"></small>
                </div>
-               <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;">⛭</button>
+               <button onclick="toggleMenu('right')" style="border:none; background:none; font-size:24px; cursor:pointer;">⚙️</button>
             </header>
             <div id="chat-box"></div>
             <footer>
-               <button onclick="abrirSelectorMultimedia()" style="border:none; background:none; font-size:26px; cursor:pointer;">➕</button>
+               <button onclick="abrirSelectorMultimedia()" style="border:none; background:none; font-size:26px; cursor:pointer;">📂</button>
 <input id="msg-in" placeholder="Escribe un mensaje..." autocomplete="off">
 
 
-               <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:42px; height:42px; border-radius:50%; cursor:pointer; font-size: 18px;">➔</button>
+               <button onclick="enviarMsg()" style="background:#0088cc; color:white; border:none; width:42px; height:42px; border-radius:50%; cursor:pointer; font-size: 18px;">🆙</button>
             </footer>
         </main>
 
         <aside id="sidebar-right">
             <div style="padding:15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
                 <b style="color:#0088cc;">Info del Grupo</b>
-                <span onclick="toggleMenu('right')" style="cursor:pointer; font-size:20px;">✖</span>
+                <span onclick="toggleMenu('right')" style="cursor:pointer; font-size:20px;">❌</span>
             </div>
-                    
+          
+            <!-- Línea 356: Pega esto justo debajo del encabezado del sidebar-right -->
+<div style="width: 100%; display: flex; justify-content: center; align-items: center; padding: 10px 0;">
+    <div style="transform: scale(0.85); transform-origin: center;">
+        <script type="text/javascript">
+            atOptions = {
+                'key' : 'a474e797518c7de8fb11f33e69f0be26',
+                'format' : 'iframe',
+                'height' : 250,
+                'width' : 300,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="https://www.highperformanceformat.com/a474e797518c7de8fb11f33e69f0be26/invoke.js"></script>
+    </div>
+</div>
+
+<!-- Después de esto sigue tu código de info-icon, nombre y botón de editar info -->
+
+            
             <div style="padding:20px; text-align:center;">
-
-
-
-    <!-- BOTÓN DE EDITAR: Manteniendo la función original intacta -->
-    <button id="btn-edit-group" onclick="editarNombreGrupo()" style="display:none; background:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:6px 15px; font-size:12px; cursor:pointer; margin-top:5px; position: relative; z-index: 999;">Editar Info</button>
-
-                
-                                
+                <div id="info-icon" style="width:80px; height:80px; background:#0088cc; color:white; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:bold;">S</div>
+                <h3 id="info-name" style="margin:5px 0; font-size: 18px;">Sincro MD</h3>
+                <button id="btn-edit-group" onclick="editarNombreGrupo()" style="display:none; background:none; border:1px solid #0088cc; color:#0088cc; border-radius:5px; padding:5px 12px; font-size:11px; cursor:pointer; margin-top:8px;">Editar Info</button>
+            </div>
            <button id="btn-add-member" onclick="mostrarListaParaAgregar()" style="width:100%; padding:10px; margin-top:10px; background:#0088cc; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">
    ➕ Añadir Miembros
 </button>
@@ -1369,10 +1384,5 @@ function procesarInvitacionPorNombre() {
 
 
 </script>
-
-    <script src="https://pl28843986.profitablecpmratenetwork.com/32/96/fa/3296fa9ea72356eb5eb96a44ecd1a8cc.js"></script>
-
-
-
 </body>
 </html>
