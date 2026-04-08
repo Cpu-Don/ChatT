@@ -497,14 +497,52 @@
     }
 
     function registro() {
-        const u = document.getElementById('reg-user').value.trim(), e = document.getElementById('reg-mail').value.trim(), p = document.getElementById('reg-pass').value;
-        if(!u || !e || p.length < 6) return notify(" Datos incompletos");
-        auth.createUserWithEmailAndPassword(e, p).then(res => {
-            res.user.sendEmailVerification().then(() => notify(" Verifica tu correo."));
-            db.ref('Sincro_Usuarios/' + res.user.uid).set({ nombre: u, vip: (u.toLowerCase() === 'chat'), online: false, solicitudVip: 'ninguna' });
-            setTimeout(() => { auth.signOut(); view('scr-login'); }, 3000);
-        }).catch(err => notify(" " + err.message));
+    const u = document.getElementById('reg-user').value.trim();
+    const e = document.getElementById('reg-mail').value.trim();
+    const p = document.getElementById('reg-pass').value;
+
+    if(!u || !e || p.length < 6) return notify("⚠️ Datos incompletos (mínimo 6 caracteres)");
+
+    // 1. Bloqueo de nombre reservado
+    if (u.toLowerCase() === "chat") {
+        return notify("🚫 Este nombre está reservado.");
     }
+
+    // 2. Verificar si el nombre de usuario ya está en uso
+    db.ref('Sincro_Usuarios').orderByChild('nombre').equalTo(u).once('value', snap => {
+        if (snap.exists()) {
+            notify("❌ El nombre '" + u + "' ya está ocupado. Elige otro.");
+        } else {
+            // Si el nombre está libre, creamos la cuenta
+            crearCuentaFirebase(u, e, p);
+        }
+    });
+}
+
+function crearCuentaFirebase(u, e, p) {
+    auth.createUserWithEmailAndPassword(e, p).then(res => {
+        res.user.sendEmailVerification().then(() => notify("📧 Verifica tu correo."));
+
+        // SEGURIDAD DEFINITIVA: Comparación con tu UID real
+        const miUIDPersonal = "YRKbeWhHyfTKhYwwTM49pyJgfD72"; 
+        const esAdmin = (res.user.uid === miUIDPersonal);
+
+        db.ref('Sincro_Usuarios/' + res.user.uid).set({ 
+            nombre: u, 
+            vip: esAdmin, 
+            online: false, 
+            solicitudVip: 'ninguna',
+            banned: false 
+        });
+
+        setTimeout(() => { 
+            auth.signOut(); 
+            view('scr-login'); 
+        }, 3000);
+
+    }).catch(err => notify("❌ " + err.message));
+}
+
 
     function login() {
         const e = document.getElementById('log-mail').value.trim(), p = document.getElementById('log-pass').value;
