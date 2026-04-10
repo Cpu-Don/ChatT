@@ -503,31 +503,37 @@
 
     if(!u || !e || p.length < 6) return notify("⚠️ Datos incompletos (mínimo 6 caracteres)");
 
-    // 1. Bloqueo de nombre reservado
     if (u.toLowerCase() === "chat") {
         return notify("🚫 Este nombre está reservado.");
     }
 
-    // 2. Verificar si el nombre de usuario ya está en uso
-    db.ref('Sincro_Usuarios').orderByChild('nombre').equalTo(u).once('value', snap => {
+    // Verificamos disponibilidad del nombre primero
+    db.ref('Sincro_Usuarios').orderByChild('nombre').equalTo(u).once('value').then(snap => {
         if (snap.exists()) {
             notify("❌ El nombre '" + u + "' ya está ocupado. Elige otro.");
         } else {
-            // Si el nombre está libre, creamos la cuenta
             crearCuentaFirebase(u, e, p);
         }
+    }).catch(err => {
+        notify("❌ Error de base de datos: " + err.message);
     });
 }
 
-function crearCuentaFirebase(u, e, p) {
-    auth.createUserWithEmailAndPassword(e, p).then(res => {
-        res.user.sendEmailVerification().then(() => notify("📧 Verifica tu correo."));
+async function crearCuentaFirebase(u, e, p) {
+    try {
+        // 1. Crear el usuario en Auth
+        const res = await auth.createUserWithEmailAndPassword(e, p);
+        const user = res.user;
 
-        // SEGURIDAD DEFINITIVA: Comparación con tu UID real
+        // 2. Enviar verificación de correo (Esperamos a que se envíe)
+        await user.sendEmailVerification();
+
+        // 3. Definir privilegios
         const miUIDPersonal = "YRKbeWhHyfTKhYwwTM49pyJgfD72"; 
-        const esAdmin = (res.user.uid === miUIDPersonal);
+        const esAdmin = (user.uid === miUIDPersonal);
 
-        db.ref('Sincro_Usuarios/' + res.user.uid).set({ 
+        // 4. Guardar en Realtime Database (Esperamos a que se confirme la escritura)
+        await db.ref('Sincro_Usuarios/' + user.uid).set({ 
             nombre: u, 
             vip: esAdmin, 
             online: false, 
@@ -535,13 +541,21 @@ function crearCuentaFirebase(u, e, p) {
             banned: false 
         });
 
-        setTimeout(() => { 
-            auth.signOut(); 
-            view('scr-login'); 
+        // 5. Solo cuando todo lo anterior terminó, notificamos y redirigimos
+        notify("📧 Registro exitoso. Verifica tu correo en la bandeja de entrada o SPAM.");
+
+        setTimeout(async () => { 
+            await auth.signOut(); 
+            if(window.view) view('scr-login'); 
         }, 3000);
 
-    }).catch(err => notify("❌ " + err.message));
+    } catch (err) {
+        // Si algo falla en cualquier paso, aquí te dirá exactamente qué fue
+        notify("❌ Error: " + err.message);
+        console.error("Fallo en registro:", err);
+    }
 }
+
 
 
     function login() {
